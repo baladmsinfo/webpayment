@@ -15,11 +15,19 @@ export interface QRData {
 export const usePaymentsStore = defineStore("payments", {
   state: () => ({
     transactions: [],
+    totalTransactions: 0,
+    totalReports: 0,   // ✅ Added here
     totalCollection: {
       dailyCollection: 0,
+      dailyCount: 0,
+      weeklyCollection: 0,
+      weeklyCount: 0,
       monthlyCollection: 0,
-      yearlyCollection: 0
+      monthlyCount: 0,
+      yearlyCollection: 0,
+      yearlyCount: 0,
     },
+    reports: [],
     payments: [] as QRData[],
     lastQR: null as QRData | null,
     vpaStatus: null as { valid: boolean; message?: string } | null,
@@ -47,21 +55,46 @@ export const usePaymentsStore = defineStore("payments", {
     setError(message: string | null) {
       this.error = message
     },
-    setPayment(payload: any){
+
+    setPayment(payload: any) {
       this.transactions = payload
     },
-    setCollection(payload: any){
-      this.totalCollection = payload
+
+    setTotalTransactions(count: number) {
+      this.totalTransactions = count
     },
+
+    setReports(r: any) {
+      this.reports = r
+    },
+    
+    setTotalReports(count: number) {
+      this.totalReports = count
+    },
+
+    setCollection(payload: any) {
+      this.totalCollection = {
+        dailyCollection: payload.dailyCollection || 0,
+        dailyCount: payload.dailyCount || 0,
+        weeklyCollection: payload.weeklyCollection || 0,
+        weeklyCount: payload.weeklyCount || 0,
+        monthlyCollection: payload.monthlyCollection || 0,
+        monthlyCount: payload.monthlyCount || 0,
+        yearlyCollection: payload.yearlyCollection || 0,
+        yearlyCount: payload.yearlyCount || 0,
+      }
+    },
+
     setPaymentStatus(status: PaymentStatus, details: Partial<QRData>) {
       this.paymentStatus = status
 
-      // Merge with existing transactionDetails so no data is lost
       const updated: QRData = {
         ...(this.transactionDetails ?? {
           qr: "",
           order_id: "",
           paymentStatus: "PENDING",
+          payerVpa: "",
+          rrn: "",
           txn_ref_no: "",
           time: "",
         }),

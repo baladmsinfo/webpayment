@@ -7,7 +7,7 @@ export default defineNuxtPlugin(() => {
   console.log(runtimeConfig.public.API_ENDPOINT)
 
   const axiosInstance = axios.create({
-    baseURL: runtimeConfig.public.API_ENDPOINT || "https://feebdev.bucksbox.in",
+    baseURL: runtimeConfig.public.API_ENDPOINT || "http://localhost:3010",
   });
 
   axiosInstance.interceptors.request.use(

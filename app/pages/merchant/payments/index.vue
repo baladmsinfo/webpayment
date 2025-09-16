@@ -1,12 +1,12 @@
 <template>
-    <h1>Payments</h1>
+  <div>
+    <payments/>
+  </div>
 </template>
 
 <script setup>
-
 definePageMeta({
   layout: "mlayer",
   middleware: "auth",
 });
-
 </script>

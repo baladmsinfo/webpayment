@@ -1,16 +1,33 @@
-// composables/useApi.ts
-export const useApi = () => {
-  const { $axios } = useNuxtApp()
+// src/composables/useApi.ts
+import axios from "axios";
+import { useAuthStore } from "~/stores/auth";
+import { useCookie } from "#app";
 
-  const get = async (url: string, params = {}) => {
-    const res = await $axios.get(url, { params })
-    return res.data
-  }
+export function useApi() {
+  const auth = useAuthStore();
 
-  const post = async (url: string, data = {}) => {
-    const res = await $axios.post(url, data)
-    return res.data
-  }
+  const instance = axios.create({
+    baseURL: useRuntimeConfig().public.API_ENDPOINT, // http://localhost:3010
+  });
 
-  return { get, post }
+  // Add Authorization header
+  instance.interceptors.request.use((config) => {
+    let token = auth.token || localStorage.getItem("token");
+    if (!token) {
+      const cookie = useCookie("authToken");
+      token = cookie.value || null;
+    }
+
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    return config;
+  });
+
+  const get = (url: string, config = {}) => instance.get(url, config);
+  const post = (url: string, data: any, config = {}) =>
+    instance.post(url, data, config);
+
+  return { get, post };
 }

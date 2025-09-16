@@ -2,11 +2,7 @@
   <div>
     <v-app-bar :color="color">
       <!-- Drawer toggle -->
-      <v-app-bar-nav-icon
-        variant="text"
-        @click.stop="drawer = !drawer"
-        v-if="!goback"
-      />
+      <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer" v-if="!goback" />
 
       <!-- Back button -->
       <template #prepend>
@@ -27,16 +23,19 @@
     </v-app-bar>
 
     <!-- Navigation Drawer -->
+    <!-- Navigation Drawer -->
     <v-navigation-drawer v-model="drawer" tile scrim>
       <v-list>
-        <v-list-item v-for="item in menus" :key="item.url" :to="item.url">
+        <v-list-item v-for="item in menus" :key="item.url" :to="item.url" link>
+          <!-- Prepend Icon -->
           <template #prepend>
-            <v-icon :color="color" size="x-small" :icon="item.icon" />
+            <v-icon :color="color" size="small">{{ item.icon }}</v-icon>
           </template>
-          <v-list-item-title
-            class="text-overline font-weight-black pt-1"
-            v-text="item.title"
-          />
+
+          <!-- Title -->
+          <v-list-item-title class="text-overline font-weight-black pt-1">
+            {{ item.title }}
+          </v-list-item-title>
         </v-list-item>
       </v-list>
 
@@ -62,7 +61,7 @@ const props = defineProps({
   title: { type: String, default: "BUCKSBOX" },
   color: { type: String, default: "primary" },
   buttons: { type: Array, default: () => [] },
-  menus: { type: Array, default: () => [] }, // ✅ renamed to menus
+  menus: { type: Array, default: () => [] },
   goback: { type: Boolean, default: false },
 })
 
@@ -78,6 +77,6 @@ onMounted(() => {
 function logout() {
   const authToken = useCookie("authToken")
   authToken.value = null
-  navigateTo("/login")
+  navigateTo("/")
 }
 </script>
