@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { usePaymentsStore } from "~/stores/payments";
-import { usePaymentsApi } from "~/composables/apis/usePaymentsApi";
+import { usePaymentsApi } from "~/composables/apis/usepaymentsApi";
 
 const store = usePaymentsStore();
 const { getTransactions } = usePaymentsApi();
