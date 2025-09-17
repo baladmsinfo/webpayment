@@ -104,7 +104,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { usePaymentsStore } from "~/stores/payments";
-import { usePaymentsApi } from "~/composables/apis/usePaymentsApi";
+import { usePaymentsApi } from "~/composables/apis/usepaymentsApi";
 import VueApexCharts from "vue3-apexcharts";
 
 definePageMeta({
