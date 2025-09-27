@@ -94,7 +94,7 @@ export function usePaymentsApi() {
   const getPaymentsByGranularity = async (granularity: string) => {
     try {
       store.setLoading(true);
-      const res = await post("/payments/getCollectionsByGranularity", {
+      const res = await post("/merchant/getCollectionsByGranularity", {
         granularity,
       });
 

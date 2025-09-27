@@ -71,20 +71,25 @@ export function useUsersApi() {
     }
   };
 
-  const registor = async (payload: {
-    name: string;
-    email: string;
-    mobile_no: number;
-    interface: string;
-  }) => {
-    const is_verified = await post("/register", payload);
-    console.log(is_verified);
-    if (is_verified.statusCode == "00") {
-      auth.setUser(is_verified.data.merchant, is_verified.data.token);
-      localStorage.setItem("token", is_verified.data.token); // optional
+  const registor = async (payload) => {
+    const res = await post("/register", payload);
+
+    if (res.statusCode === "00") {
+      const data = res.data;
+
+      if (data.user) {
+        // If backend returns user object with role
+        auth.setUser(data.user, data.token);
+      } else if (data.aggregator) {
+        // If backend sends aggregator directly
+        auth.setUser({ role: "aggregator", aggregator: data.aggregator }, data.token);
+      } else if (data.merchant) {
+        // If backend sends merchant directly
+        auth.setUser({ role: "merchant", merchant: data.merchant }, data.token);
+      }
     }
-    //auth.setMobile()
-    return is_verified;
+
+    return res;
   };
 
   const forgotPassword = async (payload: any) => {
@@ -119,7 +124,7 @@ export function useUsersApi() {
     if (res.data.statusCode === "00" && res.data.token) {
       // store user in Pinia or wherever you manage state
       console.log("Login successful, setting user in store");
-      
+
       auth.setUser(res.data.user, res.data.token);
 
       // ✅ Save token in cookie

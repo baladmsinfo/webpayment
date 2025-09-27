@@ -17,7 +17,7 @@
                 label="Enter mobile number" clearable class="mb-4" />
               <v-text-field v-model="password" :readonly="loading" type="password" variant="solo" :rules="[required]"
                 label="Enter password" clearable />
-                
+
               <div class="d-flex justify-end mb-6">
                 <a href="/forgotpassword" class="text-white text-caption font-weight-medium"
                   @click.prevent="router.push('/forgotpassword')">
@@ -94,7 +94,12 @@ async function onSubmit() {
       emailOrMobile: mobilenumber.value,
       password: password.value,
     });
-    router.push("/merchant");
+    console.log("login page response", res);
+    if (res.data.user.role === "merchant") {
+      router.push("/merchant");
+    } else if (res.data.user.role === "aggregator") {
+      router.push("/aggregator");
+    }
     loading.value = true;
   } finally {
     loading.value = false;

@@ -1,12 +1,11 @@
 <template>
   <v-container fluid>
     <h1 class="text-h5 font-weight-bold mb-4">Reports</h1>
-
     <div class="d-flex flex-wrap align-center mb-4" style="gap: 16px;">
       <v-text-field v-model="fromDate" type="date" label="From Date" density="compact" hide-details class="w-auto" />
       <v-text-field v-model="toDate" type="date" label="To Date" density="compact" hide-details class="w-auto" />
 
-      <v-select v-model="status" :items="['PENDING', 'SUCCESS', 'FAILED']" label="Status" density="compact" hide-details
+      <v-select v-model="status" :items="['PENDING', 'SUCCESS', 'PAID', 'FAILED']" label="Status" density="compact" hide-details
         class="w-auto" clearable />
 
       <v-select v-model="paymentMethod" :items="['UPI', 'CARD', 'NETBANKING', 'WALLET']" label="Mode" density="compact"
@@ -240,6 +239,8 @@ const statusColor = (status: string) => {
       return "green";
     case "FAILED":
       return "red";
+    case "PAID":
+      return "blue";
     default:
       return "grey";
   }

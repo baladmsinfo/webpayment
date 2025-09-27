@@ -14,12 +14,12 @@ export function useOnboadingApi() {
     return await get("onboading/search/pincode?q=" + searchBy);
   };
 
-  const verifyPan = async (payload: { dob: string,fathername: string,name: string,pan: string }) => {
+  const verifyPan = async (payload: any) => {
     //console.log(payload);
     return await post("/onboading/verify/pan", payload);
   };
 
-  const verifyAccount = async (payload: { accountNumber: number,accountHolderName: string,ifsc: string,additionalData: boolean,consent: string }) => {
+  const verifyAccount = async (payload: any) => {
     //console.log(payload);
     return await post("/onboading/verify/account", payload);
   };
@@ -37,8 +37,11 @@ export function useOnboadingApi() {
 
   const businessType = async () => {
     const res = await get("onboading/businessType");
-    Onboading.setBusinessTypes(res.data);
-    return res.data;
+    console.log(res.data);
+    if (res.data.statusCode == "00") {
+      Onboading.setBusinessTypes(res.data.data);
+      return res.data.data;
+    }
   };
 
   return {

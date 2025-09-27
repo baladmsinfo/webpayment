@@ -1,4 +1,3 @@
-// stores/auth.ts
 import { defineStore } from "pinia";
 
 export interface TurnOverData {

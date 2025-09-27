@@ -150,7 +150,7 @@ const donutOptions = ref({
           },
           total: {
             show: true,
-            label: "Total",
+            label: "All Txn",
             fontSize: "18px",
             fontWeight: 600,
             formatter: (w) => {
