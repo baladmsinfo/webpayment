@@ -441,9 +441,9 @@ const props = defineProps({
 })
 
 const merchant = ref(null)
-const { getuserOnboarding } = useAggregatorApi()
+const { getuserOnboarding, verifyPan, verifyAccount, onboading } = useAggregatorApi()
 
-const { MCCSearch, businessTurnOver, businessType, pincodeSearch, verifyPan, verifyAccount, onboading } = useOnboadingApi();
+const { MCCSearch, businessTurnOver, businessType, pincodeSearch } = useOnboadingApi();
 const { getProfile } = useUsersApi();
 const Onboarding = useOnboardingStore();
 const { turnOverList, businessTypeList } = storeToRefs(Onboarding);

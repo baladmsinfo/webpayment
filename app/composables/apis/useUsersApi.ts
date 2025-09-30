@@ -77,16 +77,16 @@ export function useUsersApi() {
     if (res.statusCode === "00") {
       const data = res.data;
 
-      if (data.user) {
-        // If backend returns user object with role
-        auth.setUser(data.user, data.token);
-      } else if (data.aggregator) {
-        // If backend sends aggregator directly
-        auth.setUser({ role: "aggregator", aggregator: data.aggregator }, data.token);
-      } else if (data.merchant) {
-        // If backend sends merchant directly
-        auth.setUser({ role: "merchant", merchant: data.merchant }, data.token);
-      }
+      // if (data.user) {
+      //   // If backend returns user object with role
+      //   auth.setUser(data.user, data.token);
+      // } else if (data.aggregator) {
+      //   // If backend sends aggregator directly
+      //   auth.setUser({ role: "aggregator", aggregator: data.aggregator }, data.token);
+      // } else if (data.merchant) {
+      //   // If backend sends merchant directly
+      //   auth.setUser({ role: "merchant", merchant: data.merchant }, data.token);
+      // }
     }
 
     return res;
@@ -113,6 +113,30 @@ export function useUsersApi() {
     }
   };
 
+    const loginAdmin = async (payload: {
+    emailOrMobile: string;
+    password: string;
+  }) => {
+    const res = await post("/login", payload);
+    console.log(res);
+
+    if (res.data.statusCode === "00" && res.data.token) {
+      // store user in Pinia or wherever you manage state
+      console.log("Login successful, setting user in store");
+
+      auth.setUser(res.data.user, res.data.token);
+
+      // ✅ Save token in cookie
+      const authToken = useCookie("authToken", {
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      });
+      authToken.value = res.data.token;
+    }
+
+    return res;
+  };
 
   const login = async (payload: {
     emailOrMobile: string;
@@ -145,5 +169,5 @@ export function useUsersApi() {
     return merchant;
   };
 
-  return { SendOtp, resetPassword, setPassword, forgotPassword, verifyOtp, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  return { SendOtp, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }

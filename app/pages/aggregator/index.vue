@@ -29,14 +29,36 @@
             </v-row>
         </v-container>
 
-        <v-row dense >
-            <v-col cols="12" md="8">
+        <v-row dense>
+            <v-col cols="12" md="4">
                 <v-card class="pa-4" elevation="2" rounded="lg" style="height: 100%">
                     <template v-if="!loading">
-                        <apexchart type="donut" height="350" :options="donutOptions" :series="donutSeries" />
+                        <div class="mb-4">
+                            <h2>
+                                Payment Methods
+                            </h2>
+                        </div>
+                        <apexchart type="donut" height="300" :options="donutOptions" :series="donutSeries" />
                     </template>
                     <template v-else>
-                        <v-skeleton-loader type="card" height="350" class="rounded-lg" style="opacity: 0.7" />
+                        <v-skeleton-loader type="card" height="300" class="rounded-lg" style="opacity: 0.7" />
+                    </template>
+                </v-card>
+            </v-col>
+
+            <v-col cols="12" md="4">
+                <v-card class="pa-4" elevation="2" rounded="lg" style="height: 100%">
+                    <template v-if="!loading">
+                        <div class="mb-4">
+                            <h2>
+                                Transaction Status
+                            </h2>
+                        </div>
+                        <apexchart type="donut" height="300" :options="statusDonutOptions"
+                            :series="statusDonutSeries" />
+                    </template>
+                    <template v-else>
+                        <v-skeleton-loader type="card" height="300" class="rounded-lg" style="opacity: 0.7" />
                     </template>
                 </v-card>
             </v-col>
@@ -133,7 +155,7 @@ import VueApexCharts from "vue3-apexcharts";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 import { useAuthStore } from "~/stores/auth";
 
-const { getAggregator, getTransactions, getPaymentMethodSummary } = useAggregatorApi();
+const { getAggregator, getTransactions, getTransactionStatusSummary, getPaymentMethodSummary } = useAggregatorApi();
 const authStore = useAuthStore();
 const apexchart = VueApexCharts;
 
@@ -155,6 +177,44 @@ definePageMeta({
 
 const topMerchants = computed(() => authStore.topMerchants);
 
+const statusDonutSeries = computed(() =>
+    Object.values(authStore.transactionStatusSummary).map((t) => t.count)
+);
+
+const statusDonutOptions = computed(() => {
+    const data = Object.values(authStore.transactionStatusSummary);
+    const labels = data.map((t) => t.status);
+    const total = data.reduce((sum, t) => sum + t.count, 0);
+
+    return {
+        labels,
+        colors: [ 'red','blue'],
+        legend: { position: "bottom" },
+        plotOptions: {
+            pie: {
+                donut: {
+                    labels: {
+                        show: true,
+                        total: {
+                            show: true,
+                            label: "Total Txns",
+                            formatter: () => total.toLocaleString(),
+                        },
+                    },
+                },
+            },
+        },
+        tooltip: {
+            y: {
+                formatter: (val, opts) => {
+                    const t = data[opts.seriesIndex];
+                    return `${t.count} Txns | Amount: ₹${t.amount} | Response Code: ${t.responceCode}`;
+                },
+            },
+        },
+    };
+});
+
 const donutSeries = computed(() =>
     Object.values(authStore.paymentSummary).map((m) => m.amount)
 );
@@ -166,6 +226,7 @@ const donutOptions = computed(() => {
 
     return {
         labels: methods,
+        colors: ['#4CAF50', '#F44336', '#FF9800', '#2196F3'],
         legend: { position: "bottom" },
         plotOptions: {
             pie: { donut: { labels: { show: true, total: { show: true, label: "Total", formatter: () => `₹${totalAmount.toLocaleString()}` } } } }
@@ -183,7 +244,7 @@ onMounted(async () => {
         loading.value = true;
     }
     try {
-        await Promise.all([getAggregator(), getTransactions(), getPaymentMethodSummary()]);
+        await Promise.all([getAggregator(), getTransactions(), getTransactionStatusSummary(), getPaymentMethodSummary()]);
         loading.value = false;
     } catch (err) {
         console.error("Dashboard load error:", err);

@@ -7,36 +7,36 @@ export function useOnboadingApi() {
   const Onboading = useOnboardingStore();
 
   const MCCSearch = async (searchBy: string) => {
-    return await get("/onboading/search/mcc?q=" + searchBy);
+    return await get("/aggregator/search/mcc?q=" + searchBy);
   };
 
   const pincodeSearch = async (searchBy: string) => {
-    return await get("onboading/search/pincode?q=" + searchBy);
+    return await get("/aggregator/search/pincode?q=" + searchBy);
   };
 
-  const verifyPan = async (payload: any) => {
-    //console.log(payload);
-    return await post("/onboading/verify/pan", payload);
-  };
+  // const verifyPan = async (payload: any) => {
+  //   //console.log(payload);
+  //   return await post("/onboading/verify/pan", payload);
+  // };
 
-  const verifyAccount = async (payload: any) => {
-    //console.log(payload);
-    return await post("/onboading/verify/account", payload);
-  };
+  // const verifyAccount = async (payload: ) => {
+  //   //console.log(payload);
+  //   return await post("/onboading/verify/account", payload);
+  // };
 
-  const onboading = async (payload: any) => {
-    //console.log(payload);
-    return await post("/onboading/onboading", payload);
-  };
+  // const onboading = async (payload: any) => {
+  //   //console.log(payload);
+  //   return await post("/onboading/onboading", payload);
+  // };
 
   const businessTurnOver = async () => {
-    const res = await get("onboading/trunOver");
+    const res = await get("/aggregator/trunOver");
     Onboading.setTurnOver(res.data);
     return res.data;
   };
 
   const businessType = async () => {
-    const res = await get("onboading/businessType");
+    const res = await get("/aggregator/businessType");
     console.log(res.data);
     if (res.data.statusCode == "00") {
       Onboading.setBusinessTypes(res.data.data);
@@ -49,8 +49,5 @@ export function useOnboadingApi() {
     businessTurnOver,
     businessType,
     pincodeSearch,
-    verifyPan,
-    verifyAccount,
-    onboading
   };
 }

@@ -32,6 +32,16 @@ export function useAggregatorApi() {
         return res.data;
     };
 
+    const getTransactionStatusSummary = async () => {
+        const res = await get("/aggregator/transaction/summary/today");
+        console.log("Transaction Status Summary", res.data);
+
+        if (res.data.statusCode === "00") {
+            auth.setTransactionStatusSummary(res.data.data);
+        }
+        return res.data;
+    };
+
     const getMerchants = async ({ page = 1, limit = 10 }) => {
         const res = await get(`/aggregator/merchants?page=${page}&limit=${limit}`);
         console.log("Aggregator Merchants:", res.data.data);
@@ -100,12 +110,31 @@ export function useAggregatorApi() {
         }
     };
 
+    const verifyPan = async (payload: any) => {
+        //console.log(payload);
+        return await post("/aggregator/verify/pan", payload);
+    };
+
+    const verifyAccount = async (payload: any) => {
+        //console.log(payload);
+        return await post("/aggregator/verify/account", payload);
+    };
+
+    const onboading = async (payload: any) => {
+        //console.log(payload);
+        return await post("/aggregator/onboading", payload);
+    };
+
     return {
         getAggregator,
         resetPassword,
         getTransactionsByMerchantId,
         getuserOnboarding,
+        verifyPan,
+        verifyAccount,
+        onboading,
         getPaymentMethodSummary,
+        getTransactionStatusSummary,
         getTransactions,
         getMerchants,
         getMerchantById
