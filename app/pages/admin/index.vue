@@ -11,7 +11,13 @@
 
         <v-col cols="12" md="5" class="d-flex align-center justify-center bg-purple-darken-2">
           <v-container max-width="400px">
-            <h1 class="mb-10">Welcome</h1>
+            <h1 id="merchant-login-title" class="mb-2 text-2xl font-semibold">
+              Welcome, Aggregator!
+            </h1>
+
+            <p class="mb-4 text-sm" role="note">
+              Access your dashboard to add, update, and monitor merchant details with ease.
+            </p>
             <v-form ref="webFormRef" @submit.prevent="onSubmit">
               <v-text-field v-model="mobilenumber" :readonly="loading" variant="solo" :rules="[required]"
                 label="Enter email or mobile number" clearable class="mb-4" />

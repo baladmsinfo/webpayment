@@ -23,7 +23,6 @@
     </v-app-bar>
 
     <!-- Navigation Drawer -->
-    <!-- Navigation Drawer -->
     <v-navigation-drawer v-model="drawer" tile scrim>
       <v-list>
         <v-list-item v-for="item in menus" :key="item.url" :to="item.url" link>

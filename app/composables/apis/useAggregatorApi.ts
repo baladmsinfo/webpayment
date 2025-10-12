@@ -58,6 +58,14 @@ export function useAggregatorApi() {
         return res.data;
     };
 
+    const getPendingMerchants = async ({ page = 1, limit = 10 }) => {
+        const res = await get(`/aggregator/merchants/pending?page=${page}&limit=${limit}`);
+        console.log("Kyc pending:", res.data);
+
+        return res.data;
+    };
+
+
     const getMerchantById = async (id: string) => {
         try {
             const res = await get(`/aggregator/merchants/${id}`);
@@ -122,7 +130,12 @@ export function useAggregatorApi() {
 
     const onboading = async (payload: any) => {
         //console.log(payload);
-        return await post("/aggregator/onboading", payload);
+        return await post("/aggregator/merchantMonitoring/onboarding", payload);
+    };
+
+    const verifyOnboarding = async (payload: any) => {
+        //console.log(payload);
+        return await post("/aggregator/merchant/onboarding", payload);
     };
 
     return {
@@ -133,6 +146,8 @@ export function useAggregatorApi() {
         verifyPan,
         verifyAccount,
         onboading,
+        verifyOnboarding,
+        getPendingMerchants,
         getPaymentMethodSummary,
         getTransactionStatusSummary,
         getTransactions,

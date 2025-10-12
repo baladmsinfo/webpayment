@@ -32,43 +32,14 @@ export function useFileUpload() {
     const blob = await fetch(photo.dataUrl!).then(r => r.blob())
     file.value = new File([blob], `photo_${Date.now()}.jpg`, { type: blob.type })
     if (filename === "63_Pan_Card_front") {
-      uploadFile("63",filename)
+      return uploadFile("63",filename)
     } else if (filename === "55_Aadhar_Card_front") {
-      uploadFile("55",filename)
+      return uploadFile("55",filename)
     } else if (filename === "55_Aadhar_Card_back") {
-      uploadFile("55",filename)
+      return uploadFile("55",filename)
     } else {
-      uploadFile("999",filename)
+      return uploadFile("999",filename)
     }
-    
-  }
-
-    async function takePhotoDesktop(filename: string, id: any) {
-    console.log("MerchatId", id);
-    
-    await Camera.checkPermissions();
-    await Camera.requestPermissions;
-    const photo = await Camera.getPhoto({
-      resultType: CameraResultType.DataUrl,
-      source: CameraSource.Camera,
-      quality: 90
-    })
-
-    //previewUrl.value = photo.dataUrl
-
-    // convert base64 to File
-    const blob = await fetch(photo.dataUrl!).then(r => r.blob())
-    file.value = new File([blob], `photo_${Date.now()}.jpg`, { type: blob.type })
-    if (filename === "63_Pan_Card_front") {
-      uploadFileDesktop("63",filename,id)
-    } else if (filename === "55_Aadhar_Card_front") {
-      uploadFileDesktop("55",filename,id)
-    } else if (filename === "55_Aadhar_Card_back") {
-      uploadFileDesktop("55",filename,id)
-    } else {
-      uploadFileDesktop("999",filename,id)
-    }
-    
   }
 
   /**
@@ -85,17 +56,6 @@ export function useFileUpload() {
     return formData
   }
 
-    function buildFormDataDesktop( docId: string , filename?: string, merchantId?: any) {
-    if (!file.value) throw new Error('No file selected or captured')
-
-    const formData = new FormData()
-    formData.append('file', file.value, filename || file.value.name)
-    formData.append('docId', docId)
-    formData.append('filename', filename || file.value.name)
-    formData.append('merchantId', merchantId)
-
-    return formData
-  }
 
   /**
    * Upload file with metadata
@@ -108,7 +68,7 @@ export function useFileUpload() {
     const runtimeConfig = useRuntimeConfig();
 
     const token = localStorage.getItem("token");
-    const res = await fetch( runtimeConfig.public.API_ENDPOINT + "/OnboadingImages", {
+    const res = await fetch( runtimeConfig.public.API_ENDPOINT + "/aggregator/OnboadingImages", {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`
@@ -121,43 +81,6 @@ export function useFileUpload() {
     const result = await res.json()
     console.log("✅ Upload response:", result)
 
-    if (filename === "63_Pan_Card_front") {
-      panUrl.value = result.data[0].url
-    } else if (filename === "55_Aadhar_Card_front") {
-      AadharFrontUrl.value = result.data[0].url
-    } else if (filename === "55_Aadhar_Card_back") {
-      AadharBackUrl.value = result.data[0].url
-    } else {
-      STOREURL.value = result.data[0].url
-    }
-
-    return result
-
-  }
-
-    async function uploadFileDesktop(
-    docId: string,
-    filename?: string,
-    merchantId?: any
-  ) {
-    const formData = buildFormDataDesktop(docId,filename,merchantId)
-    const runtimeConfig = useRuntimeConfig();
-
-    const token = localStorage.getItem("token");
-    const res = await fetch( runtimeConfig.public.API_ENDPOINT + "/OnboadingImages", {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
-    })
-
-    if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
-
-    const result = await res.json()
-    console.log("✅ Upload response:", result)
-
-    // here you can set response to your refs (panUrl, AadharFrontUrl, etc)
     if (filename === "63_Pan_Card_front") {
       panUrl.value = result.data[0].url
     } else if (filename === "55_Aadhar_Card_front") {
@@ -187,8 +110,6 @@ export function useFileUpload() {
     takePhoto,
     buildFormData,
     uploadFile,
-    uploadFileDesktop,
-    takePhotoDesktop,
     panUrl,
     AadharFrontUrl,
     AadharBackUrl,

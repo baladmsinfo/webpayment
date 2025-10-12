@@ -1,38 +1,42 @@
 <template>
   <div>
-    <admin-nav :menus="menus" />
+    <aggregator-nav :menus="menus" />
     <v-container>
       <slot />
     </v-container>
-
   </div>
 </template>
 
-
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref } from "vue"
+
 const menus = ref([
   {
     title: "Dashboard",
     icon: "mdi-view-dashboard",
-    enable: true,
-    role: "aggregator",
     url: "/aggregator",
   },
   {
     title: "Merchants",
     icon: "mdi-credit-card-outline",
-    enable: true,
-    color: "red",
-    url: "/aggregator/merchants",
+    // 👇 Two submenu pages
+    children: [
+      {
+        title: "Onboarded Merchants",
+        icon: "mdi-account-check",
+        url: "/aggregator/merchants/onboarded",
+      },
+      {
+        title: "Pending Merchants",
+        icon: "mdi-account-clock",
+        url: "/aggregator/merchants/pending",
+      },
+    ],
   },
   {
     title: "Settings",
     icon: "mdi-cog",
-    enable: false,
-    role: "aggregator",
     url: "/aggregator/settings",
   },
-]);
-
+])
 </script>
