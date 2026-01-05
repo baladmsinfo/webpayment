@@ -72,7 +72,7 @@ export function useAggregatorApi() {
             console.log("Merchant Details:", res.data);
             return res.data; // return the single merchant object
         } catch (error) {
-            console.error("Error fetching merchant by ID:", error);
+            console.log("Error fetching merchant by ID:", error);
             return null;
         }
     };
