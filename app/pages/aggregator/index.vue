@@ -50,6 +50,11 @@
                 <v-card class="pa-4" elevation="2" rounded="lg" style="height: 100%">
                     <!-- Daily Transaction Status -->
                     <template v-if="!noTransactionsToday">
+                        <div class="mb-4">
+                            <h2>
+                                Today's Transaction Status
+                            </h2>
+                        </div>
                         <apexchart type="donut" height="300" :options="statusDonutOptions"
                             :series="statusDonutSeries" />
                     </template>
