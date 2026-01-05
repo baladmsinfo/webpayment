@@ -13,6 +13,7 @@ export function useApi() {
   // Add Authorization header
   instance.interceptors.request.use((config) => {
     let token = auth.token || localStorage.getItem("token");
+
     if (!token) {
       const cookie = useCookie("authToken");
       token = cookie.value || null;
@@ -29,5 +30,8 @@ export function useApi() {
   const post = (url: string, data: any, config = {}) =>
     instance.post(url, data, config);
 
-  return { get, post };
+  const put = (url: string, data: any, config = {}) =>
+    instance.put(url, data, config);
+
+  return { get, post, put };
 }

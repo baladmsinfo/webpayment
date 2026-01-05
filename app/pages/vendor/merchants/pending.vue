@@ -1,12 +1,12 @@
 <template>
   <div>
-    <transactions-merchant/>
+    <MerchantsPendingVendor />
   </div>
 </template>
 
 <script setup>
 definePageMeta({
-  layout: "mlayer",
+  layout: "vendorlayer",
   middleware: "auth",
 });
 </script>

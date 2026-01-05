@@ -113,7 +113,7 @@ export function useUsersApi() {
     }
   };
 
-    const loginAdmin = async (payload: {
+  const loginAdmin = async (payload: {
     emailOrMobile: string;
     password: string;
   }) => {
@@ -141,27 +141,58 @@ export function useUsersApi() {
   const login = async (payload: {
     emailOrMobile: string;
     password: string;
-  }) => {
+  }, role: any = ["merchant"]) => {
     const res = await post("/login", payload);
     console.log(res);
 
+    const userRole = res?.data?.user?.role;
+
     if (res.data.statusCode === "00" && res.data.token) {
-      // store user in Pinia or wherever you manage state
       console.log("Login successful, setting user in store");
 
-      auth.setUser(res.data.user, res.data.token);
+      if (role.includes(userRole)) {
+        auth.setUser(res.data.user, res.data.token);
 
-      // ✅ Save token in cookie
-      const authToken = useCookie("authToken", {
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      });
-      authToken.value = res.data.token;
+        // Save token in cookie
+        const authToken = useCookie("authToken", {
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
+        authToken.value = res.data.token;
+      }
+
+      // if (role.includes(userRole)) {
+      //   throw new Error("Unauthorized role");
+      // }
+
+      // auth.setUser(res.data.user, res.data.token);
+
+      // // ✅ Save token in cookie
+      // const authToken = useCookie("authToken", {
+      //   maxAge: 60 * 60 * 24 * 7, // 7 days
+      //   secure: process.env.NODE_ENV === "production",
+      //   sameSite: "lax",
+      // });
+      // authToken.value = res.data.token;
     }
 
     return res;
   };
+
+  const addMerchant = async (payload) => {
+    try {
+      const res = await post("/add-merchant", payload)
+
+      console.log("User Merchant Register Response-", res.data)
+
+      return res.data
+    } catch (err) {
+      console.log("Add Merchant API Error:", err.response.data)
+
+      return err.response.data
+    }
+  }
 
   const getProfile = async () => {
     let merchant = await get("/merchant/me");
@@ -169,5 +200,33 @@ export function useUsersApi() {
     return merchant;
   };
 
-  return { SendOtp, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  const getAggregator = async () => {
+    let aggregator = await get("/aggregator/me");
+
+    if (aggregator.data.data.statusCode !== "00") {
+      return aggregator.data.data;
+    }
+  };
+
+
+  const getTransactionsByMerchantId = async (merchantId: any, page = 1, limit = 10) => {
+    try {
+      const res = await get(`/admin/merchants/${merchantId}/transactions?page=${page}&limit=${limit}`);
+      // Convert BigInt fields to string if necessary
+      const data = res.data.data.map((t: any) => ({
+        ...t,
+        id: t.id.toString(),
+        amount: t.amount.toString(),
+      }));
+      return {
+        data,
+        pagination: res.data.pagination
+      };
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      return { data: [], pagination: {} };
+    }
+  };
+
+  return { SendOtp, addMerchant, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }

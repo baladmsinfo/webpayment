@@ -235,67 +235,6 @@
                     </v-row>
                 </v-card>
 
-                <!-- PAN INFO -->
-                <v-card class="pa-4 mb-4" elevation="1">
-                    <div class="d-flex justify-space-between align-center mb-3">
-                        <h3 class="text-subtitle-1 font-weight-bold mb-0">PAN Information</h3>
-                        <v-btn variant="text" prepend-icon="mdi-pencil" @click="toggleEdit('pan')">
-                            Edit
-                        </v-btn>
-                    </div>
-                    <v-divider class="mb-4"></v-divider>
-
-                    <v-row>
-                        <!-- Display Mode -->
-                        <template v-if="!editMode.pan">
-                            <v-col cols="6">
-                                <div class="text-caption text-grey">PAN</div>
-                                <div>{{ merchantForm.merchantpan?.pan || "—" }}</div>
-                            </v-col>
-                            <v-col cols="6">
-                                <div class="text-caption text-grey">Name</div>
-                                <div>{{ merchantForm.merchantpan?.pan_name || "—" }}</div>
-                            </v-col>
-                            <v-col cols="6">
-                                <div class="text-caption text-grey">Entity PAN</div>
-                                <div>{{ merchantForm.merchantpan?.entity_pan || "—" }}</div>
-                            </v-col>
-                            <v-col cols="6">
-                                <div class="text-caption text-grey">Father Name</div>
-                                <div>{{ merchantForm.merchantpan?.father_name || "—" }}</div>
-                            </v-col>
-                            <v-col cols="6">
-                                <div class="text-caption text-grey">PAN DOB</div>
-                                <div>{{ formattedPanDob }}</div>
-                            </v-col>
-                        </template>
-
-                        <!-- Edit Mode -->
-                        <template v-else>
-                            <v-col cols="6">
-                                <v-text-field v-model="merchantForm.merchantpan.pan" label="PAN" density="compact"
-                                    variant="outlined" />
-                            </v-col>
-                            <v-col cols="6">
-                                <v-text-field v-model="merchantForm.merchantpan.pan_name" label="Name" density="compact"
-                                    variant="outlined" />
-                            </v-col>
-                            <v-col cols="6">
-                                <v-text-field v-model="merchantForm.merchantpan.entity_pan" label="Entity PAN"
-                                    density="compact" variant="outlined" />
-                            </v-col>
-                            <v-col cols="6">
-                                <v-text-field v-model="merchantForm.merchantpan.father_name" label="Father Name"
-                                    density="compact" variant="outlined" />
-                            </v-col>
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantpan.pan_dob" label="PAN DOB" type="date"
-                                    density="compact" variant="outlined" />
-                            </v-col>
-                        </template>
-                    </v-row>
-                </v-card>
-
                 <!-- SETTLEMENT ACCOUNT -->
                 <v-card class="pa-4 mb-4" elevation="0" outlined>
                     <div class="d-flex justify-space-between align-center mb-3">
@@ -695,6 +634,65 @@
                     </v-row>
                 </v-card>
 
+                <!-- PAN INFORMATION -->
+                <v-card class="pa-4 mb-6" elevation="1">
+                    <div class="d-flex justify-space-between align-center mb-3">
+                        <h3 class="text-subtitle-1 font-weight-bold mb-0">PAN Information</h3>
+                    </div>
+
+                    <v-divider class="mb-4" />
+
+                    <v-data-table :headers="panHeaders" :items="merchantForm.merchantpan || []" item-key="id"
+                        class="elevation-0" density="comfortable">
+                        <!-- PAN -->
+                        <template #item.pan="{ item }">
+                            {{ item.pan || "—" }}
+                        </template>
+
+                        <!-- Name -->
+                        <template #item.pan_name="{ item }">
+                            {{ item.pan_name || "—" }}
+                        </template>
+
+                        <!-- Entity PAN -->
+                        <template #item.entity_pan="{ item }">
+                            {{ item.entity_pan || "—" }}
+                        </template>
+
+                        <!-- Father Name -->
+                        <template #item.pan_father_name="{ item }">
+                            {{ item.pan_father_name || "—" }}
+                        </template>
+
+                        <!-- DOB -->
+                        <template #item.pan_dob="{ item }">
+                            {{ item.pan_dob ? formatDate(item.pan_dob) : "—" }}
+                        </template>
+
+                        <!-- Partner -->
+                        <template #item.partner="{ item }">
+                            <v-chip size="small" variant="tonal" :color="item.partner ? 'success' : 'error'">
+                                {{ item.partner ? 'Yes' : 'No' }}
+                            </v-chip>
+                        </template>
+
+
+                        <!-- ACTION (EDIT ONLY) -->
+                        <template #item.actions="{ item }">
+                            <v-btn icon size="small" variant="text" color="primary" @click="editPan(item)">
+                                <v-icon size="18">mdi-pencil</v-icon>
+                            </v-btn>
+                        </template>
+
+                        <!-- EMPTY STATE -->
+                        <template #no-data>
+                            <v-alert type="info" variant="tonal" density="compact">
+                                PAN details not available
+                            </v-alert>
+                        </template>
+                    </v-data-table>
+                </v-card>
+
                 <!-- TERMINALS -->
                 <v-card v-if="merchantForm.terminals && merchantForm.terminals.length > 0" class="pa-4 mb-4"
                     elevation="0" outlined>
@@ -791,6 +789,46 @@
                     </v-row>
                 </v-card>
 
+                <!-- DOCUMENTS -->
+                <v-card v-if="merchantForm.documents && merchantForm.documents.length" class="pa-4 mb-6" elevation="1">
+                    <div class="d-flex justify-space-between align-center mb-3">
+                        <h3 class="text-subtitle-1 font-weight-bold mb-0">
+                            Documents
+                        </h3>
+                    </div>
+
+                    <v-divider class="mb-4" />
+
+                    <v-row dense>
+                        <v-col v-for="doc in merchantForm.documents" :key="doc.id" cols="12" sm="6" md="4">
+                            <v-card class="pa-3 document-card" outlined hover @click="openDocument(doc)">
+                                <!-- Header -->
+                                <div class="d-flex justify-space-between align-center mb-2">
+                                    <div class="font-weight-bold text-body-2">
+                                        {{ doc.doc_name }}
+                                    </div>
+
+                                    <v-chip size="small" :color="doc.doc_status === 'VERIFIED' ? 'success' : 'warning'"
+                                        variant="tonal">
+                                        {{ doc.doc_status }}
+                                    </v-chip>
+                                </div>
+
+                                <!-- Doc Number -->
+                                <div class="text-caption font-weight-medium">
+                                    {{ doc.doc_number || '—' }}
+                                </div>
+
+                                <!-- Image count -->
+                                <div class="mt-2 text-caption">
+                                    <v-icon size="14" class="mr-1">mdi-image</v-icon>
+                                    {{ doc.images.length }} image(s)
+                                </div>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                </v-card>
+
                 <v-snackbar v-model="snackbar.show" :color="snackbar.color">{{ snackbar.message }}</v-snackbar>
 
                 <!-- FIXED BOTTOM BAR -->
@@ -827,6 +865,114 @@
                 </v-card>
             </div>
         </v-tabs-items>
+
+        <!-- DOCUMENT VIEW DIALOG -->
+        <v-dialog v-model="documentDialog" max-width="900">
+            <v-card>
+                <!-- Header -->
+                <v-card-title class="d-flex justify-space-between align-center">
+                    <div>
+                        <div class="font-weight-bold">{{ selectedDocument?.doc_name }}</div>
+                        <div class="text-caption grey--text">
+                            {{ selectedDocument?.doc_type }}
+                        </div>
+                    </div>
+
+                    <v-chip size="small" :color="selectedDocument?.doc_status === 'VERIFIED' ? 'success' : 'warning'"
+                        variant="tonal">
+                        {{ selectedDocument?.doc_status }}
+                    </v-chip>
+                </v-card-title>
+
+                <v-divider />
+
+                <!-- Details -->
+                <v-card-text>
+                    <v-row dense class="mb-4">
+                        <v-col cols="6">
+                            <strong>Document Number</strong>
+                            <div>{{ selectedDocument?.doc_number || '—' }}</div>
+                        </v-col>
+
+                        <v-col cols="6">
+                            <strong>Verified By</strong>
+                            <div>{{ selectedDocument?.doc_verified_by || '—' }}</div>
+                        </v-col>
+
+                        <v-col cols="6">
+                            <strong>Verification Result</strong>
+                            <div>
+                                {{ selectedDocument?.doc_verified_result ? 'Success' : 'Pending' }}
+                            </div>
+                        </v-col>
+
+                        <v-col cols="6">
+                            <strong>Remark</strong>
+                            <div>{{ selectedDocument?.doc_verified_remark || '—' }}</div>
+                        </v-col>
+                    </v-row>
+
+                    <!-- Images -->
+                    <h4 class="text-subtitle-2 font-weight-bold mb-2">
+                        Document Images
+                    </h4>
+
+                    <v-row dense>
+                        <v-col v-for="img in selectedDocument?.images" :key="img.id" cols="12" sm="6" md="4">
+                            <v-card outlined>
+                                <v-img :src="img.url" aspect-ratio="1" cover class="cursor-pointer"
+                                    @click="previewImage(img.url)" />
+                            </v-card>
+                        </v-col>
+
+                        <v-col v-if="!selectedDocument?.images?.length" cols="12">
+                            <v-alert type="info" variant="tonal" density="compact">
+                                No images uploaded for this document
+                            </v-alert>
+                        </v-col>
+                    </v-row>
+                </v-card-text>
+
+                <v-divider />
+
+                <v-card-actions class="justify-end">
+                    <v-btn text @click="documentDialog = false">Close</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+        <!-- IMAGE PREVIEW DIALOG -->
+        <v-dialog v-model="imageDialog" max-width="700">
+            <v-card rounded="lg" elevation="8">
+
+                <!-- IMAGE HEADER -->
+                <v-toolbar density="comfortable" flat>
+                    <v-toolbar-title class="text-subtitle-2">
+                        Document Image Preview
+                    </v-toolbar-title>
+
+                    <v-spacer />
+
+                    <!-- CLOSE -->
+                    <v-btn icon variant="text" @click="imageDialog = false">
+                        <v-icon>mdi-close</v-icon>
+                    </v-btn>
+                </v-toolbar>
+
+                <v-divider />
+
+                <!-- IMAGE -->
+                <v-card-text class="pa-2">
+                    <v-img :src="previewImageUrl" aspect-ratio="1" contain class="rounded-lg" />
+                </v-card-text>
+
+                <!-- FOOTER -->
+                <v-card-actions class="justify-end">
+                    <v-btn variant="outlined" @click="imageDialog = false">
+                        Close
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </v-container>
 
     <!-- LOADER -->
@@ -839,15 +985,23 @@
 import { ref, reactive, onMounted, watch, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
+import { useUsersApi } from "~/composables/apis/useUsersApi";
 
 const props = defineProps({ merchantId: String });
 const router = useRouter();
-const { getMerchantById, getTransactionsByMerchantId, verifyOnboarding } = useAggregatorApi();
+const { getMerchantById, verifyOnboarding } = useAggregatorApi();
+const { getTransactionsByMerchantId } = useUsersApi();
 
 const merchantForm = reactive({});
 const transactions = ref({ data: [], pagination: {} });
 const transactionPage = ref(1);
 const transactionLimit = ref(10);
+
+const documentDialog = ref(false)
+const selectedDocument = ref(null)
+
+const imageDialog = ref(false)
+const previewImageUrl = ref(null)
 
 const transactionHeaders = [
     { title: "Transaction ID", key: "tr" },
@@ -858,6 +1012,16 @@ const transactionHeaders = [
     { title: "Provider", key: "provider" },
     { title: "Date", key: "createdAt" },
 ];
+
+const panHeaders = [
+    { title: "PAN", key: "pan" },
+    { title: "Name", key: "pan_name" },
+    { title: "Entity PAN", key: "entity_pan" },
+    { title: "Father Name", key: "pan_father_name" },
+    { title: "DOB", key: "pan_dob" },
+    { title: "Partner", key: "partner" },
+    { title: "Edit", key: "actions", sortable: false },
+]
 
 const isFormChanged = ref(false);
 
@@ -894,6 +1058,22 @@ const formattedPanDob = computed(() => {
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
 });
+
+const openDocument = (doc) => {
+    selectedDocument.value = doc
+    documentDialog.value = true
+}
+
+const previewImage = (url) => {
+    previewImageUrl.value = url
+    imageDialog.value = true
+}
+
+watch(documentDialog, (val) => {
+    if (!val) {
+        selectedDocument.value = null
+    }
+})
 
 // Utility functions
 const formatKey = (key) => key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());

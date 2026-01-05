@@ -1,6 +1,6 @@
 <template>
   <div class="pa-4">
-    <aggregator-nav :menus="menus" />
+    <vendor-nav :menus="menus" />
     <slot />
   </div>
 </template>
@@ -12,7 +12,7 @@ const menus = ref([
   {
     title: "Dashboard",
     icon: "mdi-view-dashboard",
-    url: "/aggregator",
+    url: "/vendor",
   },
   {
     title: "Merchants",
@@ -22,24 +22,24 @@ const menus = ref([
       {
         title: "Onboarded Merchants",
         icon: "mdi-account-check",
-        url: "/aggregator/merchants/onboarded",
+        url: "/vendor/merchants/onboarded",
       },
       {
         title: "Pending Merchants",
         icon: "mdi-account-clock",
-        url: "/aggregator/merchants/pending",
+        url: "/vendor/merchants/pending",
       },
     ],
   },
   {
     title: "Transactions",
     icon: "mdi-cash-multiple",
-    url: "/aggregator/transactions",
+    url: "/vendor/transactions",
   },
   {
     title: "Settings",
     icon: "mdi-cog",
-    url: "/aggregator/settings",
+    url: "/vendor/settings",
   },
 ])
 </script>

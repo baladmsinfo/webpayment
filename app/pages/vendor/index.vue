@@ -165,10 +165,10 @@
 <script setup>
 import { computed, onMounted } from "vue";
 import VueApexCharts from "vue3-apexcharts";
-import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
+import { useVendorApi } from "~/composables/apis/useVendorApi";
 import { useAuthStore } from "~/stores/auth";
 
-const { getAggregator, getTransactions, getTransactionStatusSummary, getPaymentMethodSummary } = useAggregatorApi();
+const { getVendor, getTransactions, getTransactionStatusSummary, getPaymentMethodSummary } = useVendorApi();
 const authStore = useAuthStore();
 const apexchart = VueApexCharts;
 
@@ -184,7 +184,7 @@ const overallStats = computed(() => [
 ]);
 
 definePageMeta({
-    layout: "aggregatorlayer",
+    layout: "vendorlayer",
     middleware: "auth",
 });
 
@@ -265,7 +265,7 @@ onMounted(async () => {
         loading.value = true;
     }
     try {
-        await Promise.all([getAggregator(), getTransactions(), getTransactionStatusSummary(), getPaymentMethodSummary()]);
+        await Promise.all([getVendor(), getTransactions(), getTransactionStatusSummary(), getPaymentMethodSummary()]);
         loading.value = false;
     } catch (err) {
         console.error("Dashboard load error:", err);

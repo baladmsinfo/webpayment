@@ -3,48 +3,48 @@ import { useAuthStore } from "~/stores/auth";
 import { useMerchantsStore } from "~/stores/merchants";
 import { useOnboardingStore } from "~/stores/onboading";
 
-export function useAggregatorApi() {
+export function useVendorApi() {
     const { get, post } = useApi();
     const auth = useAuthStore();
     const merchant = useMerchantsStore();
     const onboard = useOnboardingStore()
 
-    const getAggregator = async () => {
-        const res = await get("/aggregator/me");
-        console.log("Aggregator:", res.data.data);
-        auth.setAggregator(res.data.data)
+    const getVendor = async () => {
+        const res = await get("/vendor/me");
+        console.log("vendor:", res.data.data);
+        auth.setVendor(res.data.data)
         return res
     };
 
     const getTransactions = async () => {
-        const res = await get("/aggregator/gettransactions");
-        console.log("Aggregator Transactions", res.data.data);
-        auth.setAggregatorTransactions(res.data.data);
+        const res = await get("/vendor/gettransactions");
+        console.log("Vendor Transactions", res.data.data);
+        auth.setVendorTransactions(res.data.data);
     };
 
     const getPaymentMethodSummary = async () => {
-        const res = await get("/aggregator/payment-method-summary");
+        const res = await get("/vendor/payment-method-summary");
         console.log("Payment Method Summary", res.data);
 
         if (res.data.statusCode === "00") {
-            auth.setPaymentSummary(res.data.data); // <-- save to store
+            auth.setPaymentSummaryVendor(res.data.data);
         }
         return res.data;
     };
 
     const getTransactionStatusSummary = async () => {
-        const res = await get("/aggregator/transaction/summary/today");
+        const res = await get("/vendor/transaction/summary/today");
         console.log("Transaction Status Summary", res.data);
 
         if (res.data.statusCode === "00") {
-            auth.setTransactionStatusSummary(res.data.data);
+            auth.setTransactionStatusSummaryVendor(res.data.data);
         }
         return res.data;
     };
 
     const getMerchants = async ({ page = 1, limit = 10 }) => {
-        const res = await get(`/aggregator/merchants?page=${page}&limit=${limit}`);
-        console.log("Aggregator Merchants:", res.data.data);
+        const res = await get(`/vendor/merchants?page=${page}&limit=${limit}`);
+        console.log("Vendor Merchants:", res.data.data);
 
         merchant.setMerchants({
             list: res.data.data,
@@ -59,7 +59,7 @@ export function useAggregatorApi() {
     };
 
     const getPendingMerchants = async ({ page = 1, limit = 10 }) => {
-        const res = await get(`/aggregator/merchants/pending?page=${page}&limit=${limit}`);
+        const res = await get(`/vendor/merchants/pending?page=${page}&limit=${limit}`);
         console.log("Kyc pending:", res.data);
 
         return res.data;
@@ -68,7 +68,7 @@ export function useAggregatorApi() {
 
     const getMerchantById = async (id: string) => {
         try {
-            const res = await get(`/api/merchants/${id}`);
+            const res = await get(`/aggregator/merchants/${id}`);
             console.log("Merchant Details:", res.data);
             return res.data; // return the single merchant object
         } catch (error) {
@@ -77,7 +77,8 @@ export function useAggregatorApi() {
         }
     };
 
-    const getAllAggregatorTransactions = async ({
+
+    const getAllVendorTransactions = async ({
         page = 1,
         limit = 20,
         status,
@@ -93,11 +94,11 @@ export function useAggregatorApi() {
             ...(paymentMethod && { paymentMethod }),
             ...(fromDate && { fromDate }),
             ...(toDate && { toDate }),
-            ...(merchantId && { merchantId }), // ✅ ADD
+            ...(merchantId && { merchantId }),
         }).toString();
 
 
-        const res = await get(`/aggregator/transaction/aggregator/all?${query}`);
+        const res = await get(`/vendor/transaction/vendor/all?${query}`);
 
         if (res.data.statusCode === "00") {
             return {
@@ -112,7 +113,7 @@ export function useAggregatorApi() {
 
     const resetPassword = async (payload: { oldPassword: string; newPassword: string }) => {
         try {
-            const res = await post("/aggregator/reset-password", payload);
+            const res = await post("/vendor/reset-password", payload);
             console.log("Password reset response:", res);
             return res;
         } catch (e) {
@@ -153,19 +154,6 @@ export function useAggregatorApi() {
     };
 
     return {
-        getAggregator,
-        resetPassword,
-        getuserOnboarding,
-        verifyPan,
-        verifyAccount,
-        onboading,
-        verifyOnboarding,
-        getPendingMerchants,
-        getPaymentMethodSummary,
-        getTransactionStatusSummary,
-        getAllAggregatorTransactions,
-        getTransactions,
-        getMerchants,
-        getMerchantById
+        getVendor, getTransactions, getPendingMerchants, getMerchants, getAllVendorTransactions, getTransactionStatusSummary, getPaymentMethodSummary,
     };
 }

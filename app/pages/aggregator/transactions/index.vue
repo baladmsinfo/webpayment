@@ -1,12 +1,12 @@
 <template>
   <div>
-    <transactions-merchant/>
+    <Transactions />
   </div>
 </template>
 
 <script setup>
 definePageMeta({
-  layout: "mlayer",
+  layout: "aggregatorlayer",
   middleware: "auth",
 });
 </script>

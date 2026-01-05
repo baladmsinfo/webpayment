@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Onboarding/>
+    <SuccessOnboarding />
   </div>
 </template>
 

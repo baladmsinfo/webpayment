@@ -16,13 +16,23 @@
             <p class="mb-4 text-sm" role="note">
               Access your dashboard to manage payments, settlements, and onboarding status.
             </p>
+
+            <v-alert v-if="alert.show" class="mb-4" type="warning" variant="tonal" density="comfortable" border="start"
+              closable :icon="alert.icon" @click:close="alert.show = false">
+              {{ alert.message }}
+            </v-alert>
+
             <v-form ref="webFormRef" @submit.prevent="onSubmit">
               <v-text-field v-model="mobilenumber" :readonly="loading" variant="solo" :rules="[required]"
                 label="Enter email or mobile number" clearable class="mb-4" />
               <v-text-field v-model="password" :readonly="loading" type="password" variant="solo" :rules="[required]"
                 label="Enter password" clearable />
 
-              <div class="d-flex justify-end mb-6">
+              <div class="d-flex align-center justify-end ga-3 mb-6">
+                <!-- <a href="/admin" class="text-white text-caption font-weight-medium"
+                  @click.prevent="router.push('/admin')">
+                  Admin Login
+                </a> -->
                 <a href="/forgotpassword" class="text-white text-caption font-weight-medium"
                   @click.prevent="router.push('/forgotpassword')">
                   Forgot Password?
@@ -69,6 +79,12 @@ const codes = ref(["", "", "", "", "", ""]);
 const countdown = ref(0);
 let timer = null;
 
+const alert = ref({
+  show: false,
+  message: "",
+  icon: "mdi-alert-circle-outline",
+});
+
 // Rules
 const required = (v) => !!v || "Required";
 const phoneRule = (v) => {
@@ -94,21 +110,35 @@ async function onSubmit() {
   if (!valid) return;
 
   try {
+    loading.value = true;
+
     const res = await login({
       emailOrMobile: mobilenumber.value,
       password: password.value,
-    });
-    console.log("login page response", res);
-    if (res.data.user.role === "merchant") {
+    }, ["merchant"]);
+
+    const role = res?.data?.user?.role;
+
+    if (role === "merchant") {
       router.push("/merchant");
-    } else if (res.data.user.role === "aggregator") {
-      router.push("/aggregator");
+    } else {
+      alert.value = {
+        show: true,
+        message: "This account belongs to an Aggregator or Vendor. Please use the Aggregator & Vendor Login.",
+        icon: "mdi-account-switch-outline",
+      };
     }
-    loading.value = true;
+  } catch (e) {
+    alert.value = {
+      show: true,
+      message: "Login failed. Please try again.",
+      icon: "mdi-alert-circle-outline",
+    };
   } finally {
     loading.value = false;
   }
 }
+
 </script>
 
 <style scoped>

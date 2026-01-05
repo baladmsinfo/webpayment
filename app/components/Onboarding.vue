@@ -12,107 +12,140 @@
 
         <!-- Main Card -->
         <v-card variant="flat" class="mx-auto my-6" max-width="1100">
-            <v-window v-model="step" class="px-4 py-4 pb-4">
-                <!-- STEP 1: Business Info -->
+
+            <v-window v-model="step" class="px-2 py-4 pb-4">
                 <v-window-item :value="1">
                     <v-form ref="formBusiness" v-model="validBusiness">
-                        <v-container fluid class="pa-4">
-                            <!-- Business Names -->
-                            <v-row class="mb-4" dense>
-                                <v-col cols="12">
-                                    <h3 class="text-h6 font-weight-bold mb-3">Business Names</h3>
-                                </v-col>
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.legal_name" label="Legal Name"
-                                        placeholder="Enter your registered business name" variant="outlined"
-                                        :rules="[req]" dense />
-                                </v-col>
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.dba_name" label="DBA (Trade Name)"
-                                        placeholder="Enter your trade/business alias" variant="outlined" :rules="[req]"
-                                        dense />
-                                </v-col>
-                            </v-row>
+                        <v-container fluid class="pa-2">
+                            <v-card class="mb-6 border-primary" rounded="lg" elevation="0">
+                                <v-card-title class="text-h6 font-weight-bold d-flex align-center">
+                                    <v-icon color="primary" class="mr-2">mdi-domain</v-icon>
+                                    Merchant Details & Contacts
+                                </v-card-title>
 
-                            <!-- Business Details -->
-                            <v-row class="mb-4" dense>
-                                <v-col cols="12">
-                                    <h3 class="text-h6 font-weight-bold mb-3">Business Details</h3>
-                                </v-col>
-                                <v-col cols="12" md="4">
-                                    <v-combobox v-model="mcc" :items="mccOptions" item-title="descr" item-value="id"
-                                        label="Nature of Business" placeholder="Select or search business nature"
-                                        clearable variant="outlined" :loading="loading" :rules="[req]"
-                                        @update:search="onSearch" dense>
-                                        <template v-slot:selection="{ item, index }">
-                                            <v-chip v-if="item === Object(item)" :text="item.raw.descr" size="small"
-                                                variant="flat" closable label @click:close="removeSelection(index)" />
-                                        </template>
-                                    </v-combobox>
-                                </v-col>
-                                <v-col cols="12" md="4">
-                                    <v-autocomplete v-model="form.business_type" :items="businessTypeList"
-                                        item-title="type" item-value="type" label="Business Type"
-                                        placeholder="Select business type" variant="outlined" :rules="[req]" dense />
-                                </v-col>
-                                <v-col cols="12" md="4">
-                                    <v-autocomplete v-model="form.annual_turn_over" :items="turnOverList.data"
-                                        item-title="label" item-value="value" label="Annual Turnover"
-                                        placeholder="Select annual turnover" variant="outlined" :rules="[req]" dense />
-                                </v-col>
-                            </v-row>
+                                <v-card-text>
+                                    <v-row dense>
+                                        <!-- LEGAL NAME -->
+                                        <v-col cols="12">
+                                            <v-text-field v-model.trim="form.name" label="Merchant Name"
+                                                :disabled="disableMerchantInput" placeholder="Merchant Name"
+                                                variant="outlined" :rules="[req]" dense />
+                                        </v-col>
 
-                            <!-- Primary Contact -->
-                            <v-row class="mb-4" dense>
-                                <v-col cols="12">
-                                    <h3 class="text-h6 font-weight-bold mb-3">Primary Contact</h3>
-                                </v-col>
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model="form.primary_email_id" label="Email"
-                                        placeholder="Enter primary email" variant="outlined" :rules="[req, emailRule]"
-                                        dense />
-                                </v-col>
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model="form.primary_mobile" label="Mobile No"
-                                        placeholder="Enter primary mobile number" prefix="+91" variant="outlined"
-                                        :rules="[req, phoneRule]" dense />
-                                </v-col>
-                            </v-row>
+                                        <!-- PRIMARY EMAIL -->
+                                        <v-col cols="12" md="6">
+                                            <v-text-field v-model="form.primary_email_id"
+                                                :disabled="disableMerchantInput" label="Primary Email"
+                                                placeholder="example@company.com" variant="outlined"
+                                                :rules="[req, emailRule]" prepend-inner-icon="mdi-email-outline"
+                                                dense />
+                                        </v-col>
 
-                            <!-- Beneficiary Contact -->
-                            <v-row class="mb-4" dense>
-                                <v-col cols="12">
-                                    <h3 class="text-h6 font-weight-bold mb-3">Beneficiary Contact</h3>
-                                </v-col>
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.beneficiary_email"
-                                        label="Beneficiary Email (optional)"
-                                        placeholder="Enter beneficiary email (optional)" variant="outlined"
-                                        :rules="[emailOrEmpty]" dense />
-                                </v-col>
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.beneficiary_mobile"
-                                        label="Beneficiary Mobile (optional)"
-                                        placeholder="Enter beneficiary mobile (optional)" prefix="+91"
-                                        variant="outlined" :rules="[phoneOrEmpty]" dense />
-                                </v-col>
-                            </v-row>
+                                        <!-- PRIMARY MOBILE -->
+                                        <v-col cols="12" md="6">
+                                            <v-text-field v-model="form.primary_mobile" :disabled="disableMerchantInput"
+                                                label="Primary Mobile Number" placeholder="Enter mobile number"
+                                                prefix="+91" variant="outlined" :rules="[req, phoneRule]"
+                                                prepend-inner-icon="mdi-phone-outline" dense />
+                                        </v-col>
+                                    </v-row>
+                                </v-card-text>
+                            </v-card>
 
-                            <!-- Location -->
-                            <v-row dense>
-                                <v-col cols="12">
-                                    <h3 class="text-h6 font-weight-bold mb-3">Location</h3>
-                                </v-col>
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.lat" label="Latitude" placeholder="Enter latitude"
-                                        variant="outlined" :rules="[req, latRule]" dense />
-                                </v-col>
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.long" label="Longitude"
-                                        placeholder="Enter longitude" variant="outlined" :rules="[req, lngRule]"
-                                        dense />
-                                </v-col>
-                            </v-row>
+                            <!-- OTHER BUSINESS DETAILS -->
+                            <v-card class="mb-6" rounded="lg" variant="flat">
+                                <v-card-title class="text-h6 font-weight-bold">
+                                    Business Details
+                                </v-card-title>
+
+                                <v-card-text>
+                                    <v-row dense>
+                                        <v-col cols="12" md="6">
+                                            <v-text-field v-model.trim="form.legal_name"
+                                                :disabled="disableMerchantInput" label="Legal Business Name"
+                                                placeholder="Registered business name" variant="outlined" :rules="[req]"
+                                                dense />
+                                        </v-col>
+
+                                        <!-- DATE OF BIRTH -->
+                                        <v-col cols="12" md="6">
+                                            <v-text-field v-model="form.dob" label="Business DOB" type="date"
+                                                variant="outlined" :rules="[req]" :max="maxDob" />
+                                        </v-col>
+
+                                        <v-col cols="12" md="6">
+                                            <v-text-field v-model.trim="form.dba_name" label="DBA / Trade Name"
+                                                placeholder="Public-facing business name" variant="outlined"
+                                                :rules="[req]" dense />
+                                        </v-col>
+
+                                        <v-col cols="12" md="6">
+                                            <v-combobox v-model="mcc" :items="mccOptions" item-title="descr"
+                                                item-value="id" label="Nature of Business"
+                                                placeholder="Search or select" clearable variant="outlined"
+                                                :loading="loading" :rules="[req]" @update:search="onSearch" dense>
+                                                <template #selection="{ item, index }">
+                                                    <v-chip v-if="item === Object(item)" :text="item.raw.descr"
+                                                        size="small" closable variant="flat"
+                                                        @click:close="removeSelection(index)" />
+                                                </template>
+                                            </v-combobox>
+                                        </v-col>
+
+                                        <v-col cols="12" md="6">
+                                            <v-autocomplete v-model="form.annual_turn_over" :items="turnOverList.data"
+                                                item-title="label" item-value="value" label="Annual Turnover"
+                                                placeholder="Select turnover range" variant="outlined" :rules="[req]"
+                                                dense />
+                                        </v-col>
+                                    </v-row>
+                                </v-card-text>
+                            </v-card>
+
+                            <!-- OPTIONAL CONTACT -->
+                            <v-card class="mb-6" rounded="lg" variant="flat">
+                                <v-card-title class="text-h6 font-weight-bold">
+                                    Beneficiary Contact (Optional)
+                                </v-card-title>
+
+                                <v-card-text>
+                                    <v-row dense>
+                                        <v-col cols="12" md="6">
+                                            <v-text-field v-model.trim="form.beneficiary_email"
+                                                label="Beneficiary Email" placeholder="Optional" variant="outlined"
+                                                :rules="[emailOrEmpty]" dense />
+                                        </v-col>
+
+                                        <v-col cols="12" md="6">
+                                            <v-text-field v-model.trim="form.beneficiary_mobile"
+                                                label="Beneficiary Mobile" placeholder="Optional" prefix="+91"
+                                                variant="outlined" :rules="[phoneOrEmpty]" dense />
+                                        </v-col>
+                                    </v-row>
+                                </v-card-text>
+                            </v-card>
+
+                            <!-- LOCATION -->
+                            <v-card rounded="lg" variant="flat">
+                                <v-card-title class="text-h6 font-weight-bold">
+                                    Location
+                                </v-card-title>
+
+                                <v-card-text>
+                                    <v-row dense>
+                                        <v-col cols="12" md="6">
+                                            <v-text-field v-model.trim="form.lat" label="Latitude" variant="outlined"
+                                                :rules="[req, latRule]" dense />
+                                        </v-col>
+
+                                        <v-col cols="12" md="6">
+                                            <v-text-field v-model.trim="form.long" label="Longitude" variant="outlined"
+                                                :rules="[req, lngRule]" dense />
+                                        </v-col>
+                                    </v-row>
+                                </v-card-text>
+                            </v-card>
+
                         </v-container>
                     </v-form>
                 </v-window-item>
@@ -149,8 +182,7 @@
                                     <v-combobox v-model="opincode" :items="opincodeOptions" item-title="pincode"
                                         item-value="pincode" label="Search Pincode"
                                         placeholder="Search your area pincode" density="comfortable" variant="outlined"
-                                        return-object :loading="loading" :rules="[req]" @update:search="opinSearch"
-                                        dense>
+                                        return-object :loading="loading" @update:search="opinSearch" dense>
                                         <template v-slot:selection="{ item, index }">
                                             <v-chip v-if="item === Object(item)" :text="item.raw.pincode" size="small"
                                                 variant="flat" closable label @click:close="removeSelection(index)" />
@@ -176,315 +208,330 @@
 
                 <!-- STEP 3: Residential & Visitor Address -->
                 <v-window-item :value="3">
+
+                    <!-- ░░ RESIDENTIAL ADDRESS ░░ -->
                     <v-form ref="formResidential" v-model="validResidential">
                         <v-container fluid class="pa-4">
-                            <v-row class="mb-4" dense>
+                            <v-row dense>
+
                                 <v-col cols="12">
                                     <h3 class="text-h6 font-weight-bold mb-3">Residential Address</h3>
                                 </v-col>
+
                                 <v-col cols="12">
                                     <v-checkbox v-model="sameAsOfficialResidential" label="Same as Official Address"
                                         @change="copyOfficialToResidential" />
                                 </v-col>
+
                                 <v-col cols="12" md="6">
                                     <v-text-field v-model.trim="form.residential_address"
-                                        label="Door No / Residential Address"
-                                        placeholder="Enter residential door number or address" variant="outlined"
-                                        dense />
+                                        label="Door No / Residential Address" variant="outlined" dense
+                                        :rules="[requiredIf(sameAsOfficialResidential)]" />
                                 </v-col>
+
                                 <v-col cols="12" md="6">
                                     <v-text-field v-model.trim="form.res_address1" label="Street Address 1"
-                                        placeholder="Enter street address line 1" variant="outlined" dense />
+                                        variant="outlined" dense :rules="[requiredIf(sameAsOfficialResidential)]" />
                                 </v-col>
+
                                 <v-col cols="12" md="6">
                                     <v-text-field v-model.trim="form.res_address2" label="Street Address 2"
-                                        placeholder="Enter street address line 2" variant="outlined" dense />
+                                        variant="outlined" dense :rules="[requiredIf(sameAsOfficialResidential)]" />
                                 </v-col>
+
                                 <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.res_address3" label="Landmark"
-                                        placeholder="Enter landmark (optional)" variant="outlined" dense />
+                                    <v-text-field v-model.trim="form.res_address3" label="Landmark (optional)"
+                                        variant="outlined" dense />
                                 </v-col>
+
                                 <v-col cols="6" md="3">
                                     <v-combobox v-model="resPincode" :items="respincodeOptions" item-title="pincode"
-                                        item-value="pincode" label="Search Pincode"
-                                        placeholder="Search your area pincode" density="comfortable" variant="outlined"
-                                        return-object :loading="loading" @update:search="respinSearch" dense>
-                                        <template v-slot:selection="{ item, index }">
-                                            <v-chip v-if="item === Object(item)" :text="item.raw.pincode" size="small"
-                                                variant="flat" closable label @click:close="removeSelection(index)" />
-                                        </template>
-                                    </v-combobox>
+                                        item-value="pincode" label="Search Pincode" variant="outlined" dense
+                                        return-object :loading="loading" @update:search="respinSearch" />
                                 </v-col>
+
                                 <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.res_pincode" label="Pincode"
-                                        placeholder="Auto-filled" disabled variant="outlined" :rules="[pincodeOrEmpty]"
-                                        dense />
+                                    <v-text-field v-model.trim="form.res_pincode" label="Pincode" variant="outlined"
+                                        dense disabled :rules="[pincodeRule]" />
                                 </v-col>
+
                                 <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.res_city" label="City" placeholder="Auto-filled"
-                                        disabled variant="outlined" dense />
+                                    <v-text-field v-model.trim="form.res_city" label="City" variant="outlined" dense
+                                        disabled />
                                 </v-col>
+
                                 <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.res_state" label="State" placeholder="Auto-filled"
-                                        disabled variant="outlined" dense />
+                                    <v-text-field v-model.trim="form.res_state" label="State" variant="outlined" dense
+                                        disabled />
                                 </v-col>
+
                             </v-row>
                         </v-container>
                     </v-form>
 
+                    <!-- ░░ VISITOR ADDRESS ░░ -->
                     <v-form ref="formVisitor" v-model="validVisitor">
                         <v-container fluid class="pa-4">
-                            <v-row class="mb-4" dense>
+                            <v-row dense>
+
                                 <v-col cols="12">
                                     <h3 class="text-h6 font-weight-bold mb-3">Visitor Address</h3>
                                 </v-col>
+
                                 <v-col cols="12">
                                     <v-checkbox v-model="sameAsOfficialVisitor" label="Same as Official Address"
                                         @change="copyOfficialToVisitor" />
                                 </v-col>
+
                                 <v-col cols="12" md="6">
                                     <v-text-field v-model.trim="form.visitor_address" label="Door No / Visitor Address"
-                                        placeholder="Enter visitor door number or address" variant="outlined" dense />
+                                        variant="outlined" dense :rules="[requiredIf(sameAsOfficialVisitor)]" />
                                 </v-col>
+
                                 <v-col cols="12" md="4">
                                     <v-text-field v-model.trim="form.v_address1" label="Street Address 1"
-                                        placeholder="Enter street address line 1" variant="outlined" dense />
+                                        variant="outlined" dense :rules="[requiredIf(sameAsOfficialVisitor)]" />
                                 </v-col>
+
                                 <v-col cols="12" md="4">
                                     <v-text-field v-model.trim="form.v_address2" label="Street Address 2"
-                                        placeholder="Enter street address line 2" variant="outlined" dense />
+                                        variant="outlined" dense :rules="[requiredIf(sameAsOfficialVisitor)]" />
                                 </v-col>
+
                                 <v-col cols="12" md="4">
-                                    <v-text-field v-model.trim="form.v_address3" label="Landmark"
-                                        placeholder="Enter landmark (optional)" variant="outlined" dense />
+                                    <v-text-field v-model.trim="form.v_address3" label="Landmark (optional)"
+                                        variant="outlined" dense />
                                 </v-col>
+
                                 <v-col cols="6" md="3">
                                     <v-combobox v-model="vPincode" :items="vpincodeOptions" item-title="pincode"
-                                        item-value="pincode" label="Search Pincode"
-                                        placeholder="Search your area pincode" density="comfortable" variant="outlined"
-                                        return-object :loading="loading" @update:search="vpinSearch" dense>
-                                        <template v-slot:selection="{ item, index }">
-                                            <v-chip v-if="item === Object(item)" :text="item.raw.pincode" size="small"
-                                                variant="flat" closable label @click:close="removeSelection(index)" />
-                                        </template>
-                                    </v-combobox>
+                                        item-value="pincode" label="Search Pincode" variant="outlined" dense
+                                        return-object :loading="loading" @update:search="vpinSearch" />
                                 </v-col>
+
                                 <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.v_pincode" label="Pincode"
-                                        placeholder="Auto-filled" variant="outlined" :rules="[pincodeOrEmpty]" dense />
+                                    <v-text-field v-model.trim="form.v_pincode" label="Pincode" variant="outlined" dense
+                                        :rules="[pincodeRule]" />
                                 </v-col>
+
                                 <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.v_city" label="City" placeholder="Auto-filled"
-                                        variant="outlined" dense />
+                                    <v-text-field v-model.trim="form.v_city" label="City" variant="outlined" dense />
                                 </v-col>
+
                                 <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.v_state" label="State" placeholder="Auto-filled"
-                                        variant="outlined" dense />
+                                    <v-text-field v-model.trim="form.v_state" label="State" variant="outlined" dense />
                                 </v-col>
+
                             </v-row>
                         </v-container>
                     </v-form>
+
                 </v-window-item>
 
-                <!-- STEP 4: PAN Verification -->
                 <v-window-item :value="4">
-                    <v-container fluid class="pa-4">
-                        <v-row>
-                            <!-- Form Column -->
-                            <v-col cols="12" md="6">
-                                <h3 class="text-h6 font-weight-bold mb-3">PAN Verification</h3>
-                                <p class="mb-4">Please enter your PAN details as per your card.</p>
+                    <v-card class="pa-6" elevation="0">
+                        <h3 class="text-h6 font-weight-bold mb-4">
+                            Select Business Type
+                        </h3>
 
-                                <v-form ref="formPan" v-model="validPan" class="pa-0">
-                                    <v-text-field v-model="pannum" label="PAN Number *"
-                                        placeholder="Enter your 10-character PAN" variant="outlined" dense
-                                        maxlength="10" required :rules="[req]" @input="pannum = pannum.toUpperCase()" />
-                                    <v-text-field v-model="panholdername" label="PAN Card Name *"
-                                        placeholder="Enter your full name as on PAN" variant="outlined" dense
-                                        class="mt-4" maxlength="30" :rules="[req]" />
-                                    <v-text-field v-model="fathername" label="Father's Name *"
-                                        placeholder="Enter your father's full name" variant="outlined" dense
-                                        class="mt-4" maxlength="30" :rules="[req]" />
-                                    <v-text-field v-model="form.dob" label="Date of Birth" placeholder="DD-MM-YYYY"
-                                        variant="outlined" dense type="date" class="mt-4" :rules="[req, dobPastRule]" />
-                                </v-form>
-                            </v-col>
+                        <v-radio-group v-model="selectedBusinessType" column>
+                            <v-radio v-for="type in businessTypeList" :key="type.id" :label="type.label"
+                                :value="type.value" class="mb-2" />
+                        </v-radio-group>
 
-                            <!-- PAN Card Guide Column -->
-                            <v-col class="d-flex align-center" cols="12" md="6">
-                                <v-card class="pa-8 bg-black" outlined>
-                                    <h4 class="text-title-1 font-weight-bold mb-3 text-white">
-                                        How to find your PAN details?
-                                    </h4>
-                                    <v-list class="bg-black" dense>
-                                        <div class="d-flex align-center mb-3">
-                                            <v-icon color="primary" class="me-2"
-                                                size="24">mdi-information-outline</v-icon>
-                                            <div class="text-white" style="white-space: normal;">
-                                                Your Permanent Account Number (PAN) is a ten-character alphanumeric
-                                                identifier.
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex align-center mb-3">
-                                            <v-icon color="primary" class="me-2"
-                                                size="24">mdi-information-outline</v-icon>
-                                            <div class="text-white" style="white-space: normal;">
-                                                Ensure the name on the PAN card exactly matches your official documents.
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex align-center">
-                                            <v-icon color="primary" class="me-2"
-                                                size="24">mdi-information-outline</v-icon>
-                                            <div class="text-white" style="white-space: normal;">
-                                                You can find your PAN details on the PAN card issued by NSDL or UTIITSL.
-                                            </div>
-                                        </div>
-                                    </v-list>
-                                </v-card>
-                            </v-col>
-                        </v-row>
-                    </v-container>
+                        <!-- Info Alert -->
+                        <v-alert v-if="selectedBusinessType" type="info" variant="tonal" class="mt-4">
+                            {{
+                                BUSINESS_TYPE_RULES[selectedBusinessType]?.partners > 0
+                                    ? `This business requires ${BUSINESS_TYPE_RULES[selectedBusinessType].partners} partners`
+                                    : "No partners required"
+                            }}
+                        </v-alert>
+                    </v-card>
                 </v-window-item>
 
-                <!-- STEP 5: Account Verification -->
                 <v-window-item :value="5">
-                    <v-container fluid class="pa-4">
-                        <v-row>
-                            <v-col cols="12" md="6">
-                                <v-card class="pa-8" outlined>
-                                    <h3 class="text-h6 font-weight-bold mb-3">Account Verification</h3>
-                                    <p class="mb-4">Please enter your bank account details carefully.</p>
+                    <v-card class="pa-4" elevation="0">
 
-                                    <v-form ref="formAccount" v-model="validAccount" class="pa-0">
-                                        <v-text-field v-model="accountname" label="Account Holder Name *"
-                                            placeholder="Enter account holder name" variant="outlined" dense
-                                            maxlength="200" :rules="[req]" />
-                                        <v-text-field v-model="accountnumber" label="Account Number *"
-                                            placeholder="Enter account number" variant="outlined" dense type="number"
-                                            maxlength="20" class="mt-4" :rules="[req, accNumberRule]" />
-                                        <v-text-field v-model="ifsccode" label="Branch IFSC *"
-                                            placeholder="Ex: HDFC0001234" variant="outlined" dense maxlength="65"
-                                            class="mt-4" @input="ifsccode = ifsccode.toUpperCase()"
-                                            :rules="[req, ifscRule]" />
-                                        <v-autocomplete v-model="accounttype" label="Account Type *"
-                                            placeholder="Select account type" variant="outlined" dense class="mt-4"
-                                            :items="account_type" item-text="name" item-value="id" return-object
-                                            :rules="[req]" />
-                                    </v-form>
-                                </v-card>
-                            </v-col>
+                        <div class="mb-6">
+                            <h3 class="text-h6 font-weight-bold">
+                                Verification Documents
+                            </h3>
+                            <div class="text-caption text-medium-emphasis">
+                                Upload the required documents to complete verification
+                            </div>
+                        </div>
 
-                            <v-col class="d-flex align-center" cols="12" md="6">
-                                <v-card class="pa-8 bg-black" outlined>
-                                    <h4 class="text-title-1 font-weight-bold mb-3 text-white">
-                                        How to enter your account details?
-                                    </h4>
-                                    <v-list class="bg-black" dense>
-                                        <div class="d-flex align-center mb-3">
-                                            <v-icon color="primary" class="me-2"
-                                                size="24">mdi-information-outline</v-icon>
-                                            <div class="text-white" style="white-space: normal;">
-                                                Ensure the account number matches exactly with your bank records.
+                        <v-alert v-if="!isComplianceComplete" type="warning" variant="tonal" class="my-4">
+                            Please complete all required document categories before submitting.
+                        </v-alert>
+
+                        <v-alert v-if="isComplianceComplete" type="info" variant="tonal" class="my-4">
+                            You have successfully submitted all required documents. You are ready go onboarding.
+                        </v-alert>
+
+                        <v-window v-model="docStep">
+
+                            <v-window-item :value="0">
+                                <v-row no-gutters>
+                                    <v-col v-for="group in requiredDocs" :key="group.category" cols="6" md="4" lg="3"
+                                        class="pa-1 pa-md-3 pa-lg-5">
+                                        <v-card class="pa-4 h-100 d-flex flex-column cursor-pointer" color="primary"
+                                            elevation="1" rounded="lg" @click="openCategory(group)">
+                                            <div class="d-flex justify-space-between ga-2 align-center mb-2">
+                                                <div class="text-caption font-weight-bold text-uppercase">
+                                                    {{ group.category.replaceAll('_', ' ') }}
+                                                </div>
+
+                                                <v-chip size="small" variant="outlined"
+                                                    :color="group.compliant ? 'success' : 'red'">
+                                                    {{ group.uploaded }} / {{ group.required }}
+                                                </v-chip>
                                             </div>
-                                        </div>
 
-                                        <div class="d-flex align-center mb-3">
-                                            <v-icon color="primary" class="me-2"
-                                                size="24">mdi-information-outline</v-icon>
-                                            <div class="text-white" style="white-space: normal;">
-                                                The IFSC code is required for electronic transactions (NEFT/RTGS/IMPS).
+                                            <v-progress-linear :model-value="group.required
+                                                ? (group.uploaded / group.required) * 100
+                                                : 0" height="4" rounded :color="group.compliant ? 'success' : 'red'" />
+
+                                            <v-spacer />
+
+                                            <div class="text-caption mt-4 font-weight-medium">
+                                                Click to manage documents
                                             </div>
-                                        </div>
+                                        </v-card>
+                                    </v-col>
+                                </v-row>
+                            </v-window-item>
 
-                                        <div class="d-flex align-center">
-                                            <v-icon color="primary" class="me-2"
-                                                size="24">mdi-information-outline</v-icon>
-                                            <div class="text-white" style="white-space: normal;">
-                                                Select the correct account type (Savings/Current) as per your bank.
+                            <v-window-item :value="1">
+
+                                <div class="d-flex align-center mb-6">
+                                    <v-btn icon elevation="0" @click="docStep = 0">
+                                        <v-icon>mdi-arrow-left</v-icon>
+                                    </v-btn>
+
+                                    <div class="ml-3">
+                                        <div class="font-weight-medium">
+                                            {{ activeCategory.category.replaceAll('_', ' ') }}
+                                        </div>
+                                        <div class="text-caption text-medium-emphasis">
+                                            Upload all required documents below
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <v-row no-gutters>
+                                    <v-col v-for="doc in activeCategory.documents" :key="doc.code"
+                                        class="pa-1 pa-md-3 pa-lg-5" cols="6" md="4" lg="3">
+                                        <v-card class="pa-4 h-100 d-flex flex-column text-center" color="primary"
+                                            elevation="1" rounded="lg">
+                                            <v-icon size="24" class="mb-3" :color="doc.uploaded ? 'success' : 'red'">
+                                                {{ doc.uploaded ? 'mdi-check-circle-outline' :
+                                                    'mdi-alert-circle-outline' }}
+                                            </v-icon>
+
+                                            <div class="text-body-2 font-weight-medium mb-1">
+                                                {{ doc.name }}
                                             </div>
+
+                                            <v-chip size="x-small" variant="outlined" class="mx-auto"
+                                                :color="doc.uploaded ? 'success' : 'red'">
+                                                {{ doc.uploaded ? 'Uploaded' : 'Pending' }}
+                                            </v-chip>
+
+                                            <v-spacer />
+
+                                            <v-btn size="small" block color="background" class="mt-4 font-weight-bold"
+                                                :disabled="doc.uploaded ||
+                                                    (
+                                                        activeCategory.category !== 'STORE_IMAGE' &&
+                                                        activeCategory.uploaded > 0
+                                                    )" @click="openDocUpload(doc.code)">
+
+                                                {{ doc.uploaded ? 'Added' : 'Add' }}
+                                            </v-btn>
+                                        </v-card>
+                                    </v-col>
+                                </v-row>
+                            </v-window-item>
+
+                            <v-window-item :value="2">
+
+                                <div class="d-flex align-center mb-6">
+                                    <v-btn icon elevation="0" color="background" @click="docStep = 1">
+                                        <v-icon>mdi-arrow-left</v-icon>
+                                    </v-btn>
+
+                                    <div class="ml-3">
+                                        <div class="font-weight-medium">
+                                            Upload {{ activeDocType?.replaceAll('_', ' ') }}
                                         </div>
-                                    </v-list>
-                                </v-card>
-                            </v-col>
-                        </v-row>
-                    </v-container>
-                </v-window-item>
+                                        <div class="text-caption text-medium-emphasis">
+                                            Ensure images are clear and readable
+                                        </div>
+                                    </div>
+                                </div>
 
-                <v-window-item :value="6">
-                    <v-container fluid class="pa-4">
-                        <h3 class="text-h6 font-weight-bold mb-4">Image Verification</h3>
-                        <p class="mb-6">Please upload the required documents for verification.</p>
+                                <v-card class="pa-6" color="background" elevation="1" rounded="lg">
 
-                        <v-row dense>
-                            <!-- PAN Image -->
-                            <v-col cols="12" md="6">
-                                <v-card outlined class="pa-4 mb-4">
-                                    <div class="d-flex justify-space-between align-center mb-3">
-                                        <div class="font-weight-medium">Upload PAN Image</div>
-                                        <span v-if="panUrl" class="text-green">Uploaded</span>
-                                        <span v-else class="text-orange">Pending</span>
+                                    <v-text-field v-if="showDocNumber
+                                        && activeDocType !== 'BANK_PASSBOOK'
+                                    " v-model="docUploads[activeDocType].docNumber" :label="docNumberLabel"
+                                        variant="outlined" class="mb-4" :rules="[req]" />
+
+                                    <!-- BANK PASSBOOK FIELDS -->
+                                    <div v-if="activeDocType === 'BANK_PASSBOOK'">
+                                        <v-text-field v-model="docUploads.BANK_PASSBOOK.settlement.accountHolderName"
+                                            label="Account Holder Name" :rules="[req]" />
+
+                                        <v-text-field v-model="docUploads.BANK_PASSBOOK.settlement.accountNumber"
+                                            label="Account Number" :rules="[req, accNumberRule]" />
+
+                                        <v-text-field v-model="docUploads.BANK_PASSBOOK.settlement.bankName"
+                                            label="Bank Name" :rules="[req]" />
+
+                                        <v-text-field v-model="docUploads.BANK_PASSBOOK.settlement.ifsc"
+                                            label="IFSC Code" :rules="[req, ifscRule]" />
+
+                                        <v-select v-model="docUploads.BANK_PASSBOOK.settlement.account_type"
+                                            :items="['SAVING', 'CURRENT']" label="Account Type" :rules="[req]" />
                                     </div>
 
-                                    <v-img v-if="panUrl" :src="panUrl" contain height="200" class="mb-3" />
-                                    <v-btn v-else color="blue" block @click="uploadPhoto('63_Pan_Card_front')">
-                                        Upload
-                                    </v-btn>
-                                </v-card>
-                            </v-col>
+                                    <div
+                                        v-if="activeDocType === 'INDIVIDUAL_PAN' || activeDocType === 'PARTNER1_INDIVIDUAL_PAN' || activeDocType === 'PARTNER2_INDIVIDUAL_PAN'">
+                                        <v-text-field v-model="docUploads[activeDocType].pan.pan" label="PAN Number"
+                                            :rules="[req, panRule]" />
 
-                            <!-- Aadhar Front -->
-                            <v-col cols="12" md="6">
-                                <v-card outlined class="pa-4 mb-4">
-                                    <div class="d-flex justify-space-between align-center mb-3">
-                                        <div class="font-weight-medium">Upload Aadhar Front Image</div>
-                                        <span v-if="AadharFrontUrl" class="text-green">Uploaded</span>
-                                        <span v-else class="text-orange">Pending</span>
+                                        <v-text-field v-model="docUploads[activeDocType].pan.pan_name"
+                                            label="PAN Holder Name" :rules="[req]" />
+
+                                        <v-text-field v-model="docUploads[activeDocType].pan.pan_father_name"
+                                            label="Father's Name" :rules="[req]" />
+
+                                        <v-text-field v-model="docUploads[activeDocType].pan.pan_dob"
+                                            label="Date of Birth" type="date" :rules="[req]" />
                                     </div>
 
-                                    <v-img v-if="AadharFrontUrl" :src="AadharFrontUrl" contain height="200"
-                                        class="mb-3" />
-                                    <v-btn v-else color="blue" block @click="uploadPhoto('55_Aadhar_Card_front')">
-                                        Upload
+                                    <v-file-input v-model="docUploads[activeDocType].files" multiple chips show-size
+                                        accept="image/*" :label="`Upload ${requiredImageCount} image(s)`"
+                                        prepend-icon="mdi-cloud-upload-outline" />
+
+                                    <v-alert v-if="docUploads[activeDocType]?.files?.length" type="info" variant="tonal"
+                                        class="mt-4">
+                                        {{ docUploads[activeDocType].files.length }}
+                                        / {{ requiredImageCount }} image(s) selected
+                                    </v-alert>
+
+                                    <v-btn block size="large" color="primary" class="mt-6" :disabled="docUploads[activeDocType]?.files?.length !== requiredImageCount ||
+                                        (showDocNumber && !docUploads[activeDocType]?.docNumber)
+                                        " @click="saveDocUpload">
+                                        Save Document
                                     </v-btn>
                                 </v-card>
-                            </v-col>
+                            </v-window-item>
 
-                            <!-- Aadhar Back -->
-                            <v-col cols="12" md="6">
-                                <v-card outlined class="pa-4 mb-4">
-                                    <div class="d-flex justify-space-between align-center mb-3">
-                                        <div class="font-weight-medium">Upload Aadhar Back Image</div>
-                                        <span v-if="AadharBackUrl" class="text-green">Uploaded</span>
-                                        <span v-else class="text-orange">Pending</span>
-                                    </div>
-
-                                    <v-img v-if="AadharBackUrl" :src="AadharBackUrl" contain height="200"
-                                        class="mb-3" />
-                                    <v-btn v-else color="blue" block @click="uploadPhoto('55_Aadhar_Card_back')">
-                                        Upload
-                                    </v-btn>
-                                </v-card>
-                            </v-col>
-
-                            <!-- Store Image -->
-                            <v-col cols="12" md="6">
-                                <v-card outlined class="pa-4 mb-4">
-                                    <div class="d-flex justify-space-between align-center mb-3">
-                                        <div class="font-weight-medium">Upload Store Image</div>
-                                        <span v-if="STOREURL" class="text-green">Uploaded</span>
-                                        <span v-else class="text-orange">Pending</span>
-                                    </div>
-
-                                    <v-img v-if="STOREURL" :src="STOREURL" contain height="200" class="mb-3" />
-                                    <v-btn v-else color="blue" block @click="uploadPhoto('999_STORE_1')">
-                                        Upload
-                                    </v-btn>
-                                </v-card>
-                            </v-col>
-                        </v-row>
-                    </v-container>
+                        </v-window>
+                    </v-card>
                 </v-window-item>
             </v-window>
 
@@ -494,7 +541,8 @@
                 <v-btn variant="tonal" :disabled="step === 1" @click="prev">Back</v-btn>
                 <v-spacer></v-spacer>
                 <v-btn v-if="step < steps.length" color="primary" @click="next">Next</v-btn>
-                <v-btn v-else color="primary" :disabled="!isValid" @click="submit" :loading="submitting">Submit</v-btn>
+                <v-btn v-else color="primary" :disabled="!isComplianceComplete" @click="submit"
+                    :loading="submitting">Submit</v-btn>
             </v-footer>
         </v-card>
 
@@ -505,7 +553,6 @@
 
 <script setup>
 import { ref, reactive, defineProps, computed, watch, onMounted } from "vue";
-import { useAggregatorApi } from '@/composables/apis/useAggregatorApi'
 import { useOnboadingApi } from "@/composables/apis/useOnboadingApi";
 import { useUsersApi } from "@/composables/apis/useUsersApi";
 import { useOnboardingStore } from "@/stores/onboading";
@@ -513,13 +560,23 @@ import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import { useFileUpload } from "@/composables/apis/useUploader";
 
-const { getuserOnboarding, verifyPan, verifyAccount, onboading } = useAggregatorApi()
-
-const { MCCSearch, businessTurnOver, businessType, pincodeSearch } = useOnboadingApi();
-const { getProfile } = useUsersApi();
+const { MCCSearch,
+    businessTurnOver,
+    businessType,
+    pincodeSearch,
+    fetchCompliance,
+    complianceStatus,
+    complianceInit,
+    uploadDoc,
+    getMerchantById,
+    onboading,
+    updateMerchant } = useOnboadingApi();
+const { addMerchant } = useUsersApi();
 const Onboarding = useOnboardingStore();
 const { turnOverList, businessTypeList } = storeToRefs(Onboarding);
 const router = useRouter();
+
+const activeMerchant = ref("")
 const {
     previewUrl,
     file,
@@ -534,6 +591,8 @@ const {
     STOREURL,
     isValid,
 } = useFileUpload();
+
+const props = defineProps({ merchantId: String });
 
 const pannum = ref("");           // PAN Number input
 const panholdername = ref("");    // Name on PAN input
@@ -560,15 +619,591 @@ const selectedFile = ref(null);
 const imageName = ref("");
 const cropDialog = ref("");
 
-// Stepper
+// <div v-for="(docs, category) in requiredDocumentsByCategory" :key="category">
+//   <h4>{{ category }}</h4>
+
+//   <v-chip
+//     v-for="doc in docs"
+//     :key="doc"
+//     class="ma-1"
+//   >
+//     {{ doc }}
+//   </v-chip>
+// </div>
+
+const { $native } = useNuxtApp();
+
+const selectedBusinessType = ref(null)
+const activeDoc = ref(null)
+
+const disableMerchantInput = ref(false)
+
+const accNumberRule = (v) =>
+    /^[0-9]*$/.test(v) || "Account number must contain only digits";
+
+const ifscRule = (v) =>
+    /^[A-Z]{4}0[A-Z0-9]{6}$/.test(v?.toUpperCase()) || "Invalid IFSC code";
+
+function toggleDoc(doc) {
+    activeDoc.value = activeDoc.value === doc ? null : doc
+}
+
+const getMerchant = async (id) => {
+    try {
+        const res = await getMerchantById(id);
+        // Object.assign(merchantForm, res.data || {});
+        console.log("Merchant from the props", res.data);
+
+        form.legal_name = res.data.legal_name
+        form.name = res.data.user?.name
+        form.primary_email_id = res.data.user?.email
+        form.primary_mobile = res.data.user?.mobile_no
+
+        disableMerchantInput.value = true
+
+    } catch (e) {
+        console.error("Failed to fetch merchant:", e);
+    }
+};
+
+const DOC_RULES = {
+    DEFAULT: {
+        label: "Document Number",
+        images: 1,
+        requiresNumber: false,
+
+        buildPayload: (doc, imageIds, docType) => {
+            const now = new Date();
+
+            const docNumber =
+                now.getFullYear().toString() +
+                String(now.getMonth() + 1).padStart(2, "0") +
+                String(now.getDate()).padStart(2, "0") +
+                String(now.getHours()).padStart(2, "0") +
+                String(now.getMinutes()).padStart(2, "0") +
+                String(now.getSeconds()).padStart(2, "0");
+
+            return {
+                doc_type: docType,
+                doc_number: docNumber,
+                images: imageIds
+            };
+        }
+    },
+
+    AADHAAR: {
+        label: "Aadhaar Number",
+        images: 2,
+        requiresNumber: true,
+
+        buildPayload: (doc, imageIds, docType = "AADHAAR") => ({
+            doc_type: docType,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    PARTNER1_AADHAAR: {
+        label: "Aadhaar Number",
+        images: 2,
+        requiresNumber: true,
+
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "PARTNER1_AADHAAR",
+            partner: 1,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    PARTNER2_AADHAAR: {
+        label: "Aadhaar Number",
+        images: 2,
+        requiresNumber: true,
+
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "PARTNER2_AADHAAR",
+            partner: 2,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    DRIVING_LICENSE: {
+        label: "Driving License Number",
+        images: 1,
+        requiresNumber: true,
+
+        buildPayload: (doc, imageIds, docType = "DRIVING_LICENSE") => ({
+            doc_type: docType,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    PARTNER1_DRIVING_LICENSE: {
+        label: "Driving License Number",
+        images: 1,
+        requiresNumber: true,
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "PARTNER1_DRIVING_LICENSE",
+            partner: 1,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    PARTNER2_DRIVING_LICENSE: {
+        label: "Driving License Number",
+        images: 1,
+        requiresNumber: true,
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "PARTNER2_DRIVING_LICENSE",
+            partner: 2,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    VOTER_ID: {
+        label: "Voter ID Number",
+        images: 1,
+        requiresNumber: true,
+
+        buildPayload: (doc, imageIds, docType = "VOTER_ID") => ({
+            doc_type: docType,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    PARTNER1_VOTER_ID: {
+        label: "Voter ID Number",
+        images: 1,
+        requiresNumber: true,
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "PARTNER1_VOTER_ID",
+            partner: 1,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    PARTNER2_VOTER_ID: {
+        label: "Voter ID Number",
+        images: 1,
+        requiresNumber: true,
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "PARTNER2_VOTER_ID",
+            partner: 2,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    PASSPORT: {
+        label: "Passport Number",
+        images: 1,
+        requiresNumber: true,
+
+        buildPayload: (doc, imageIds, docType = "PASSPORT") => ({
+            doc_type: docType,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    PARTNER1_PASSPORT: {
+        label: "Passport Number",
+        images: 1,
+        requiresNumber: true,
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "PARTNER1_PASSPORT",
+            partner: 1,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    PARTNER2_PASSPORT: {
+        label: "Passport Number",
+        images: 1,
+        requiresNumber: true,
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "PARTNER2_PASSPORT",
+            partner: 2,
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    INDIVIDUAL_PAN: {
+        label: "PAN Number",
+        images: 1,
+        requiresNumber: false,
+
+        formSchema: {
+            pan: {
+                pan: "",
+                pan_name: "",
+                pan_dob: "",
+                pan_father_name: ""
+            }
+        },
+
+        buildPayload: (doc, imageIds, docType = "INDIVIDUAL_PAN") => ({
+            doc_type: docType,
+            doc_number: doc.pan.pan,
+            pan: { ...doc.pan },
+            images: imageIds
+        })
+    },
+
+    PARTNER1_INDIVIDUAL_PAN: {
+        label: "PAN Number",
+        images: 1,
+        requiresNumber: false,
+
+
+        formSchema: {
+            pan: {
+                pan: "",
+                pan_name: "",
+                pan_dob: "",
+                pan_father_name: ""
+            }
+        },
+
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "PARTNER1_INDIVIDUAL_PAN",
+            partner: 1,
+            doc_number: doc.pan.pan,
+            pan: { ...doc.pan, partner: true },
+            images: imageIds
+        })
+    },
+
+    PARTNER2_INDIVIDUAL_PAN: {
+        label: "PAN Number",
+        images: 1,
+        requiresNumber: false,
+
+
+        formSchema: {
+            pan: {
+                pan: "",
+                pan_name: "",
+                pan_dob: "",
+                pan_father_name: ""
+            }
+        },
+
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "PARTNER2_INDIVIDUAL_PAN",
+            partner: 2,
+            doc_number: doc.pan.pan,
+            pan: { ...doc.pan, partner: true },
+            images: imageIds
+        })
+    },
+
+    BANK_PASSBOOK: {
+        label: "Bank Account Number",
+        images: 1,
+        requiresNumber: false,
+
+        formSchema: {
+            settlement: {
+                accountHolderName: "",
+                account_type: "",
+                bankName: "",
+                accountNumber: "",
+                ifsc: "",
+                consent: "Y",
+                additionalData: true
+            }
+        },
+
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "BANK_PASSBOOK",
+            doc_number: doc.settlement.accountNumber,
+            settlement: { ...doc.settlement },
+            images: imageIds
+        })
+    },
+
+    INDOOR_STORE_IMAGE: {
+        label: null,
+        images: 1,
+        requiresNumber: false,
+
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "INDOOR_STORE_IMAGE",
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    },
+
+    OUTDOOR_STORE_IMAGE: {
+        label: null,
+        images: 1,
+        requiresNumber: false,
+
+        buildPayload: (doc, imageIds) => ({
+            doc_type: "OUTDOOR_STORE_IMAGE",
+            doc_number: doc.docNumber,
+            images: imageIds
+        })
+    }
+}
+
+const incompleteCategories = computed(() => {
+    if (!complianceResponse.value?.categories) return []
+    return complianceResponse.value.categories.filter(
+        cat => cat.uploaded === 0 || cat.missing > 0
+    )
+})
+
+const activeDocRule = computed(() => {
+    return DOC_RULES[activeDocType.value] || {
+        label: "Document Number",
+        images: 1,
+        requiresNumber: false
+    }
+})
+
+const showDocNumber = computed(() => activeDocRule.value.requiresNumber)
+
+const docNumberLabel = computed(() => activeDocRule.value.label)
+
+const requiredImageCount = computed(() => activeDocRule.value.images)
+
+const complianceList = ref([]);
+const complianceResponse = ref(null)
+
+const BUSINESS_TYPE_RULES = computed(() => {
+    const rules = {}
+
+    complianceList.value.forEach(bt => {
+        const categories = bt.categories || []
+
+        const hasPartnerDocs = categories.some(
+            c => c.category === 'PARTNER_DOCS'
+        )
+
+        const hasBusinessPan = categories.some(
+            c => c.category === 'BUSINESS_PAN'
+        )
+
+        const documentsByCategory = {}
+
+        categories.forEach(category => {
+            documentsByCategory[category.category] = (category.documents || []).map(
+                doc => doc.code
+            )
+        })
+
+        rules[bt.type] = {
+            partners: hasPartnerDocs ? 2 : 0,
+            requireBusinessPan: hasBusinessPan,
+            documentsByCategory
+        }
+    })
+
+    return rules
+})
+
+const requiresPartners = computed(() => {
+    if (!selectedBusinessType.value) return 0
+    return BUSINESS_TYPE_RULES.value[selectedBusinessType.value]?.partners || 0
+})
+
+const requiredDocumentsByCategory = computed(() => {
+    if (!selectedBusinessType.value) return {}
+    return (
+        BUSINESS_TYPE_RULES.value[selectedBusinessType.value]?.documentsByCategory ||
+        {}
+    )
+})
+
+const isBusinessPan = computed(() => {
+    if (!selectedBusinessType.value) return false
+    return BUSINESS_TYPE_RULES.value[selectedBusinessType.value]?.requireBusinessPan
+})
+
+function isUploaded(doc) {
+    return doc.uploaded === true
+}
+
+const isStoreImageCategory = (category) =>
+    category === 'STORE_IMAGE'
+
+
+const requiredDocs = computed(() => {
+    if (!complianceResponse.value?.categories) return []
+
+    return complianceResponse.value.categories.map(cat => {
+        const uploadedCount = (cat.documents || []).filter(d => d.uploaded).length
+        const isStoreImage = isStoreImageCategory(cat.category)
+
+        const required = isStoreImage
+            ? cat.documents.length
+            : 1
+
+        const uploaded = uploadedCount
+
+        const compliant = isStoreImage
+            ? uploadedCount === cat.documents.length
+            : uploadedCount > 0
+
+        const missing = isStoreImage
+            ? Math.max(cat.documents.length - uploadedCount, 0)
+            : compliant ? 0 : 1
+
+        return {
+            category: cat.category,
+            documents: cat.documents,
+            required,
+            uploaded,
+            missing,
+            compliant
+        }
+    })
+})
+
+const isComplianceComplete = computed(() => {
+    return requiredDocs.value.every(cat => cat.compliant)
+})
+
+const documents = reactive({
+    BUSINESS_PAN: null,
+
+    INDIVIDUAL_ID: {
+        selected: null,
+        files: {}
+    },
+
+    PARTNERS: []
+})
+
+function addPartner() {
+    documents.PARTNERS.push({
+        pan: null,
+        identity: null
+    })
+}
+
+async function takePartnerDoc(index, type) {
+    const res = await takePhoto(`PARTNER_${index}_${type}`)
+    if (res?.statusCode === '00' && res.data?.length) {
+        documents.PARTNERS[index][type.toLowerCase()] = res.data[0]
+        uploadedDocs.value.push(res.data[0])
+    }
+}
+
 const steps = [
-    { key: "register", label: "Register" },
-    { key: "business", label: "Business" },
+    { key: "business", label: "Business Details" },
     { key: "official", label: "Official Address" },
-    { key: "residential", label: "Residential" },
-    { key: "pan", label: "PAN Verification" },
-    { key: "account", label: "Account Verification" },
-];
+    { key: "residential", label: "Address Details" },
+    { key: "business-type", label: "Business Type" },
+    { key: "documents", label: "Documents" },
+]
+
+const docStep = ref(0)
+const activeCategory = ref(null)
+
+function openCategory(group) {
+    activeCategory.value = group
+    docStep.value = 1
+}
+
+const activeDocType = ref(null)
+
+const docUploads = reactive({
+    // AADHAAR: { files: [], docNumber: '', imageIds: [] }
+})
+
+function openDocUpload(doc) {
+    activeDocType.value = doc
+    docStep.value = 2
+
+    const rule = DOC_RULES[doc]
+
+    docUploads[doc] = {
+        files: [],
+        docNumber: '',
+        imageIds: [],
+        ...(rule?.formSchema
+            ? JSON.parse(JSON.stringify(rule.formSchema))
+            : {})
+    }
+}
+
+async function saveDocUpload() {
+    const doc = docUploads[activeDocType.value]
+    const rule = DOC_RULES[activeDocType.value] || DOC_RULES.DEFAULT
+
+    if (doc.files.length !== rule.images) {
+        snackbar.message = `Please upload exactly ${rule.images} image(s)`
+        snackbar.color = "error"
+        snackbar.show = true
+        return
+    }
+
+    if (!rule.requiresNumber) {
+        doc.docNumber = `${activeDocType.value}_${Date.now()}`
+    }
+
+    doc.imageIds = []
+
+    for (const file of doc.files) {
+        const res = await uploadDoc(file, {
+            filename: `${activeDocType.value}_${file.name}`
+        })
+
+        if (res?.data?.statusCode === "00") {
+            doc.imageIds.push(res.data.data.id)
+        }
+    }
+
+    const payload = rule.buildPayload(doc, doc.imageIds, activeDocType.value)
+    const res = await complianceInit(payload, activeMerchant.value.id)
+
+    if (res?.data?.statusCode === "00") {
+        const status = await complianceStatus(activeMerchant.value.id)
+        if (status?.data?.statusCode === "00") {
+            complianceResponse.value = status.data
+        }
+    }
+
+    doc.files = []
+
+    snackbar.message = "Document uploaded successfully"
+    snackbar.color = "success"
+    snackbar.show = true
+
+    docStep.value = 0
+}
+
+const showSuccess = ref(false);
+
+function pick(obj, keys) {
+    const out = {};
+    keys.forEach((k) => (out[k] = obj[k]));
+    return JSON.stringify(out, null, 2);
+}
+
+const title = computed(() => {
+    switch (step.value) {
+        case 1: return "BUSINESS DETAILS"
+        case 2: return "OFFICIAL ADDRESS"
+        case 3: return "ADDRESS DETAILS"
+        case 4: return "DOCUMENT UPLOAD"
+        case 5: return "BUSINESS TYPE"
+        default: return "ONBOARDING"
+    }
+})
+
 const step = ref(1);
 const prev = () => (step.value = Math.max(1, step.value - 1));
 
@@ -576,8 +1211,7 @@ const uploadedDocs = ref([]);
 
 // Form state
 const form = reactive({
-    password: "",
-    legal_name: "", dba_name: null, dob: "", primary_email_id: "", primary_mobile: "", mobile_number: "",
+    legal_name: "", name: "", dba_name: null, dob: "", primary_email_id: "", primary_mobile: "", mobile_number: "",
     official_address: "", address1: "", address2: "", address3: "", phone: "", city: "", state: "", pincode: "",
     residential_address: "", res_address1: "", res_address2: "", res_address3: "", res_mobile: "", res_phone_number: "", res_city: "", res_state: "", res_pincode: "",
     vister_address: "", v_address1: "", v_address2: "", v_address3: "", v_mobile: "", v_phone_number: "", v_city: "", v_state: "", v_pincode: "",
@@ -608,6 +1242,11 @@ const passwordRule = v =>
 
 const passwordOrEmpty = v =>
     !v || (v.length >= 8) || "Password must be at least 8 characters";
+
+const required = v => !!v || 'This field is required'
+
+const requiredIf = condition => v =>
+    condition || !!v || 'This field is required'
 
 const pincodeRule = v => pincode6(v) || "6-digit pincode";
 const pincodeOrEmpty = v => !v || pincode6(v) || "6-digit pincode";
@@ -718,7 +1357,7 @@ const cleanedPayload = computed(() => {
             : `https://${clone.website}`;
     }
 
-    if (clone){
+    if (clone) {
         clone.mobile_number = clone.primary_mobile;
         clone.phone = clone.mobile_number;
         clone.res_mobile = clone.primary_mobile;
@@ -766,14 +1405,14 @@ async function submit() {
             ...cleanedPayload.value,
             onboardingImages: [...uploadedDocs.value]
         };
-        const res = await onboading(payload);
+        const res = await onboading(payload, activeMerchant.value.id);
         console.log("onboading response:", res);
 
         if (res.data.statusCode == "00") {
             snackbar.message = res.data.message;
             snackbar.color = "success";
             snackbar.show = true;
-            router.push("/aggregator/merchants");
+            router.push("/aggregator/onboarding/success");
         } else {
             snackbar.message = res.data.message;
             snackbar.color = "error";
@@ -787,48 +1426,209 @@ async function submit() {
 }
 
 const next = async () => {
-    let formRef;
-    switch (step.value) {
-        case 1: formRef = formBusiness; break;
-        case 2: formRef = formOfficial; break;
-        case 3:
-            const resValid = await formResidential.value.validate();
-            const visitorValid = await formVisitor.value.validate();
-            if (!resValid.valid || !visitorValid.valid) return;
-            step.value++;
-            return;
-        case 4: formRef = formPan; break;
-        case 5: formRef = formAccount; break;
-    }
-    if (formRef?.value) {
-        const result = await formRef.value.validate();
-        if (!result.valid) return;
-    }
-    step.value++;
-};
 
-// Dynamic title
-const title = computed(() => {
-    switch (step.value) {
-        case 1: return "BUSINESS DETAILS";
-        case 2: return "OFFICIAL ADDRESS";
-        case 3: return "RESIDENTIAL & VISITOR ADDRESS";
-        case 4: return "PAN VERIFICATION";
-        case 5: return "ACCOUNT VERIFICATION";
-        case 6: return "IMAGE UPLOAD";
-        default: return "ONBOARDING";
-    }
-});
+    if (step.value === 1) {
+        const res = await formBusiness.value.validate()
+        if (!res.valid) return
 
-// Load initial profile & location
+        const payload = {
+            name: form.name,
+            email: form.primary_email_id,
+            mobile_no: form.primary_mobile,
+            role: "merchant",
+            interface: "MOS",
+        }
+
+        const user_merchant = await addMerchant(payload)
+
+        console.log("Add Merchant Response", user_merchant)
+
+        if (user_merchant?.statusCode === "00") {
+
+            form.legal_name = user_merchant?.data?.merchant.legal_name
+            form.name = user_merchant?.data?.user.name
+            form.primary_email_id = user_merchant?.data?.user?.email
+            form.primary_mobile = user_merchant?.data?.user?.mobile_no
+
+            activeMerchant.value = user_merchant?.data?.merchant
+
+        } else if (user_merchant?.statusCode === "10") {
+            const merchantInfo = user_merchant?.data?.merchant?.merchantinfo
+            const address = user_merchant?.data?.merchant?.address
+
+            form.dba_name = merchantInfo?.dba_name || null
+            form.mobile_number = merchantInfo?.mobile_number || ""
+            form.phone = merchantInfo?.phone || ""
+
+            form.gender = merchantInfo?.gender || ""
+            form.lat = merchantInfo?.lat || ""
+            form.long = merchantInfo?.long || ""
+            form.nature_of_business = merchantInfo?.nature_of_business || null
+            form.business_type = merchantInfo?.business_type || null
+
+            selectedBusinessType.value = merchantInfo?.business_type || null
+
+            form.mcc = merchantInfo?.mcc || ""
+            form.std_code = merchantInfo?.std_code || "091"
+            form.lead_source = merchantInfo?.lead_source || "BUCKSBOX"
+            form.lg_code = merchantInfo?.lg_code || ""
+            form.annual_turn_over = merchantInfo?.annual_turn_over || null
+            form.website = merchantInfo?.website || ""
+
+            form.beneficiary_email = merchantInfo?.beneficiary_email || ""
+            form.beneficiary_mobile = merchantInfo?.beneficiary_mobile || ""
+
+            if (address) {
+                form.official_address = address?.official_address || ""
+                form.address1 = address?.address1 || ""
+                form.address2 = address?.address2 || ""
+                form.address3 = address?.address3 || ""
+                form.city = address?.city || ""
+                form.state = address?.state || ""
+                form.pincode = address?.pincode || ""
+                form.phone = address?.phone || ""
+            }
+
+            if (address) {
+                form.residential_address = address?.residential_address || ""
+                form.res_address1 = address?.res_address1 || ""
+                form.res_address2 = address?.res_address2 || ""
+                form.res_address3 = address?.res_address3 || ""
+                form.res_mobile = address?.res_mobile || ""
+                form.res_phone_number = address?.res_phone_number || ""
+                form.res_city = address?.res_city || ""
+                form.res_state = address?.res_state || ""
+                form.res_pincode = address?.res_pincode || ""
+            }
+
+            if (address) {
+                form.vister_address = address?.vister_address || ""
+                form.v_address1 = address?.v_address1 || ""
+                form.v_address2 = address?.v_address2 || ""
+                form.v_address3 = address?.v_address3 || ""
+                form.v_mobile = address?.v_mobile || ""
+                form.v_phone_number = address?.v_phone_number || ""
+                form.v_city = address?.v_city || ""
+                form.v_state = address?.v_state || ""
+                form.v_pincode = address?.v_pincode || ""
+            }
+
+            activeMerchant.value = user_merchant?.data?.merchant
+
+            snackbar.message =
+                user_merchant?.message || "Incomplete merchant onboarding"
+            snackbar.color = "error"
+            snackbar.show = true
+        } else {
+            snackbar.message = user_merchant?.message || "Unable to create merchant"
+            snackbar.color = "error"
+            snackbar.show = true
+            return
+        }
+
+        console.log("Active Merchant after creation:", activeMerchant.value);
+    }
+
+    if (step.value === 2) {
+        const res = await formOfficial.value.validate()
+        if (!res.valid) return
+    }
+
+    if (step.value === 3) {
+        const res1 = await formResidential.value.validate()
+        const res2 = await formVisitor.value.validate()
+
+        if (!res1.valid || !res2.valid) return
+    }
+
+    if (step.value === 4) {
+        if (!selectedBusinessType.value) {
+            snackbar.message = "Please select a business type"
+            snackbar.color = "error"
+            snackbar.show = true
+            return
+        }
+
+        form.business_type = selectedBusinessType.value
+
+        console.log("Active Merchant before update:", activeMerchant.value);
+
+        const payload = {
+            businessTypeCode: selectedBusinessType.value,
+            merchantId: activeMerchant.value.id
+        }
+
+        const res = await updateMerchant(payload)
+        console.log("Update Merchant Response", res)
+
+        if (res?.success === true) {
+            const merchantId = activeMerchant.value.id
+            const res = await complianceStatus(merchantId)
+            console.log("Get Compliance Status Response", res)
+
+            if (res?.data.statusCode !== "00") {
+                snackbar.message = res.message || ""
+                snackbar.color = "error"
+                snackbar.show = true
+                return
+            } else {
+                complianceResponse.value = res.data
+            }
+        } else {
+            snackbar.message = res.message || ""
+            snackbar.color = "error"
+            snackbar.show = true
+            return
+        }
+    }
+
+    if (step.value === 5) {
+
+        if (isBusinessPan.value && !documents.BUSINESS_PAN) {
+            snackbar.message = "Business PAN is required"
+            snackbar.color = "error"
+            snackbar.show = true
+            return
+        }
+
+        if (
+            requiredDocumentsByCategory.value.INDIVIDUAL_DOCS &&
+            !documents.INDIVIDUAL_ID.selected
+        ) {
+            snackbar.message = "Upload one identity document"
+            snackbar.color = "error"
+            snackbar.show = true
+            return
+        }
+
+        if (
+            requiresPartners.value > 0 &&
+            documents.PARTNERS.length < requiresPartners.value
+        ) {
+            snackbar.message = `Add ${requiresPartners.value} partners`
+            snackbar.color = "error"
+            snackbar.show = true
+            return
+        }
+    }
+
+    step.value++
+}
+
 onMounted(async () => {
-    await businessTurnOver();
-    console.log(turnOverList.value);
-
+    if (props.merchantId) {
+        getMerchant(props.merchantId);
+    }
+    businessTurnOver();
     businessType();
+
+    const res = await fetchCompliance();
+    if (res) {
+        complianceList.value = res;
+    }
+
 });
 
-// MCC & Pincode watchers
 watch(uploadedDocs, val => {
     console.log("Uploaded docs updated:", val);
 });

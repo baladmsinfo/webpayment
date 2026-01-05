@@ -1,43 +1,43 @@
 <template>
     <v-container class="pa-0 mt-4" fluid>
         <h1 class="text-h5 font-weight-bold">Settings</h1>
-        <p class="text-caption mb-4">{{ aggregator?.legal_name }}</p>
+        <p class="text-caption mb-4">{{ vendor?.name }}</p>
 
         <v-tabs v-model="tab" color="deep-purple-accent-4" grow>
-            <v-tab value="aggregator">AGGREGATOR</v-tab>
+            <v-tab value="vendor">VENDOR</v-tab>
             <v-tab value="reset">RESET PASSWORD</v-tab>
         </v-tabs>
 
         <v-window v-model="tab" class="mt-4">
-            <!-- Aggregator Info -->
-            <v-window-item value="aggregator">
+            <!-- Vendor Info -->
+            <v-window-item value="vendor">
                 <v-card rounded="lg" class="pa-4">
                     <v-card-text>
-                        <template v-if="aggregator">
+                        <template v-if="vendor">
                             <div class="d-flex justify-space-between py-2">
-                                <b>Aggregator Code:</b>
-                                <span>{{ aggregator.code }}</span>
+                                <b>Vendor Code:</b>
+                                <span>{{ vendor.code }}</span>
                             </div>
                             <div class="d-flex justify-space-between py-2">
-                                <b>Aggregator ID:</b>
-                                <span>{{ aggregator.id }}</span>
+                                <b>Vendor ID:</b>
+                                <span>{{ vendor.id }}</span>
                             </div>
                             <div class="d-flex justify-space-between py-2">
-                                <b>Aggregator Name:</b>
-                                <span>{{ aggregator.name }}</span>
+                                <b>Vendor Name:</b>
+                                <span>{{ vendor.name }}</span>
                             </div>
                             <div class="d-flex justify-space-between py-2">
                                 <b>Email:</b>
-                                <span>{{ aggregator.email }}</span>
+                                <span>{{ vendor.email }}</span>
                             </div>
                             <div class="d-flex justify-space-between py-2">
                                 <b>Mobile:</b>
-                                <span>{{ aggregator.mobile }}</span>
+                                <span>{{ vendor.mobile }}</span>
                             </div>
-                            <div class="d-flex justify-space-between py-2">
+                            <!-- <div class="d-flex justify-space-between py-2">
                                 <b>Rate Type:</b>
-                                <span>{{ aggregator.rateType }}</span>
-                            </div>
+                                <span>{{ vendor.rateType }}</span>
+                            </div> -->
                         </template>
 
                         <template v-else>
@@ -86,21 +86,21 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "~/stores/auth";
-import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
+import { useVendorApi } from "~/composables/apis/useVendorApi";
 
-const { getAggregator, resetPassword } = useAggregatorApi();
+const { getVendor, resetPassword } = useVendorApi();
 const authStore = useAuthStore();
 
-const tab = ref("aggregator");
+const tab = ref("vendor");
 
-const aggregator = computed(() => authStore.aggregator);
+const vendor = computed(() => authStore.vendor);
 
 
 onMounted(async () => {
     try {
         await getAggregator();
     } catch (err) {
-        console.error("Failed to load aggregator:", err);
+        console.error("Failed to load vendor:", err);
     } finally {
     }
 });
@@ -141,7 +141,7 @@ async function handleReset() {
 }
 
 definePageMeta({
-    layout: "aggregatorlayer",
+    layout: "vendorlayer",
     middleware: "auth",
 });
 </script>

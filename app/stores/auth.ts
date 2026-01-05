@@ -2,6 +2,7 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     merchant: null as Record<string, any> | null,
     aggregator: null as Record<string, any> | null,
+    vendor: null as Record<string, any> | null,
     user: null as Record<string, any> | null,
     mobile_number: null as number | null,
     token: null as string | null,
@@ -30,7 +31,15 @@ export const useAuthStore = defineStore("auth", {
       this.summary = data.summary;
       this.topMerchants = data.topMerchants;
     },
+    setVendorTransactions(data: any) {
+      this.merchants = data.merchants;
+      this.summary = data.summary;
+      this.topMerchants = data.topMerchants;
+    },
     setPaymentSummary(data: Record<string, { amount: number }>) {
+      this.paymentSummary = data;
+    },
+    setPaymentSummaryVendor(data: Record<string, { amount: number }>) {
       this.paymentSummary = data;
     },
     setMerchant(payload: any) {
@@ -39,10 +48,25 @@ export const useAuthStore = defineStore("auth", {
     setAggregator(payload: any) {
       this.aggregator = payload;
     },
+    setVendor(payload: any) {
+      this.vendor = payload;
+    },
     setMobile(mobile_number: number) {
       this.mobile_number = mobile_number;
     },
     setTransactionStatusSummary(data: Array<{
+      responceCode: string;
+      reason: string;
+      status: string;
+      count: number;
+      amount: number;
+    }>) {
+      this.transactionStatusSummary = data.reduce((acc, t) => {
+        acc[t.responceCode] = t;
+        return acc;
+      }, {} as Record<string, any>);
+    },
+    setTransactionStatusSummaryVendor(data: Array<{
       responceCode: string;
       reason: string;
       status: string;
@@ -61,6 +85,9 @@ export const useAuthStore = defineStore("auth", {
       } else if (user.role === "aggregator") {
         this.user = user;
         this.aggregator = user.aggregator;
+      } else if (user.role === "vendor") {
+        this.user = user;
+        this.vendor = user.vendor;
       }
 
       this.token = token;
