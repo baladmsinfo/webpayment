@@ -52,7 +52,7 @@
                     <template v-if="!noTransactionsToday">
                         <div class="mb-4">
                             <h2>
-                                Today's Transaction Status
+                                Daily Transaction Status
                             </h2>
                         </div>
                         <apexchart type="donut" height="300" :options="statusDonutOptions"
