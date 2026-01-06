@@ -32,17 +32,38 @@
         <v-row dense>
             <v-col cols="12" md="4">
                 <v-card class="pa-4" elevation="2" rounded="lg" style="height: 100%">
-                    <template v-if="!loading">
+
+                    <!-- Show Payment chart ONLY if payment exists -->
+                    <template v-if="!noPaymentTransactions && !loading">
                         <div class="mb-4">
-                            <h2>
-                                Payment Methods
-                            </h2>
+                            <h2>Payment Methods</h2>
                         </div>
+
                         <apexchart type="donut" height="300" :options="donutOptions" :series="donutSeries" />
                     </template>
+
+                    <!-- Empty state -->
+                    <template v-else-if="noPaymentTransactions && !loading">
+                        <v-card flat class="d-flex flex-column align-center justify-center" style="height: 300px">
+                            <v-icon size="56" color="primary">
+                                mdi-credit-card-off-outline
+                            </v-icon>
+
+                            <h3 class="text-subtitle-1 font-weight-medium mt-4">
+                                No Payment Transactions
+                            </h3>
+
+                            <p class="text-caption text-center text-medium-emphasis">
+                                Payment methods will appear once transactions are recorded
+                            </p>
+                        </v-card>
+                    </template>
+
+                    <!-- Loading -->
                     <template v-else>
                         <v-skeleton-loader type="card" height="300" class="rounded-lg" style="opacity: 0.7" />
                     </template>
+
                 </v-card>
             </v-col>
 
@@ -69,7 +90,7 @@
                                 No Transactions Today
                             </h3>
 
-                            <p class="text-caption text-medium-emphasis">
+                            <p class="text-caption text-center text-medium-emphasis">
                                 There are no transactions recorded for today
                             </p>
                         </v-card>
@@ -202,6 +223,15 @@ const noTransactionsToday = computed(() => {
         data.every((t) => t.count === 0)
     );
 });
+
+const noPaymentTransactions = computed(() => {
+    const data = Object.values(authStore.paymentSummary || {})
+
+    return (
+        data.length === 0 ||
+        data.every(m => !m.amount || m.amount === 0)
+    )
+})
 
 const statusDonutSeries = computed(() =>
     Object.values(authStore.transactionStatusSummary).map((t) => t.count)
