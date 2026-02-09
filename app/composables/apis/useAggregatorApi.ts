@@ -1,12 +1,14 @@
 import { useApi } from "./useApi";
 import { useAuthStore } from "~/stores/auth";
 import { useMerchantsStore } from "~/stores/merchants";
+import { useVendorStore } from "~/stores/vendors";
 import { useOnboardingStore } from "~/stores/onboading";
 
 export function useAggregatorApi() {
     const { get, post } = useApi();
     const auth = useAuthStore();
     const merchant = useMerchantsStore();
+    const vendor = useVendorStore();
     const onboard = useOnboardingStore()
 
     const getAggregator = async () => {
@@ -65,6 +67,28 @@ export function useAggregatorApi() {
         return res.data;
     };
 
+    const getVendors = async ({ page = 1, limit = 10 }) => {
+        const res = await get(`/aggregator/vendors?page=${page}&limit=${limit}`);
+        console.log("Aggregator Merchants:", res.data.data);
+
+        vendor.setVendors({
+            list: res.data.data,
+            active: res.data.active || 0,
+            total: res.data.pagination.total,
+            page: res.data.pagination.page,
+            limit: res.data.pagination.limit,
+            totalPages: res.data.pagination.totalPages,
+        });
+
+        return res.data;
+    };
+
+    const getPendingVendors = async ({ page = 1, limit = 10 }) => {
+        const res = await get(`/aggregator/vendors/pending?page=${page}&limit=${limit}`);
+        console.log("Kyc pending:", res.data);
+
+        return res.data;
+    };
 
     const getMerchantById = async (id: string) => {
         try {
@@ -73,6 +97,17 @@ export function useAggregatorApi() {
             return res.data; // return the single merchant object
         } catch (error) {
             console.log("Error fetching merchant by ID:", error);
+            return null;
+        }
+    };
+
+    const getVendorById = async (id: string) => {
+        try {
+            const res = await get(`/api/vendor/${id}`);
+            console.log("Vendor Details:", res.data);
+            return res.data;
+        } catch (error) {
+            console.log("Error fetching vendor by ID:", error);
             return null;
         }
     };
@@ -166,6 +201,9 @@ export function useAggregatorApi() {
         getAllAggregatorTransactions,
         getTransactions,
         getMerchants,
-        getMerchantById
+        getVendors,
+        getPendingVendors,
+        getMerchantById,
+        getVendorById
     };
 }

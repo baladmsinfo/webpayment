@@ -194,6 +194,34 @@ export function useUsersApi() {
     }
   }
 
+  const addVendor = async (payload) => {
+    try {
+      const res = await post("/add-vendor", payload)
+
+      console.log("User vendor Register Response-", res.data)
+
+      return res.data
+    } catch (err) {
+      console.log("Add vendor API Error:", err)
+
+      return err.response.data
+    }
+  }
+
+  const fetchVendor = async (payload) => {
+    try {
+      const res = await get("/fetch-vendor", {
+        params: payload,
+      })
+
+      console.log("Vendor Fetch Response -", res.data)
+      return res.data
+    } catch (err) {
+      console.error("Fetch vendor API Error:", err?.response?.data || err)
+      return err?.response?.data
+    }
+  }
+
   const getProfile = async () => {
     let merchant = await get("/merchant/me");
     auth.setMerchant(merchant.data);
@@ -207,7 +235,6 @@ export function useUsersApi() {
       return aggregator.data.data;
     }
   };
-
 
   const getTransactionsByMerchantId = async (merchantId: any, page = 1, limit = 10) => {
     try {
@@ -228,5 +255,24 @@ export function useUsersApi() {
     }
   };
 
-  return { SendOtp, addMerchant, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  const getAllTransactionsUnderVendor = async (vendorId: any, page = 1, limit = 10) => {
+    try {
+      const res = await get(`/admin/vendor/${vendorId}/transactions?page=${page}&limit=${limit}`);
+      // Convert BigInt fields to string if necessary
+      const data = res.data.data.map((t: any) => ({
+        ...t,
+        id: t.id.toString(),
+        amount: t.amount.toString(),
+      }));
+      return {
+        data,
+        pagination: res.data.pagination
+      };
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      return { data: [], pagination: {} };
+    }
+  };
+
+  return { SendOtp, addMerchant, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }

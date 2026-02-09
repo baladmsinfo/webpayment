@@ -1,12 +1,12 @@
 <template>
-    <v-container class="py-6" v-if="merchantForm && merchantForm.id">
+    <v-container class="py-6" v-if="vendorForm && vendorForm.id">
         <!-- HEADER SUMMARY CARD -->
         <v-card class="pa-5 mb-6" elevation="2" rounded="lg">
             <div class="d-flex align-center justify-space-between mb-3">
                 <div class="text-h6 font-weight-bold">
-                    {{ merchantForm.legal_name }}
+                    {{ vendorForm.name }}
                     <v-chip class="ml-2" size="small" color="blue" text-color="white">
-                        {{ merchantForm.mstatus }}
+                        {{ vendorForm.mstatus }}
                     </v-chip>
                 </div>
             </div>
@@ -16,65 +16,55 @@
             <v-row>
                 <v-col cols="12" md="3">
                     <div class="text-caption text-grey">App ID</div>
-                    <div class="font-weight-medium">{{ merchantForm.appid }}</div>
+                    <div class="font-weight-medium">{{ vendorForm.code }}</div>
                 </v-col>
 
                 <v-col cols="12" md="3">
-                    <div class="text-caption text-grey">Merchant ID</div>
-                    <div class="font-weight-medium">{{ merchantForm.id }}</div>
-                </v-col>
-
-                <v-col cols="12" md="3">
-                    <div class="text-caption text-grey">MID</div>
-                    <div class="font-weight-medium">{{ merchantForm.mid }}</div>
-                </v-col>
-
-                <v-col cols="12" md="3">
-                    <div class="text-caption text-grey">Interface</div>
-                    <div class="font-weight-medium">{{ merchantForm.interface }}</div>
+                    <div class="text-caption text-grey">Vendor ID</div>
+                    <div class="font-weight-medium">{{ vendorForm.id }}</div>
                 </v-col>
 
                 <v-col cols="12" md="3">
                     <div class="text-caption text-grey">Aggregator</div>
                     <div class="font-weight-medium">
-                        {{ merchantForm.aggregator?.name || "—" }}
+                        {{ vendorForm.aggregator?.name || "—" }}
                     </div>
                 </v-col>
 
                 <v-col cols="12" md="3">
                     <div class="text-caption text-grey">Aggregator Code</div>
                     <div class="font-weight-medium">
-                        {{ merchantForm.aggregator?.code || "—" }}
+                        {{ vendorForm.aggregator?.code || "—" }}
                     </div>
                 </v-col>
 
                 <v-col cols="12" md="3">
                     <div class="text-caption text-grey">Risk Flag</div>
-                    <div class="font-weight-medium">{{ merchantForm.riskflag }}</div>
+                    <div class="font-weight-medium">{{ vendorForm.riskflag }}</div>
                 </v-col>
 
                 <v-col cols="12" md="3">
                     <div class="text-caption text-grey">Status</div>
-                    <v-chip :color="merchantForm.status ? 'green' : 'red'" text-color="white" size="small">
-                        {{ merchantForm.status ? "Active" : "Inactive" }}
+                    <v-chip :color="vendorForm.status ? 'green' : 'red'" text-color="white" size="small">
+                        {{ vendorForm.status ? "Active" : "Inactive" }}
                     </v-chip>
                 </v-col>
 
                 <v-col cols="12" md="3">
                     <div class="text-caption text-grey">Created At</div>
-                    <div>{{ formatDate(merchantForm.createdAt) }}</div>
+                    <div>{{ formatDate(vendorForm.createdAt) }}</div>
                 </v-col>
 
                 <v-col cols="12" md="3">
-                    <div class="text-caption text-grey">Verified At</div>
-                    <div>{{ formatDate(merchantForm.verifiedAt) }}</div>
+                    <div class="text-caption text-grey">Updated At</div>
+                    <div>{{ formatDate(vendorForm.updatedAt) }}</div>
                 </v-col>
             </v-row>
         </v-card>
 
         <!-- TABS -->
         <v-tabs v-model="tab" background-color="white" grow>
-            <v-tab value="info">Merchant Info</v-tab>
+            <v-tab value="info">Vendor Info</v-tab>
             <v-tab value="transactions">Transactions</v-tab>
         </v-tabs>
 
@@ -82,7 +72,7 @@
             <div v-if="tab === 'info'">
                 <v-card class="pa-4 mb-4" elevation="1">
                     <div class="d-flex justify-space-between align-center mb-3">
-                        <h3 class="text-subtitle-1 font-weight-bold mb-0">Merchant Info</h3>
+                        <h3 class="text-subtitle-1 font-weight-bold mb-0">Vendor Info</h3>
                         <v-btn variant="text" prepend-icon="mdi-pencil" @click="toggleEdit('contact')">
                             Edit
                         </v-btn>
@@ -94,142 +84,72 @@
                         <template v-if="!editMode.contact">
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Legal Name</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantinfo.legal_name }}</div>
+                                <div class="font-weight-medium">{{ vendorForm.name }}</div>
                             </v-col>
 
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Merchant ID</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantinfo.dba_name }}</div>
+                                <div class="font-weight-medium">{{ vendorForm.id }}</div>
                             </v-col>
 
-                            <v-col cols="12" md="3">
-                                <div class="text-caption text-grey">MID (Email)</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantinfo.beneficiary_email }}</div>
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <div class="text-caption text-grey">MID (Mobile)</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantinfo.beneficiary_mobile }}</div>
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <div class="text-caption text-grey">DOB</div>
-                                <div class="font-weight-medium">{{ formatDate(merchantForm.merchantinfo.dob) }}</div>
-                            </v-col>
-
-                            <v-col cols="12" md="3">
+                            <!-- <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Latitude</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantinfo.lat }}</div>
+                                <div class="font-weight-medium">{{ vendorForm.merchantinfo.lat }}</div>
                             </v-col>
 
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Longitude</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantinfo.long }}</div>
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <div class="text-caption text-grey">Nature of Business</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantinfo.nature_of_business }}</div>
-                            </v-col>
+                                <div class="font-weight-medium">{{ vendorForm.merchantinfo.long }}</div>
+                            </v-col> -->
 
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Primary Email</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantinfo.primary_email_id }}</div>
+                                <div class="font-weight-medium">{{ vendorForm.email }}</div>
                             </v-col>
 
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Primary Mobile</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantinfo.primary_mobile }}</div>
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <div class="text-caption text-grey">MCC</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantinfo.mcc }}</div>
+                                <div class="font-weight-medium">{{ vendorForm.mobile_no }}</div>
                             </v-col>
 
                             <!-- GST Fields Display -->
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">GSTIN</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantgst?.gstin || "—" }}</div>
-                            </v-col>
-                            <v-col cols="12" md="3">
-                                <div class="text-caption text-grey">Business Name</div>
-                                <div class="font-weight-medium">{{ merchantForm.merchantgst?.business_name || "—" }}
-                                </div>
+                                <div class="font-weight-medium">{{ vendorForm.gst || "—" }}</div>
                             </v-col>
                         </template>
 
                         <!-- Merchant Info Edit -->
                         <template v-else>
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.legal_name" label="Legal Name"
-                                    density="compact" variant="outlined" />
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.dba_name" label="Merchant ID"
-                                    density="compact" variant="outlined" />
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.primary_email_id" label="Primary Email"
-                                    density="compact" variant="outlined" />
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.primary_mobile" label="Primary Mobile"
-                                    density="compact" variant="outlined" />
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.dob" label="DOB" type="date"
-                                    density="compact" variant="outlined" />
-
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.lat" label="Latitude" density="compact"
+                                <v-text-field v-model="vendorForm.name" label="Legal Name" density="compact"
                                     variant="outlined" />
                             </v-col>
 
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.long" label="Longitude"
-                                    density="compact" variant="outlined" />
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.nature_of_business"
-                                    label="Nature of Business" density="compact" variant="outlined" />
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.mcc" label="MCC" density="compact"
+                                <v-text-field v-model="vendorForm.email" label="Primary Email" density="compact"
                                     variant="outlined" />
                             </v-col>
 
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.annual_turn_over"
-                                    label="Annual Turnover" density="compact" variant="outlined" />
+                                <v-text-field v-model="vendorForm.mobile_no" label="Primary Mobile" density="compact"
+                                    variant="outlined" />
+                            </v-col>
+                            <!-- 
+                            <v-col cols="12" md="3">
+                                <v-text-field v-model="vendorForm.lat" label="Latitude" density="compact"
+                                    variant="outlined" />
                             </v-col>
 
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.beneficiary_email" label="MID (Email)"
+                                <v-text-field v-model="vendorForm.long" label="Longitude"
                                     density="compact" variant="outlined" />
-                            </v-col>
-
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantinfo.beneficiary_mobile"
-                                    label="MID (Mobile)" density="compact" variant="outlined" />
-                            </v-col>
+                            </v-col> -->
 
                             <!-- GST Fields Edit -->
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantgst.gstin" label="GSTIN" density="compact"
+                                <v-text-field v-model="vendorForm.gst" label="GSTIN" density="compact"
                                     variant="outlined" />
-                            </v-col>
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.merchantgst.business_name" label="Business Name"
-                                    density="compact" variant="outlined" />
                             </v-col>
                         </template>
                     </v-row>
@@ -249,88 +169,88 @@
                         <template v-if="!editMode.settlement">
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Account Holder Name</div>
-                                <div>{{ merchantForm.settlementaccount?.account_holder_name || "—" }}</div>
+                                <div>{{ vendorForm.settlementAccount?.account_holder_name || "—" }}</div>
                             </v-col>
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Account Holder Verified</div>
-                                <div>{{ merchantForm.settlementaccount?.account_holder_result ? "Yes" : "No" }}</div>
+                                <div>{{ vendorForm.settlementAccount?.account_holder_result ? "Yes" : "No" }}</div>
                             </v-col>
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Account Type</div>
-                                <div>{{ merchantForm.settlementaccount?.account_type || "—" }}</div>
+                                <div>{{ vendorForm.settlementAccount?.account_type || "—" }}</div>
                             </v-col>
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Bank Name</div>
-                                <div>{{ merchantForm.settlementaccount?.bank_name || "—" }}</div>
+                                <div>{{ vendorForm.settlementAccount?.bank_name || "—" }}</div>
                             </v-col>
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Bank Account No</div>
-                                <div>{{ merchantForm.settlementaccount?.bank_account_no || "—" }}</div>
+                                <div>{{ vendorForm.settlementAccount?.bank_account_no || "—" }}</div>
                             </v-col>
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">IFSC Code</div>
-                                <div>{{ merchantForm.settlementaccount?.bank_ifsc_code || "—" }}</div>
+                                <div>{{ vendorForm.settlementAccount?.bank_ifsc_code || "—" }}</div>
                             </v-col>
-                            <v-col cols="12" md="3">
+                            <!-- <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Branch Name</div>
-                                <div>{{ merchantForm.settlementaccount?.branch_name || "—" }}</div>
+                                <div>{{ vendorForm.settlementAccount?.branch_name || "—" }}</div>
                             </v-col>
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">Branch Contact</div>
-                                <div>{{ merchantForm.settlementaccount?.branch_contact || "—" }}</div>
+                                <div>{{ vendorForm.settlementAccount?.branch_contact || "—" }}</div>
                             </v-col>
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">City</div>
-                                <div>{{ merchantForm.settlementaccount?.city || "—" }}</div>
+                                <div>{{ vendorForm.settlementAccount?.city || "—" }}</div>
                             </v-col>
                             <v-col cols="12" md="3">
                                 <div class="text-caption text-grey">State</div>
-                                <div>{{ merchantForm.settlementaccount?.state || "—" }}</div>
-                            </v-col>
+                                <div>{{ vendorForm.settlementAccount?.state || "—" }}</div>
+                            </v-col> -->
                         </template>
 
                         <template v-else>
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.settlementaccount.account_holder_name"
+                                <v-text-field v-model="vendorForm.settlementAccount.account_holder_name"
                                     label="Account Holder Name" density="compact" variant="outlined" />
                             </v-col>
                             <v-col cols="12" md="3">
                                 <v-select :items="['Yes', 'No']"
-                                    v-model="merchantForm.settlementaccount.account_holder_result"
+                                    v-model="vendorForm.settlementAccount.account_holder_result"
                                     label="Account Holder Verified" density="compact" variant="outlined" />
                             </v-col>
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.settlementaccount.account_type" label="Account Type"
+                                <v-text-field v-model="vendorForm.settlementAccount.account_type" label="Account Type"
                                     density="compact" variant="outlined" />
                             </v-col>
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.settlementaccount.bank_name" label="Bank Name"
+                                <v-text-field v-model="vendorForm.settlementAccount.bank_name" label="Bank Name"
                                     density="compact" variant="outlined" />
                             </v-col>
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.settlementaccount.bank_account_no"
+                                <v-text-field v-model="vendorForm.settlementAccount.bank_account_no"
                                     label="Bank Account No" density="compact" variant="outlined" />
                             </v-col>
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.settlementaccount.bank_ifsc_code" label="IFSC Code"
+                                <v-text-field v-model="vendorForm.settlementAccount.bank_ifsc_code" label="IFSC Code"
+                                    density="compact" variant="outlined" />
+                            </v-col>
+                            <!-- <v-col cols="12" md="3">
+                                <v-text-field v-model="vendorForm.settlementAccount.branch_name" label="Branch Name"
                                     density="compact" variant="outlined" />
                             </v-col>
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.settlementaccount.branch_name" label="Branch Name"
-                                    density="compact" variant="outlined" />
-                            </v-col>
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.settlementaccount.branch_contact"
+                                <v-text-field v-model="vendorForm.settlementAccount.branch_contact"
                                     label="Branch Contact" density="compact" variant="outlined" />
                             </v-col>
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.settlementaccount.city" label="City"
+                                <v-text-field v-model="vendorForm.settlementAccount.city" label="City"
                                     density="compact" variant="outlined" />
                             </v-col>
                             <v-col cols="12" md="3">
-                                <v-text-field v-model="merchantForm.settlementaccount.state" label="State"
+                                <v-text-field v-model="vendorForm.settlementAccount.state" label="State"
                                     density="compact" variant="outlined" />
-                            </v-col>
+                            </v-col> -->
                         </template>
                     </v-row>
                 </v-card>
@@ -347,8 +267,7 @@
 
                     <v-row>
                         <v-col cols="12">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="primary" class="mr-2">mdi-office-building</v-icon>
+                            <div class="mb-2 d-flex align-center">
                                 <h4 class="text-subtitle-2 font-weight-bold">Official Address</h4>
                             </div>
                             <v-divider class="mb-3" />
@@ -356,75 +275,74 @@
                             <v-row class="pa-3 rounded-lg">
                                 <template v-if="!editMode.address">
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">Address</div>{{
-                                            merchantForm.address?.official_address || "—" }}
+                                        <div class="text-caption text-grey">Address</div>
+                                        <div>{{ vendorForm.address?.official_address || "—" }}</div>
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">Line 1</div>{{
-                                        merchantForm.address?.address1 || "—" }}
+                                        <div class="text-caption text-grey">Line 1</div>
+                                        <div>{{ vendorForm.address?.address1 || "—" }}</div>
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">Line 2</div>{{
-                                        merchantForm.address?.address2 || "—" }}
+                                        <div class="text-caption text-grey">Line 2</div>
+                                        <div>{{ vendorForm.address?.address2 || "—" }}</div>
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">Line 3</div>{{
-                                        merchantForm.address?.address3 || "—" }}
+                                        <div class="text-caption text-grey">Line 3</div>
+                                        <div>{{ vendorForm.address?.address3 || "—" }}</div>
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">City</div>{{ merchantForm.address?.city ||
-                                        "—" }}
+                                        <div class="text-caption text-grey">City</div>
+                                        <div>{{ vendorForm.address?.city || "—" }}</div>
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">State</div>{{ merchantForm.address?.state ||
-                                        "—" }}
+                                        <div class="text-caption text-grey">State</div>
+                                        <div>{{ vendorForm.address?.state || "—" }}</div>
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">Pincode</div>{{
-                                        merchantForm.address?.pincode || "—" }}
+                                        <div class="text-caption text-grey">Pincode</div>
+                                        <div>{{ vendorForm.address?.pincode || "—" }}</div>
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">Phone</div>{{ merchantForm.address?.phone ||
-                                        "—" }}
+                                        <div class="text-caption text-grey">Phone</div>
+                                        <div>{{ vendorForm.address?.phone || "—" }}</div>
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">Mobile</div>{{
-                                        merchantForm.address?.mobile_number || "—" }}
+                                        <div class="text-caption text-grey">Mobile</div>
+                                        <div>{{ vendorForm.address?.mobile_number || "—" }}</div>
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">Website</div>{{
-                                        merchantForm.address?.website || "—" }}
+                                        <div class="text-caption text-grey">Website</div>
+                                        <div>{{ vendorForm.address?.website || "—" }}</div>
                                     </v-col>
                                 </template>
 
                                 <template v-else>
-                                    <v-col cols="12" md="3"><v-text-field
-                                            v-model="merchantForm.address.official_address" label="Address"
-                                            density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.address1"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.official_address"
+                                            label="Address" density="compact" variant="outlined" /></v-col>
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.address1"
                                             label="Line 1" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.address2"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.address2"
                                             label="Line 2" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.address3"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.address3"
                                             label="Line 3" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.city"
-                                            label="City" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.state"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.city" label="City"
+                                            density="compact" variant="outlined" /></v-col>
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.state"
                                             label="State" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.pincode"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.pincode"
                                             label="Pincode" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.phone"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.phone"
                                             label="Phone" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.mobile_number"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.mobile_number"
                                             label="Mobile" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.website"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.website"
                                             label="Website" density="compact" variant="outlined" /></v-col>
                                 </template>
                             </v-row>
                         </v-col>
 
                         <v-col cols="12" class="mt-6">
-                            <div class="d-flex align-center mb-2">
+                            <div class="mb-2 d-flex align-center">
                                 <h4 class="text-subtitle-2 font-weight-bold">Residential Address</h4>
                             </div>
                             <v-divider class="mb-3" />
@@ -433,51 +351,50 @@
                                 <template v-if="!editMode.address">
                                     <v-col cols="12" md="3">
                                         <div class="text-caption text-grey">Address</div>{{
-                                            merchantForm.address?.residential_address || "—" }}
+                                            vendorForm.address?.residential_address || "—" }}
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">City</div>{{ merchantForm.address?.res_city
+                                        <div class="text-caption text-grey">City</div>{{ vendorForm.address?.res_city ||
+                                        "—" }}
+                                    </v-col>
+                                    <v-col cols="12" md="3">
+                                        <div class="text-caption text-grey">State</div>{{ vendorForm.address?.res_state
                                         || "—" }}
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">State</div>{{
-                                        merchantForm.address?.res_state || "—" }}
-                                    </v-col>
-                                    <v-col cols="12" md="3">
                                         <div class="text-caption text-grey">Pincode</div>{{
-                                        merchantForm.address?.res_pincode || "—" }}
+                                        vendorForm.address?.res_pincode || "—" }}
                                     </v-col>
                                     <v-col cols="12" md="3">
                                         <div class="text-caption text-grey">Mobile</div>{{
-                                        merchantForm.address?.res_mobile || "—" }}
+                                        vendorForm.address?.res_mobile || "—" }}
                                     </v-col>
                                     <v-col cols="12" md="3">
                                         <div class="text-caption text-grey">Phone</div>{{
-                                            merchantForm.address?.res_phone_number || "—" }}
+                                            vendorForm.address?.res_phone_number || "—" }}
                                     </v-col>
                                 </template>
 
                                 <template v-else>
                                     <v-col cols="12" md="3"><v-text-field
-                                            v-model="merchantForm.address.residential_address" label="Address"
+                                            v-model="vendorForm.address.residential_address" label="Address"
                                             density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.res_city"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.res_city"
                                             label="City" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.res_state"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.res_state"
                                             label="State" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.res_pincode"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.res_pincode"
                                             label="Pincode" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.res_mobile"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.res_mobile"
                                             label="Mobile" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field
-                                            v-model="merchantForm.address.res_phone_number" label="Phone"
-                                            density="compact" variant="outlined" /></v-col>
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.res_phone_number"
+                                            label="Phone" density="compact" variant="outlined" /></v-col>
                                 </template>
                             </v-row>
                         </v-col>
 
                         <v-col cols="12" class="mt-6">
-                            <div class="d-flex align-center mb-2">
+                            <div class="mb-2 d-flex align-center">
                                 <h4 class="text-subtitle-2 font-weight-bold">Visitor Address</h4>
                             </div>
                             <v-divider class="mb-3" />
@@ -486,48 +403,47 @@
                                 <template v-if="!editMode.address">
                                     <v-col cols="12" md="3">
                                         <div class="text-caption text-grey">Address</div>{{
-                                        merchantForm.address?.vister_address || "—" }}
+                                        vendorForm.address?.vister_address || "—" }}
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">City</div>{{ merchantForm.address?.v_city ||
+                                        <div class="text-caption text-grey">City</div>{{ vendorForm.address?.v_city ||
                                         "—" }}
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">State</div>{{ merchantForm.address?.v_state
-                                        || "—" }}
+                                        <div class="text-caption text-grey">State</div>{{ vendorForm.address?.v_state ||
+                                        "—" }}
                                     </v-col>
                                     <v-col cols="12" md="3">
                                         <div class="text-caption text-grey">Pincode</div>{{
-                                        merchantForm.address?.v_pincode || "—" }}
+                                        vendorForm.address?.v_pincode || "—" }}
                                     </v-col>
                                     <v-col cols="12" md="3">
-                                        <div class="text-caption text-grey">Mobile</div>{{
-                                        merchantForm.address?.v_mobile || "—" }}
+                                        <div class="text-caption text-grey">Mobile</div>{{ vendorForm.address?.v_mobile
+                                        || "—" }}
                                     </v-col>
                                     <v-col cols="12" md="3">
                                         <div class="text-caption text-grey">Phone</div>{{
-                                        merchantForm.address?.v_phone_number || "—" }}
+                                        vendorForm.address?.v_phone_number || "—" }}
                                     </v-col>
                                 </template>
 
                                 <template v-else>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.vister_address"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.vister_address"
                                             label="Address" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.v_city"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.v_city"
                                             label="City" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.v_state"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.v_state"
                                             label="State" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.v_pincode"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.v_pincode"
                                             label="Pincode" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.v_mobile"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.v_mobile"
                                             label="Mobile" density="compact" variant="outlined" /></v-col>
-                                    <v-col cols="12" md="3"><v-text-field v-model="merchantForm.address.v_phone_number"
+                                    <v-col cols="12" md="3"><v-text-field v-model="vendorForm.address.v_phone_number"
                                             label="Phone" density="compact" variant="outlined" /></v-col>
                                 </template>
                             </v-row>
                         </v-col>
                     </v-row>
-
                 </v-card>
 
                 <!-- PAN INFORMATION -->
@@ -538,7 +454,7 @@
 
                     <v-divider class="mb-4" />
 
-                    <v-data-table :headers="panHeaders" :items="merchantForm.merchantpan || []" item-key="id"
+                    <v-data-table :headers="panHeaders" :items="vendorForm.vendorpan || []" item-key="id"
                         class="elevation-0" density="comfortable">
                         <!-- PAN -->
                         <template #item.pan="{ item }">
@@ -590,13 +506,13 @@
                 </v-card>
 
                 <!-- TERMINALS -->
-                <v-card v-if="merchantForm.terminals && merchantForm.terminals.length > 0" class="pa-4 mb-4"
-                    elevation="0" outlined>
+                <v-card v-if="vendorForm.terminals && vendorForm.terminals.length > 0" class="pa-4 mb-4" elevation="0"
+                    outlined>
                     <h3 class="text-subtitle-1 font-weight-bold mb-3">Terminals</h3>
                     <v-divider class="mb-4"></v-divider>
 
                     <v-row dense>
-                        <v-col v-for="(terminal, i) in merchantForm.terminals" :key="i" cols="12" sm="6" md="4">
+                        <v-col v-for="(terminal, i) in vendorForm.terminals" :key="i" cols="12" sm="6" md="4">
                             <v-card class="pa-3" outlined rounded tile>
                                 <v-row align="center" class="mb-3">
                                     <v-col cols="auto">
@@ -686,7 +602,7 @@
                 </v-card>
 
                 <!-- DOCUMENTS -->
-                <v-card v-if="merchantForm.documents && merchantForm.documents.length" class="pa-4 mb-6" elevation="1">
+                <v-card v-if="vendorForm.documents && vendorForm.documents.length" class="pa-4 mb-6" elevation="1">
                     <div class="d-flex justify-space-between align-center mb-3">
                         <h3 class="text-subtitle-1 font-weight-bold mb-0">
                             Documents
@@ -696,7 +612,7 @@
                     <v-divider class="mb-4" />
 
                     <v-row dense>
-                        <v-col v-for="doc in merchantForm.documents" :key="doc.id" cols="12" sm="6" md="4">
+                        <v-col v-for="doc in vendorForm.documents" :key="doc.id" cols="12" sm="6" md="4">
                             <v-card class="pa-3 document-card" outlined hover @click="openDocument(doc)">
                                 <!-- Header -->
                                 <div class="d-flex justify-space-between align-center mb-2">
@@ -883,12 +799,12 @@ import { useRouter } from "vue-router";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 import { useUsersApi } from "~/composables/apis/useUsersApi";
 
-const props = defineProps({ merchantId: String });
+const props = defineProps({ vendorId: String });
 const router = useRouter();
-const { getMerchantById, verifyOnboarding } = useAggregatorApi();
-const { getTransactionsByMerchantId } = useUsersApi();
+const { getVendorById, verifyOnboarding } = useAggregatorApi();
+const { getAllTransactionsUnderVendor } = useUsersApi();
 
-const merchantForm = reactive({});
+const vendorForm = reactive({});
 const transactions = ref({ data: [], pagination: {} });
 const transactionPage = ref(1);
 const transactionLimit = ref(10);
@@ -930,12 +846,12 @@ const editMode = reactive({
 
 const toggleEdit = (section) => {
     if (section === "contact") {
-        merchantForm.merchantinfo = merchantForm.merchantinfo || {};
-        merchantForm.merchantgst = merchantForm.merchantgst || {};
+        vendorForm.merchantinfo = vendorForm.merchantinfo || {};
+        vendorForm.merchantgst = vendorForm.merchantgst || {};
     }
-    if (section === "pan") merchantForm.merchantpan = merchantForm.merchantpan || {};
-    if (section === "settlement") merchantForm.settlementaccount = merchantForm.settlementaccount || {};
-    if (section === "address") merchantForm.address = merchantForm.address || {};
+    if (section === "pan") vendorForm.merchantpan = vendorForm.merchantpan || {};
+    if (section === "settlement") vendorForm.settlementaccount = vendorForm.settlementaccount || {};
+    if (section === "address") vendorForm.address = vendorForm.address || {};
 
     editMode[section] = !editMode[section];
 };
@@ -945,7 +861,7 @@ const tab = ref("info");
 
 // Computed to display PAN DOB in DD/MM/YYYY format
 const formattedPanDob = computed(() => {
-    const dob = merchantForm.merchantpan?.pan_dob;
+    const dob = vendorForm.merchantpan?.pan_dob;
     if (!dob) return "—";
     const d = new Date(dob);
     if (isNaN(d)) return "—";
@@ -992,7 +908,7 @@ const statusColor = (status) => {
 
 // Watch for changes in the form to enable bottom bar button
 watch(
-    merchantForm,
+    vendorForm,
     () => {
         isFormChanged.value = Object.values(editMode).some((v) => v);
     },
@@ -1000,19 +916,21 @@ watch(
 );
 
 // Fetch merchant data
-const getMerchant = async (id) => {
+const getVendor = async (id) => {
     try {
-        const res = await getMerchantById(id);
-        Object.assign(merchantForm, res.data || {});
+        const res = await getVendorById(id);
+        console.log("Get Vendor", res);
+
+        Object.assign(vendorForm, res.data || {});
     } catch (e) {
         console.error("Failed to fetch merchant:", e);
     }
 };
 
 // Fetch transactions
-const getTransactions = async (merchantId, page = 1, limit = 10) => {
+const getTransactions = async (vendorId, page = 1, limit = 10) => {
     try {
-        const res = await getTransactionsByMerchantId(merchantId, page, limit);
+        const res = await getAllTransactionsUnderVendor(vendorId, page, limit);
         transactions.value = res;
     } catch (e) {
         console.error("Failed to fetch transactions:", e);
@@ -1023,73 +941,73 @@ const getTransactions = async (merchantId, page = 1, limit = 10) => {
 const submitForm = async () => {
     try {
         const payload = {
-            legal_name: merchantForm.merchantinfo?.legal_name,
-            dba_name: merchantForm.merchantinfo?.dba_name,
-            dob: merchantForm.merchantinfo?.dob
-                ? new Date(merchantForm.merchantinfo.dob).toISOString().split("T")[0]
+            legal_name: vendorForm.merchantinfo?.legal_name,
+            dba_name: vendorForm.merchantinfo?.dba_name,
+            dob: vendorForm.merchantinfo?.dob
+                ? new Date(vendorForm.merchantinfo.dob).toISOString().split("T")[0]
                 : null,
-            primary_email_id: merchantForm.merchantinfo?.primary_email_id,
-            primary_mobile: merchantForm.merchantinfo?.primary_mobile,
-            beneficiary_email: merchantForm.merchantinfo?.beneficiary_email,
-            beneficiary_mobile: merchantForm.merchantinfo?.beneficiary_mobile,
-            lat: merchantForm.merchantinfo?.lat,
-            long: merchantForm.merchantinfo?.long,
-            mcc: merchantForm.merchantinfo?.mcc,
-            nature_of_business: merchantForm.merchantinfo?.nature_of_business,
-            annual_turn_over: merchantForm.merchantinfo?.annual_turn_over,
+            primary_email_id: vendorForm.merchantinfo?.primary_email_id,
+            primary_mobile: vendorForm.merchantinfo?.primary_mobile,
+            beneficiary_email: vendorForm.merchantinfo?.beneficiary_email,
+            beneficiary_mobile: vendorForm.merchantinfo?.beneficiary_mobile,
+            lat: vendorForm.merchantinfo?.lat,
+            long: vendorForm.merchantinfo?.long,
+            mcc: vendorForm.merchantinfo?.mcc,
+            nature_of_business: vendorForm.merchantinfo?.nature_of_business,
+            annual_turn_over: vendorForm.merchantinfo?.annual_turn_over,
 
-            // Additional fields from merchantForm
-            business_type: merchantForm.merchantinfo?.business_type,
-            std_code: merchantForm.merchantinfo?.std_code,
-            lead_source: merchantForm.merchantinfo?.lead_source,
-            lg_code: merchantForm.merchantinfo?.lg_code,
-            website: merchantForm.merchantinfo?.website,
+            // Additional fields from vendorForm
+            business_type: vendorForm.merchantinfo?.business_type,
+            std_code: vendorForm.merchantinfo?.std_code,
+            lead_source: vendorForm.merchantinfo?.lead_source,
+            lg_code: vendorForm.merchantinfo?.lg_code,
+            website: vendorForm.merchantinfo?.website,
 
             pan: {
-                pan: merchantForm.merchantpan?.pan,
-                name: merchantForm.merchantpan?.pan_name,
-                fathername: merchantForm.merchantpan?.father_name,
-                dob: merchantForm.merchantpan?.pan_dob
-                    ? new Date(merchantForm.merchantpan.pan_dob).toISOString().split("T")[0]
+                pan: vendorForm.merchantpan?.pan,
+                name: vendorForm.merchantpan?.pan_name,
+                fathername: vendorForm.merchantpan?.father_name,
+                dob: vendorForm.merchantpan?.pan_dob
+                    ? new Date(vendorForm.merchantpan.pan_dob).toISOString().split("T")[0]
                     : null,
             },
 
             account: {
-                accountNumber: merchantForm.settlementaccount?.bank_account_no,
-                accountHolderName: merchantForm.settlementaccount?.account_holder_name,
-                ifsc: merchantForm.settlementaccount?.bank_ifsc_code,
-                bankName: merchantForm.settlementaccount?.bank_name,
-                branchName: merchantForm.settlementaccount?.branch_name,
+                accountNumber: vendorForm.settlementaccount?.bank_account_no,
+                accountHolderName: vendorForm.settlementaccount?.account_holder_name,
+                ifsc: vendorForm.settlementaccount?.bank_ifsc_code,
+                bankName: vendorForm.settlementaccount?.bank_name,
+                branchName: vendorForm.settlementaccount?.branch_name,
                 additionalData: true,
                 consent: "Y",
             },
 
-            official_address: merchantForm.address?.official_address,
-            address1: merchantForm.address?.address1,
-            address2: merchantForm.address?.address2,
-            address3: merchantForm.address?.address3,
-            phone: merchantForm.address?.phone,
-            city: merchantForm.address?.city,
-            state: merchantForm.address?.state,
-            pincode: merchantForm.address?.pincode ? String(merchantForm.address.pincode) : "",
-            residential_address: merchantForm.address?.residential_address,
-            res_address1: merchantForm.address?.res_address1,
-            res_address2: merchantForm.address?.res_address2,
-            res_address3: merchantForm.address?.res_address3,
-            res_mobile: merchantForm.address?.res_mobile,
-            res_phone_number: merchantForm.address?.res_phone_number,
-            res_city: merchantForm.address?.res_city,
-            res_state: merchantForm.address?.res_state,
-            res_pincode: merchantForm.address?.res_pincode ? String(merchantForm.address.res_pincode) : "",
-            vister_address: merchantForm.address?.vister_address,
-            v_address1: merchantForm.address?.v_address1,
-            v_address2: merchantForm.address?.v_address2,
-            v_address3: merchantForm.address?.v_address3,
-            v_mobile: merchantForm.address?.v_mobile,
-            v_phone_number: merchantForm.address?.v_phone_number,
-            v_city: merchantForm.address?.v_city,
-            v_state: merchantForm.address?.v_state,
-            v_pincode: merchantForm.address?.v_pincode ? String(merchantForm.address.v_pincode) : "",
+            official_address: vendorForm.address?.official_address,
+            address1: vendorForm.address?.address1,
+            address2: vendorForm.address?.address2,
+            address3: vendorForm.address?.address3,
+            phone: vendorForm.address?.phone,
+            city: vendorForm.address?.city,
+            state: vendorForm.address?.state,
+            pincode: vendorForm.address?.pincode ? String(vendorForm.address.pincode) : "",
+            residential_address: vendorForm.address?.residential_address,
+            res_address1: vendorForm.address?.res_address1,
+            res_address2: vendorForm.address?.res_address2,
+            res_address3: vendorForm.address?.res_address3,
+            res_mobile: vendorForm.address?.res_mobile,
+            res_phone_number: vendorForm.address?.res_phone_number,
+            res_city: vendorForm.address?.res_city,
+            res_state: vendorForm.address?.res_state,
+            res_pincode: vendorForm.address?.res_pincode ? String(vendorForm.address.res_pincode) : "",
+            vister_address: vendorForm.address?.vister_address,
+            v_address1: vendorForm.address?.v_address1,
+            v_address2: vendorForm.address?.v_address2,
+            v_address3: vendorForm.address?.v_address3,
+            v_mobile: vendorForm.address?.v_mobile,
+            v_phone_number: vendorForm.address?.v_phone_number,
+            v_city: vendorForm.address?.v_city,
+            v_state: vendorForm.address?.v_state,
+            v_pincode: vendorForm.address?.v_pincode ? String(vendorForm.address.v_pincode) : "",
             merchantId: props.merchantId,
         };
 
@@ -1116,8 +1034,8 @@ const submitForm = async () => {
 
 // Fetch data on mount
 onMounted(() => {
-    getMerchant(props.merchantId);
-    getTransactions(props.merchantId);
+    getVendor(props.vendorId);
+    getTransactions(props.vendorId);
 });
 </script>
 

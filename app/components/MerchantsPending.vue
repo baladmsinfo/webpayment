@@ -109,10 +109,10 @@ const formatStatus = (status: any) => status === true || status === 'ACTIVE' ? '
 /* Row Click */
 const goToMerchant = (event: PointerEvent, row: any) => {
 
-    if (row.item.merchantinfo !== null) {
-        router.push(`/aggregator/merchants/view/${row.item.id}`);
-    } else {
+    if (row.item.mstatus === "PENDING") {
         router.push(`/aggregator/onboarding/${row.item.id}`);
+    } else {
+        router.push(`/aggregator/merchants/view/${row.item.id}`);
     }
 
 }

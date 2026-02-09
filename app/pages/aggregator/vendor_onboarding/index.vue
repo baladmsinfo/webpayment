@@ -1,6 +1,6 @@
 <template>
   <div>
-    <SuccessOnboardingVendor />
+    <VendorOnboarding/>
   </div>
 </template>
 

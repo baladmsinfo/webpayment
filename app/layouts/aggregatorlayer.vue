@@ -14,23 +14,41 @@ const menus = ref([
     icon: "mdi-view-dashboard",
     url: "/aggregator",
   },
+
   {
     title: "Merchants",
-    icon: "mdi-credit-card-outline",
-    // 👇 Two submenu pages
+    icon: "mdi-storefront", // 🏪 Merchant icon
     children: [
       {
         title: "Onboarded Merchants",
-        icon: "mdi-account-check",
+        icon: "mdi-store-check",
         url: "/aggregator/merchants/onboarded",
       },
       {
         title: "Pending Merchants",
-        icon: "mdi-account-clock",
+        icon: "mdi-store-clock",
         url: "/aggregator/merchants/pending",
       },
     ],
   },
+
+  {
+    title: "Vendors",
+    icon: "mdi-factory", // 🏭 Vendor icon
+    children: [
+      {
+        title: "Onboarded Vendors",
+        icon: "mdi-account-check",
+        url: "/aggregator/vendor/onboarded",
+      },
+      {
+        title: "Pending Vendors",
+        icon: "mdi-account-clock",
+        url: "/aggregator/vendor/pending",
+      },
+    ],
+  },
+
   {
     title: "Transactions",
     icon: "mdi-cash-multiple",

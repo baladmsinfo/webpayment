@@ -52,6 +52,14 @@ export function useOnboadingApi() {
     return res
   }
 
+  const vendorCompliance = async (vendorId: any) => {
+    const res = await get(`/api/compliance-vendor/status`, {
+      params: { vendorId }
+    })
+
+    return res
+  }
+
   const updateMerchant = async (payload: any) => {
     const { merchantId, ...body } = payload
 
@@ -62,6 +70,23 @@ export function useOnboadingApi() {
     )
 
     console.log("Update Merchant Response", res)
+
+    if (res?.data.success) {
+      return res.data
+    }
+
+    return null
+  }
+
+  const updateVendor = async (payload: any) => {
+    const { vendorId, ...body } = payload
+
+    const res = await put(
+      `/api/vendor/business-type`,
+      payload,
+    )
+
+    console.log("Update Vendor Response", res)
 
     if (res?.data.success) {
       return res.data
@@ -83,6 +108,17 @@ export function useOnboadingApi() {
   const onboading = async (payload: any, merchantId: any) => {
     //console.log(payload);
     return await post("/Onboarding", payload, { params: { merchantId } });
+  };
+
+  const initiateOnboarding = async (payload: any, merchantId: any) => {
+    //console.log(payload);
+    return await post("/initiateOnboarding", payload, { params: { merchantId } });
+  };
+
+  const onboadingVendor = async (vendorId: any) => {
+    //console.log(payload);
+
+    return await post("/OnboardingVendor", { vendorId });
   };
 
   const uploadDoc = async (
@@ -113,6 +149,12 @@ export function useOnboadingApi() {
     return res;
   };
 
+  const complianceInitVendor = async (payload: any, vendorId: any) => {
+    const res = await post(`/api/vendor/init-compliance`, payload, { params: { vendorId } });
+
+    return res;
+  };
+
 
   const getMerchantById = async (id: string) => {
     try {
@@ -130,13 +172,18 @@ export function useOnboadingApi() {
     MCCSearch,
     businessTurnOver,
     complianceStatus,
+    vendorCompliance,
     updateMerchant,
     businessType,
     pincodeSearch,
     complianceInit,
     uploadDoc,
     onboading,
+    initiateOnboarding,
+    onboadingVendor,
     fetchCompliance,
+    updateVendor,
     getMerchantById,
+    complianceInitVendor,
   };
 }
