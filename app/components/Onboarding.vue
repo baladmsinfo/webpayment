@@ -11,346 +11,393 @@
         </v-app-bar>
 
         <!-- Main Card -->
-        <v-card variant="flat" class="mx-auto my-6" max-width="1100">
+        <v-card variant="flat" class="mx-auto my-6" rounded="xl" max-width="1100">
 
             <v-window v-model="step" class="px-2 py-4 pb-4">
+
                 <v-window-item :value="1">
-                    <v-form ref="formBusiness" v-model="validBusiness">
-                        <v-container fluid class="pa-2">
-                            <v-card class="mb-6 border-primary" rounded="lg" elevation="0">
-                                <v-card-title class="text-h6 font-weight-bold d-flex align-center">
-                                    <v-icon color="primary" class="mr-2">mdi-domain</v-icon>
-                                    Merchant Details & Contacts
-                                </v-card-title>
+                    <v-container class="pa-6">
 
-                                <v-card-text>
-                                    <v-row dense>
-                                        <!-- LEGAL NAME -->
-                                        <v-col cols="12">
-                                            <v-text-field v-model.trim="form.name" label="Merchant Name"
-                                                :disabled="disableMerchantInput" placeholder="Merchant Name"
-                                                variant="outlined" :rules="[req]" dense />
-                                        </v-col>
+                        <v-card class="pa-6 mb-6" elevation="1" rounded="xl">
 
-                                        <!-- PRIMARY EMAIL -->
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model="form.primary_email_id"
-                                                :disabled="disableMerchantInput" label="Primary Email"
-                                                placeholder="example@company.com" variant="outlined"
-                                                :rules="[req, emailRule]" prepend-inner-icon="mdi-email-outline"
-                                                dense />
-                                        </v-col>
+                            <div class="d-flex align-center mb-4">
+                                <h3 class="text-h6 font-weight-bold">Select Payment Method</h3>
+                            </div>
 
-                                        <!-- PRIMARY MOBILE -->
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model="form.primary_mobile" :disabled="disableMerchantInput"
-                                                label="Primary Mobile Number" placeholder="Enter mobile number"
-                                                prefix="+91" variant="outlined" :rules="[req, phoneRule]"
-                                                prepend-inner-icon="mdi-phone-outline" dense />
-                                        </v-col>
-                                    </v-row>
-                                </v-card-text>
-                            </v-card>
+                            <v-radio-group v-model="form.payment_method" :rules="[req]">
+                                <v-card v-for="(pm, index) in paymentMethods" :key="index"
+                                    class="pa-4 mb-3 elevation-0 border rounded-lg hover-border-primary">
+                                    <v-radio :disabled="disableMerchantInput"
+                                        :label="`${pm.paymentMethod} (${pm.provider})`" :value="pm.paymentMethod" />
+                                </v-card>
+                            </v-radio-group>
 
-                            <!-- OTHER BUSINESS DETAILS -->
-                            <v-card class="mb-6" rounded="lg" variant="flat">
-                                <v-card-title class="text-h6 font-weight-bold">
-                                    Business Details
-                                </v-card-title>
+                        </v-card>
 
-                                <v-card-text>
-                                    <v-row dense>
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model.trim="form.legal_name"
-                                                :disabled="disableMerchantInput" label="Legal Business Name"
-                                                placeholder="Registered business name" variant="outlined" :rules="[req]"
-                                                dense />
-                                        </v-col>
+                        <v-card class="pa-6" elevation="1" rounded="xl">
 
-                                        <!-- DATE OF BIRTH -->
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model="form.dob" label="Business DOB" type="date"
-                                                variant="outlined" :rules="[req]" :max="maxDob" />
-                                        </v-col>
+                            <div class="d-flex align-center mb-4">
+                                <h3 class="text-h6 font-weight-bold">Select Business Type</h3>
+                            </div>
 
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model.trim="form.dba_name" label="DBA / Trade Name"
-                                                placeholder="Public-facing business name" variant="outlined"
-                                                :rules="[req]" dense />
-                                        </v-col>
+                            <v-radio-group v-model="selectedBusinessType" column>
+                                <v-card v-for="type in businessTypeList" :key="type.id"
+                                    class="pa-4 mb-3 elevation-0 border rounded-lg hover-border-primary">
+                                    <v-radio :disabled="disableMerchantInput" :label="type.label" :value="type.value" />
+                                </v-card>
+                            </v-radio-group>
 
-                                        <v-col cols="12" md="6">
-                                            <v-combobox v-model="mcc" :items="mccOptions" item-title="descr"
-                                                item-value="id" label="Nature of Business"
-                                                placeholder="Search or select" clearable variant="outlined"
-                                                :loading="loading" :rules="[req]" @update:search="onSearch" dense>
-                                                <template #selection="{ item, index }">
-                                                    <v-chip v-if="item === Object(item)" :text="item.raw.descr"
-                                                        size="small" closable variant="flat"
-                                                        @click:close="removeSelection(index)" />
-                                                </template>
-                                            </v-combobox>
-                                        </v-col>
+                            <v-alert v-if="selectedBusinessType" type="info" variant="tonal" class="mt-4" rounded="lg">
+                                {{
+                                    BUSINESS_TYPE_RULES[selectedBusinessType]?.partners > 0
+                                        ? `This business requires ${BUSINESS_TYPE_RULES[selectedBusinessType].partners}
+                                partners`
+                                        : "No partners required"
+                                }}
+                            </v-alert>
 
-                                        <v-col cols="12" md="6">
-                                            <v-autocomplete v-model="form.annual_turn_over" :items="turnOverList.data"
-                                                item-title="label" item-value="value" label="Annual Turnover"
-                                                placeholder="Select turnover range" variant="outlined" :rules="[req]"
-                                                dense />
-                                        </v-col>
-                                    </v-row>
-                                </v-card-text>
-                            </v-card>
+                        </v-card>
 
-                            <!-- OPTIONAL CONTACT -->
-                            <v-card class="mb-6" rounded="lg" variant="flat">
-                                <v-card-title class="text-h6 font-weight-bold">
-                                    Beneficiary Contact (Optional)
-                                </v-card-title>
+                    </v-container>
+                </v-window-item>
 
-                                <v-card-text>
-                                    <v-row dense>
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model.trim="form.beneficiary_email"
-                                                label="Beneficiary Email" placeholder="Optional" variant="outlined"
-                                                :rules="[emailOrEmpty]" dense />
-                                        </v-col>
+                <v-window-item :value="2">
+                    <v-container class="pa-6" rounded="xl">
+                        <v-form ref="formBusiness" v-model="validBusiness">
+                            <v-container fluid class="pa-2">
+                                <v-card class="mb-6 pa-6 border-primary" rounded="xl" elevation="1">
+                                    <v-card-title class="text-h6 font-weight-bold d-flex align-center">
+                                        Merchant Details & Contacts
+                                    </v-card-title>
 
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model.trim="form.beneficiary_mobile"
-                                                label="Beneficiary Mobile" placeholder="Optional" prefix="+91"
-                                                variant="outlined" :rules="[phoneOrEmpty]" dense />
-                                        </v-col>
-                                    </v-row>
-                                </v-card-text>
-                            </v-card>
+                                    <v-card-text>
+                                        <v-row dense>
+                                            <!-- Legal NAME -->
+                                            <v-col cols="12">
+                                                <v-text-field v-model.trim="form.legal_name" label="Legal Name"
+                                                    :disabled="disableMerchantInput" placeholder="Legal Name"
+                                                    variant="outlined" :rules="[req]" dense />
+                                            </v-col>
 
-                            <!-- LOCATION -->
-                            <v-card rounded="lg" variant="flat">
-                                <v-card-title class="text-h6 font-weight-bold">
-                                    Location
-                                </v-card-title>
+                                            <!-- PRIMARY EMAIL -->
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model="form.primary_email_id"
+                                                    :disabled="disableMerchantInput" label="Primary Email"
+                                                    placeholder="example@company.com" variant="outlined"
+                                                    :rules="[req, emailRule]" prepend-inner-icon="mdi-email-outline"
+                                                    dense />
+                                            </v-col>
 
-                                <v-card-text>
-                                    <v-row dense>
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model.trim="form.lat" label="Latitude" variant="outlined"
-                                                :rules="[req, latRule]" dense />
-                                        </v-col>
+                                            <!-- PRIMARY MOBILE -->
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model="form.primary_mobile"
+                                                    :disabled="disableMerchantInput" label="Primary Mobile Number"
+                                                    placeholder="Enter mobile number" prefix="+91" variant="outlined"
+                                                    :rules="[req, phoneRule]" prepend-inner-icon="mdi-phone-outline"
+                                                    dense />
+                                            </v-col>
+                                        </v-row>
+                                    </v-card-text>
+                                </v-card>
 
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model.trim="form.long" label="Longitude" variant="outlined"
-                                                :rules="[req, lngRule]" dense />
-                                        </v-col>
-                                    </v-row>
-                                </v-card-text>
-                            </v-card>
+                                <!-- OTHER BUSINESS DETAILS -->
+                                <v-card class="mb-6 pa-6" rounded="xl" elevation="1">
+                                    <v-card-title class="text-h6 font-weight-bold">
+                                        Business Details
+                                    </v-card-title>
 
-                        </v-container>
-                    </v-form>
+                                    <v-card-text>
+                                        <v-row dense>
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model.trim="form.business_name"
+                                                    :disabled="disableMerchantInput" label="Business Name"
+                                                    placeholder="Registered business name" variant="outlined"
+                                                    :rules="[req]" dense />
+                                            </v-col>
+
+                                            <!-- DATE OF BIRTH -->
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model="form.dob" :disabled="disableMerchantInput"
+                                                    label="Business DOB" type="date" variant="outlined" :rules="[req]"
+                                                    :max="maxDob" />
+                                            </v-col>
+
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model.trim="form.dba_name"
+                                                    :disabled="disableMerchantInput" label="DBA / Trade Name"
+                                                    placeholder="Public-facing business name" variant="outlined"
+                                                    :rules="[req]" dense />
+                                            </v-col>
+
+                                            <v-col cols="12" md="6">
+                                                <v-combobox v-model="mcc" :items="mccOptions"
+                                                    :disabled="disableMerchantInput" item-title="descr" item-value="id"
+                                                    label="Nature of Business" placeholder="Search or select" clearable
+                                                    variant="outlined" :loading="loading" :rules="[req]"
+                                                    @update:search="onSearch" dense>
+                                                    <template #selection="{ item, index }">
+                                                        <v-chip v-if="item === Object(item)" :text="item.raw.descr"
+                                                            size="small" closable variant="flat"
+                                                            @click:close="removeSelection(index)" />
+                                                    </template>
+                                                </v-combobox>
+                                            </v-col>
+
+                                            <v-col cols="12" md="6">
+                                                <v-autocomplete v-model="form.annual_turn_over"
+                                                    :items="turnOverList.data" item-title="label" item-value="value"
+                                                    label="Annual Turnover" placeholder="Select turnover range"
+                                                    variant="outlined" :rules="[req]" dense />
+                                            </v-col>
+                                        </v-row>
+                                    </v-card-text>
+                                </v-card>
+
+                                <!-- OPTIONAL CONTACT -->
+                                <v-card class="mb-6 pa-6" rounded="xl" elevation="1">
+                                    <v-card-title class="text-h6 font-weight-bold">
+                                        Beneficiary Contact (Optional)
+                                    </v-card-title>
+
+                                    <v-card-text>
+                                        <v-row dense>
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model.trim="form.beneficiary_email"
+                                                    label="Beneficiary Email" :disabled="disableMerchantInput"
+                                                    placeholder="Optional" variant="outlined" :rules="[emailOrEmpty]"
+                                                    dense />
+                                            </v-col>
+
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model.trim="form.beneficiary_mobile"
+                                                    label="Beneficiary Mobile" :disabled="disableMerchantInput"
+                                                    placeholder="Optional" prefix="+91" variant="outlined"
+                                                    :rules="[phoneOrEmpty]" dense />
+                                            </v-col>
+                                        </v-row>
+                                    </v-card-text>
+                                </v-card>
+
+                                <!-- LOCATION -->
+                                <v-card class="pa-6" rounded="xl" elevation="1">
+                                    <v-card-title class="text-h6 font-weight-bold">
+                                        Location
+                                    </v-card-title>
+
+                                    <v-card-text>
+                                        <v-row dense>
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model.trim="form.lat" label="Latitude"
+                                                    variant="outlined" :disabled="disableMerchantInput"
+                                                    :rules="[req, latRule]" dense />
+                                            </v-col>
+
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model.trim="form.long" :disabled="disableMerchantInput"
+                                                    label="Longitude" variant="outlined" :rules="[req, lngRule]"
+                                                    dense />
+                                            </v-col>
+                                        </v-row>
+                                    </v-card-text>
+                                </v-card>
+
+                            </v-container>
+                        </v-form>
+
+                    </v-container>
                 </v-window-item>
 
                 <!-- STEP 2: Official Address -->
-                <v-window-item :value="2">
-                    <v-form ref="formOfficial" v-model="validOfficial">
-                        <v-container fluid class="pa-4">
-                            <v-row class="mb-4" dense>
-                                <v-col cols="12">
-                                    <h3 class="text-h6 font-weight-bold mb-3">Official Address</h3>
-                                </v-col>
-                                <v-col cols="12" md="3">
-                                    <v-text-field v-model.trim="form.official_address"
-                                        label="Door No / Official Address"
-                                        placeholder="Enter door number or office address" variant="outlined"
-                                        :rules="[req]" dense />
-                                </v-col>
-                                <v-col cols="12" md="4">
-                                    <v-text-field v-model.trim="form.address1" label="Street Address 1"
-                                        placeholder="Enter street address line 1" variant="outlined" :rules="[req]"
-                                        dense />
-                                </v-col>
-                                <v-col cols="12" md="4">
-                                    <v-text-field v-model.trim="form.address2" label="Street Address 2"
-                                        placeholder="Enter street address line 2" variant="outlined" :rules="[req]"
-                                        dense />
-                                </v-col>
-                                <v-col cols="12" md="4">
-                                    <v-text-field v-model.trim="form.address3" label="Landmark"
-                                        placeholder="Enter landmark (optional)" variant="outlined" dense />
-                                </v-col>
-                                <v-col cols="6" md="3">
-                                    <v-combobox v-model="opincode" :items="opincodeOptions" item-title="pincode"
-                                        item-value="pincode" label="Search Pincode"
-                                        placeholder="Search your area pincode" density="comfortable" variant="outlined"
-                                        return-object :loading="loading" @update:search="opinSearch" dense>
-                                        <template v-slot:selection="{ item, index }">
-                                            <v-chip v-if="item === Object(item)" :text="item.raw.pincode" size="small"
-                                                variant="flat" closable label @click:close="removeSelection(index)" />
-                                        </template>
-                                    </v-combobox>
-                                </v-col>
-                                <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.pincode" label="Pincode" placeholder="Auto-filled"
-                                        disabled variant="outlined" :rules="[pincodeRule]" dense />
-                                </v-col>
-                                <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.city" label="City" placeholder="Auto-filled"
-                                        disabled variant="outlined" :rules="[req]" dense />
-                                </v-col>
-                                <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.state" label="State" placeholder="Auto-filled"
-                                        disabled variant="outlined" :rules="[req]" dense />
-                                </v-col>
-                            </v-row>
-                        </v-container>
-                    </v-form>
+                <v-window-item :value="3">
+                    <v-container class="pa-6" rounded="xl">
+                        <v-form ref="formOfficial" v-model="validOfficial">
+                            <v-card class="pa-6" rounded="xl" elevation="1">
+                                <v-row class="mb-4" dense>
+                                    <v-col cols="12">
+                                        <h3 class="text-h6 font-weight-bold mb-3">Official Address</h3>
+                                    </v-col>
+                                    <v-col cols="12" md="3">
+                                        <v-text-field v-model.trim="form.official_address"
+                                            label="Door No / Official Address"
+                                            placeholder="Enter door number or office address" variant="outlined"
+                                            :rules="[req]" dense />
+                                    </v-col>
+                                    <v-col cols="12" md="4">
+                                        <v-text-field v-model.trim="form.address1" label="Street Address 1"
+                                            placeholder="Enter street address line 1" variant="outlined" :rules="[req]"
+                                            dense />
+                                    </v-col>
+                                    <v-col cols="12" md="4">
+                                        <v-text-field v-model.trim="form.address2" label="Street Address 2"
+                                            placeholder="Enter street address line 2" variant="outlined" :rules="[req]"
+                                            dense />
+                                    </v-col>
+                                    <v-col cols="12" md="4">
+                                        <v-text-field v-model.trim="form.address3" label="Landmark"
+                                            placeholder="Enter landmark (optional)" variant="outlined" dense />
+                                    </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-combobox v-model="opincode" :items="opincodeOptions" item-title="pincode"
+                                            item-value="pincode" label="Search Pincode"
+                                            placeholder="Search your area pincode" density="comfortable"
+                                            variant="outlined" return-object :loading="loading"
+                                            @update:search="opinSearch" dense>
+                                            <template v-slot:selection="{ item, index }">
+                                                <v-chip v-if="item === Object(item)" :text="item.raw.pincode"
+                                                    size="small" variant="flat" closable label
+                                                    @click:close="removeSelection(index)" />
+                                            </template>
+                                        </v-combobox>
+                                    </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-text-field v-model.trim="form.pincode" label="Pincode"
+                                            placeholder="Auto-filled" disabled variant="outlined" :rules="[pincodeRule]"
+                                            dense />
+                                    </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-text-field v-model.trim="form.city" label="City" placeholder="Auto-filled"
+                                            disabled variant="outlined" :rules="[req]" dense />
+                                    </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-text-field v-model.trim="form.state" label="State" placeholder="Auto-filled"
+                                            disabled variant="outlined" :rules="[req]" dense />
+                                    </v-col>
+                                </v-row>
+                            </v-card>
+                        </v-form>
+                    </v-container>
                 </v-window-item>
 
                 <!-- STEP 3: Residential & Visitor Address -->
-                <v-window-item :value="3">
+                <v-window-item :value="4">
+                    <v-container class="pa-6" rounded="xl">
 
-                    <!-- ░░ RESIDENTIAL ADDRESS ░░ -->
-                    <v-form ref="formResidential" v-model="validResidential">
-                        <v-container fluid class="pa-4">
-                            <v-row dense>
+                        <!-- ░░ RESIDENTIAL ADDRESS ░░ -->
+                        <v-form ref="formResidential" v-model="validResidential">
+                            <v-card class="pa-6" rounded="xl" elevation="1">
+                                <v-row dense>
 
-                                <v-col cols="12">
-                                    <h3 class="text-h6 font-weight-bold mb-3">Residential Address</h3>
-                                </v-col>
+                                    <v-col cols="12">
+                                        <h3 class="text-h6 font-weight-bold mb-3">Residential Address</h3>
+                                    </v-col>
 
-                                <v-col cols="12">
-                                    <v-checkbox v-model="sameAsOfficialResidential" label="Same as Official Address"
-                                        @change="copyOfficialToResidential" />
-                                </v-col>
+                                    <v-col cols="12">
+                                        <v-checkbox v-model="sameAsOfficialResidential" label="Same as Official Address"
+                                            @change="copyOfficialToResidential" />
+                                    </v-col>
 
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.residential_address"
-                                        label="Door No / Residential Address" variant="outlined" dense
-                                        :rules="[requiredIf(sameAsOfficialResidential)]" />
-                                </v-col>
+                                    <v-col cols="12" md="6">
+                                        <v-text-field v-model.trim="form.residential_address"
+                                            label="Door No / Residential Address" variant="outlined" dense
+                                            :rules="[requiredIf(sameAsOfficialResidential)]" />
+                                    </v-col>
 
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.res_address1" label="Street Address 1"
-                                        variant="outlined" dense :rules="[requiredIf(sameAsOfficialResidential)]" />
-                                </v-col>
+                                    <v-col cols="12" md="6">
+                                        <v-text-field v-model.trim="form.res_address1" label="Street Address 1"
+                                            variant="outlined" dense :rules="[requiredIf(sameAsOfficialResidential)]" />
+                                    </v-col>
 
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.res_address2" label="Street Address 2"
-                                        variant="outlined" dense :rules="[requiredIf(sameAsOfficialResidential)]" />
-                                </v-col>
+                                    <v-col cols="12" md="6">
+                                        <v-text-field v-model.trim="form.res_address2" label="Street Address 2"
+                                            variant="outlined" dense :rules="[requiredIf(sameAsOfficialResidential)]" />
+                                    </v-col>
 
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.res_address3" label="Landmark (optional)"
-                                        variant="outlined" dense />
-                                </v-col>
+                                    <v-col cols="12" md="6">
+                                        <v-text-field v-model.trim="form.res_address3" label="Landmark (optional)"
+                                            variant="outlined" dense />
+                                    </v-col>
 
-                                <v-col cols="6" md="3">
-                                    <v-combobox v-model="resPincode" :items="respincodeOptions" item-title="pincode"
-                                        item-value="pincode" label="Search Pincode" variant="outlined" dense
-                                        return-object :loading="loading" @update:search="respinSearch" />
-                                </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-combobox v-model="resPincode" :items="respincodeOptions" item-title="pincode"
+                                            item-value="pincode" label="Search Pincode" variant="outlined" dense
+                                            return-object :loading="loading" @update:search="respinSearch" />
+                                    </v-col>
 
-                                <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.res_pincode" label="Pincode" variant="outlined"
-                                        dense disabled :rules="[pincodeRule]" />
-                                </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-text-field v-model.trim="form.res_pincode" label="Pincode" variant="outlined"
+                                            dense disabled :rules="[pincodeRule]" />
+                                    </v-col>
 
-                                <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.res_city" label="City" variant="outlined" dense
-                                        disabled />
-                                </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-text-field v-model.trim="form.res_city" label="City" variant="outlined" dense
+                                            disabled />
+                                    </v-col>
 
-                                <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.res_state" label="State" variant="outlined" dense
-                                        disabled />
-                                </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-text-field v-model.trim="form.res_state" label="State" variant="outlined"
+                                            dense disabled />
+                                    </v-col>
 
-                            </v-row>
-                        </v-container>
-                    </v-form>
+                                </v-row>
+                            </v-card>
+                        </v-form>
+                    </v-container>
 
                     <!-- ░░ VISITOR ADDRESS ░░ -->
-                    <v-form ref="formVisitor" v-model="validVisitor">
-                        <v-container fluid class="pa-4">
-                            <v-row dense>
+                    <v-container class="pa-6" rounded="xl">
+                        <v-form ref="formVisitor" v-model="validVisitor">
+                            <v-card class="pa-6" rounded="xl" elevation="1">
+                                <v-row dense>
 
-                                <v-col cols="12">
-                                    <h3 class="text-h6 font-weight-bold mb-3">Visitor Address</h3>
-                                </v-col>
+                                    <v-col cols="12">
+                                        <h3 class="text-h6 font-weight-bold mb-3">Visitor Address</h3>
+                                    </v-col>
 
-                                <v-col cols="12">
-                                    <v-checkbox v-model="sameAsOfficialVisitor" label="Same as Official Address"
-                                        @change="copyOfficialToVisitor" />
-                                </v-col>
+                                    <v-col cols="12">
+                                        <v-checkbox v-model="sameAsOfficialVisitor" label="Same as Official Address"
+                                            @change="copyOfficialToVisitor" />
+                                    </v-col>
 
-                                <v-col cols="12" md="6">
-                                    <v-text-field v-model.trim="form.visitor_address" label="Door No / Visitor Address"
-                                        variant="outlined" dense :rules="[requiredIf(sameAsOfficialVisitor)]" />
-                                </v-col>
+                                    <v-col cols="12" md="6">
+                                        <v-text-field v-model.trim="form.vister_address"
+                                            label="Door No / Visitor Address" variant="outlined" dense
+                                            :rules="[requiredIf(sameAsOfficialVisitor)]" />
+                                    </v-col>
 
-                                <v-col cols="12" md="4">
-                                    <v-text-field v-model.trim="form.v_address1" label="Street Address 1"
-                                        variant="outlined" dense :rules="[requiredIf(sameAsOfficialVisitor)]" />
-                                </v-col>
+                                    <v-col cols="12" md="4">
+                                        <v-text-field v-model.trim="form.v_address1" label="Street Address 1"
+                                            variant="outlined" dense :rules="[requiredIf(sameAsOfficialVisitor)]" />
+                                    </v-col>
 
-                                <v-col cols="12" md="4">
-                                    <v-text-field v-model.trim="form.v_address2" label="Street Address 2"
-                                        variant="outlined" dense :rules="[requiredIf(sameAsOfficialVisitor)]" />
-                                </v-col>
+                                    <v-col cols="12" md="4">
+                                        <v-text-field v-model.trim="form.v_address2" label="Street Address 2"
+                                            variant="outlined" dense :rules="[requiredIf(sameAsOfficialVisitor)]" />
+                                    </v-col>
 
-                                <v-col cols="12" md="4">
-                                    <v-text-field v-model.trim="form.v_address3" label="Landmark (optional)"
-                                        variant="outlined" dense />
-                                </v-col>
+                                    <v-col cols="12" md="4">
+                                        <v-text-field v-model.trim="form.v_address3" label="Landmark (optional)"
+                                            variant="outlined" dense />
+                                    </v-col>
 
-                                <v-col cols="6" md="3">
-                                    <v-combobox v-model="vPincode" :items="vpincodeOptions" item-title="pincode"
-                                        item-value="pincode" label="Search Pincode" variant="outlined" dense
-                                        return-object :loading="loading" @update:search="vpinSearch" />
-                                </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-combobox v-model="vPincode" :items="vpincodeOptions" item-title="pincode"
+                                            item-value="pincode" label="Search Pincode" variant="outlined" dense
+                                            return-object :loading="loading" @update:search="vpinSearch" />
+                                    </v-col>
 
-                                <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.v_pincode" label="Pincode" variant="outlined" dense
-                                        :rules="[pincodeRule]" />
-                                </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-text-field v-model.trim="form.v_pincode" label="Pincode" variant="outlined"
+                                            dense :rules="[pincodeRule]" />
+                                    </v-col>
 
-                                <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.v_city" label="City" variant="outlined" dense />
-                                </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-text-field v-model.trim="form.v_city" label="City" variant="outlined"
+                                            dense />
+                                    </v-col>
 
-                                <v-col cols="6" md="3">
-                                    <v-text-field v-model.trim="form.v_state" label="State" variant="outlined" dense />
-                                </v-col>
+                                    <v-col cols="6" md="3">
+                                        <v-text-field v-model.trim="form.v_state" label="State" variant="outlined"
+                                            dense />
+                                    </v-col>
 
-                            </v-row>
-                        </v-container>
-                    </v-form>
+                                </v-row>
+                            </v-card>
+                        </v-form>
+                    </v-container>
 
                 </v-window-item>
 
-                <v-window-item :value="4">
-                    <v-card class="pa-6" elevation="0">
-                        <h3 class="text-h6 font-weight-bold mb-4">
-                            Select Business Type
-                        </h3>
-
-                        <v-radio-group v-model="selectedBusinessType" column>
-                            <v-radio v-for="type in businessTypeList" :key="type.id" :label="type.label"
-                                :value="type.value" class="mb-2" />
-                        </v-radio-group>
-
-                        <!-- Info Alert -->
-                        <v-alert v-if="selectedBusinessType" type="info" variant="tonal" class="mt-4">
-                            {{
-                                BUSINESS_TYPE_RULES[selectedBusinessType]?.partners > 0
-                                    ? `This business requires ${BUSINESS_TYPE_RULES[selectedBusinessType].partners} partners`
-                                    : "No partners required"
-                            }}
-                        </v-alert>
-                    </v-card>
-                </v-window-item>
-
-                <v-window-item :value="5">
+                <v-window-item :value="6">
                     <v-card class="pa-4" elevation="0">
 
                         <div class="mb-6">
@@ -547,7 +594,6 @@
         </v-card>
 
         <!-- Snackbar -->
-        <!-- Snackbar -->
         <v-snackbar v-model="snackbar.show" :timeout="4000" location="top right" elevation="8" rounded="xl"
             class="snackbar-modern" color="primary">
             <div class="d-flex align-center ga-3">
@@ -593,9 +639,11 @@ const { MCCSearch,
     uploadDoc,
     getMerchantById,
     onboading,
+    onboadingAEPS,
+    getPaymentMethods,
     updateMerchant,
     initiateOnboarding } = useOnboadingApi();
-const { addMerchant } = useUsersApi();
+const { registor } = useUsersApi();
 const Onboarding = useOnboardingStore();
 const { turnOverList, businessTypeList } = storeToRefs(Onboarding);
 const router = useRouter();
@@ -625,6 +673,7 @@ const panresult = ref(null);      // PAN verification result message
 const isPanVerified = ref(false); // PAN verification status
 const formPan = ref();            // v-form ref for validation
 const validPan = ref(false);      // v-form validity
+const paymentMethods = ref([]);
 
 const accountname = ref("");         // Account holder name input
 const accountnumber = ref("");       // Account number input
@@ -671,24 +720,6 @@ const ifscRule = (v) =>
 function toggleDoc(doc) {
     activeDoc.value = activeDoc.value === doc ? null : doc
 }
-
-const getMerchant = async (id) => {
-    try {
-        const res = await getMerchantById(id);
-        // Object.assign(merchantForm, res.data || {});
-        console.log("Merchant from the props", res.data);
-
-        form.legal_name = res.data.legal_name
-        form.name = res.data.user?.name
-        form.primary_email_id = res.data.user?.email
-        form.primary_mobile = res.data.user?.mobile_no
-
-        disableMerchantInput.value = true
-
-    } catch (e) {
-        console.error("Failed to fetch merchant:", e);
-    }
-};
 
 const DOC_RULES = {
     DEFAULT: {
@@ -1126,12 +1157,13 @@ async function takePartnerDoc(index, type) {
 }
 
 const steps = [
+    { key: "payment-method/business-type", label: "Payment Method & Business Type" },
     { key: "business", label: "Business Details" },
     { key: "official", label: "Official Address" },
     { key: "residential", label: "Address Details" },
-    { key: "business-type", label: "Business Type" },
     { key: "documents", label: "Documents" },
-]
+];
+
 
 const docStep = ref(0)
 const activeCategory = ref(null)
@@ -1219,14 +1251,14 @@ function pick(obj, keys) {
 
 const title = computed(() => {
     switch (step.value) {
-        case 1: return "BUSINESS DETAILS"
-        case 2: return "OFFICIAL ADDRESS"
-        case 3: return "ADDRESS DETAILS"
-        case 4: return "DOCUMENT UPLOAD"
-        case 5: return "BUSINESS TYPE"
+        case 1: return "SELECT SERVICES & BUSINESS TYPE"
+        case 2: return "BUSINESS DETAILS"
+        case 3: return "OFFICIAL ADDRESS"
+        case 4: return "ADDRESS DETAILS"
+        case 5: return "DOCUMENT UPLOAD"
         default: return "ONBOARDING"
     }
-})
+});
 
 const step = ref(1);
 const prev = () => (step.value = Math.max(1, step.value - 1));
@@ -1235,7 +1267,7 @@ const uploadedDocs = ref([]);
 
 // Form state
 const form = reactive({
-    legal_name: "", name: "", dba_name: null, dob: "", primary_email_id: "", primary_mobile: "", mobile_number: "",
+    legal_name: "", business_name: "", payment_method: null, dba_name: null, dob: "", primary_email_id: "", primary_mobile: "", mobile_number: "",
     official_address: "", address1: "", address2: "", address3: "", phone: "", city: "", state: "", pincode: "",
     residential_address: "", res_address1: "", res_address2: "", res_address3: "", res_mobile: "", res_phone_number: "", res_city: "", res_state: "", res_pincode: "",
     vister_address: "", v_address1: "", v_address2: "", v_address3: "", v_mobile: "", v_phone_number: "", v_city: "", v_state: "", v_pincode: "",
@@ -1246,7 +1278,7 @@ const form = reactive({
 const sameAsOfficialResidential = ref(false);
 const sameAsOfficialVisitor = ref(false);
 function copyOfficialToResidential() { if (sameAsOfficialResidential.value) { Object.assign(form, { residential_address: form.official_address, res_address1: form.address1, res_address2: form.address2, res_address3: form.address3, res_city: form.city, res_state: form.state, res_pincode: form.pincode }); } }
-function copyOfficialToVisitor() { if (sameAsOfficialVisitor.value) { Object.assign(form, { visitor_address: form.official_address, v_address1: form.address1, v_address2: form.address2, v_address3: form.address3, v_city: form.city, v_state: form.state, v_pincode: form.pincode }); } }
+function copyOfficialToVisitor() { if (sameAsOfficialVisitor.value) { Object.assign(form, { vister_address: form.official_address, v_address1: form.address1, v_address2: form.address2, v_address3: form.address3, v_city: form.city, v_state: form.state, v_pincode: form.pincode }); } }
 
 // MCC & Pincode
 const mcc = ref(), opincode = ref(), resPincode = ref(), vPincode = ref();
@@ -1371,6 +1403,58 @@ const vpinSearch = async (query) => {
         loading.value = false;
     }
 };
+const buildAepsPayload = () => {
+
+    return {
+        dba_name: form.dba_name,
+        business_dob: form.dob,                 
+        primary_email_id: form.primary_email_id,
+        primary_mobile: form.primary_mobile,
+
+        official_address: form.official_address,
+        address1: form.address1,
+        address2: form.address2,
+        address3: form.address3,
+        phone: form.primary_mobile,
+        city: form.city,
+        state: form.state,
+        pincode: form.pincode,
+
+        residential_address: form.residential_address,
+        res_address1: form.res_address1,
+        res_address2: form.res_address2,
+        res_address3: form.res_address3,
+        res_mobile: form.primary_mobile,
+        res_phone_number: form.primary_mobile,
+        res_city: form.res_city,
+        res_state: form.res_state,
+        res_pincode: form.res_pincode,
+
+        vister_address: form.vister_address,
+        v_address1: form.v_address1,
+        v_address2: form.v_address2,
+        v_address3: form.v_address3,
+        v_mobile: form.primary_mobile,
+        v_phone_number: form.primary_mobile,
+        v_city: form.v_city,
+        v_state: form.v_state,
+        v_pincode: form.v_pincode,
+
+        website: form.website,
+        beneficiary_email: form.beneficiary_email,
+        beneficiary_mobile: form.beneficiary_mobile,
+        gender: form.gender,
+
+        // MCC selected business description
+        nature_of_business: mcc.value?.descr || "",
+
+        std_code: form.std_code,
+        lead_source: form.lead_source,
+        lg_code: form.lg_code,
+
+        annual_turn_over: form.annual_turn_over
+    };
+};
 
 const cleanedPayload = computed(() => {
     const clone = JSON.parse(JSON.stringify(form));
@@ -1449,132 +1533,157 @@ async function submit() {
     }
 }
 
+const getMerchant = async (id) => {
+    try {
+        if (id) {
+            disableMerchantInput.value = true
+        }
+
+        const res = await getMerchantById(id);
+        // Object.assign(merchantForm, res.data || {});
+
+        const Merchant = res.data
+        console.log("Merchant Res", Merchant);
+
+        activeMerchant.value = Merchant
+
+        form.legal_name = Merchant.legal_name
+        form.business_name = Merchant.business_name
+        form.primary_email_id = Merchant.user?.email
+        form.primary_mobile = Merchant.user?.mobile_no
+        form.dob = Merchant.dob ? Merchant.dob.split("T")[0] : "";
+        form.dba_name = Merchant.dba_name
+        form.annual_turn_over = Merchant.annual_turn_over
+        form.lat = Merchant.lat
+        form.long = Merchant.long
+        form.beneficiary_email = Merchant.user?.email
+        form.beneficiary_mobile = Merchant.user?.mobile_no
+        form.payment_method = Merchant.paymethods[0].paymentMethod
+
+        selectedBusinessType.value = Merchant.businesstype?.type
+
+        mcc.value = Merchant.mcc
+
+        step.value = 3
+
+    } catch (e) {
+        console.error("Failed to fetch merchant:", e);
+    }
+};
+
 const next = async () => {
 
     if (step.value === 1) {
+        if (!form.payment_method) {
+            snackbar.message = "Please select a payment method"
+            snackbar.color = "error"
+            snackbar.show = true
+            return
+        }
+
+        if (!selectedBusinessType.value) {
+            snackbar.message = "Please select a business type"
+            snackbar.color = "error"
+            snackbar.show = true
+            return
+        }
+
+        form.business_type = selectedBusinessType.value
+    }
+
+
+    if (step.value === 2) {
         const res = await formBusiness.value.validate()
         if (!res.valid) return
 
+        const interfaceMap = {
+            UPI: "MOS",
+            AEPS: "NSDL",
+            DMT: "NSDL",
+        };
+
         const payload = {
-            name: form.name,
+            legal_name: form.legal_name,
+            business_name: form.business_name,
+            dob: form.dob,
+            dba_name: form.dba_name,
+            mcc: form.mcc,
+            location: {
+                latitude: form.lat,
+                longitude: form.long,
+            },
+            business_type: selectedBusinessType.value,
+            beneficiary_email: form.beneficiary_email,
+            beneficiary_mobile: form.beneficiary_mobile,
+            annual_turn_over: form.annual_turn_over,
             email: form.primary_email_id,
             mobile_no: form.primary_mobile,
             role: "merchant",
-            interface: "MOS",
-        }
+            interface: interfaceMap[form.payment_method] || "",
+            paymethod: form.payment_method
+        };
 
-        const user_merchant = await addMerchant(payload)
+        const createdMerchant = await registor(payload)
 
-        console.log("Add Merchant Response", user_merchant)
+        console.log("Created Merchant Response", createdMerchant)
 
-        if (user_merchant?.statusCode === "00") {
+        if (createdMerchant?.statusCode === "00") {
 
-            form.legal_name = user_merchant?.data?.merchant.legal_name
-            form.name = user_merchant?.data?.user.name
-            form.primary_email_id = user_merchant?.data?.user?.email
-            form.primary_mobile = user_merchant?.data?.user?.mobile_no
+            activeMerchant.value = createdMerchant?.data?.merchant
 
-            activeMerchant.value = user_merchant?.data?.merchant
+            const merchantId = activeMerchant.value?.id
 
-            const merchantId = user_merchant?.data?.merchant.id
-            const payload = {
-                mobile_number: form.primary_mobile,
-                mcc_code: form.mcc,
-                merchant_name: form.legal_name,
-                business_name: form.dba_name,
-                business_type: form.business_type,
-                location: {
-                    lat: form.lat,
-                    long: form.long
+            if (merchantId) {
+                localStorage.setItem(
+                    "activeMerchantOnboarding",
+                    merchantId
+                );
+            }
+
+            const existingMerchant = createdMerchant.data.existing
+
+            if (existingMerchant) {
+
+                if (merchantId) {
+                    console.log("Found merchant while Register:", merchantId);
+                    getMerchant(merchantId);
+                }
+
+            } else {
+
+                // Only for the UPI (MOS)
+                if (form.payment_method === "UPI") {
+                    const merchantId = createdMerchant?.data?.merchant.id
+                    const payload = {
+                        mobile_number: form.primary_mobile,
+                    }
+
+                    const initiateMOS = await initiateOnboarding(payload, merchantId);
+
+                    console.log("InitiateMOS", initiateMOS)
+
+                    if (initiateMOS?.statusCode === "00") {
+                        snackbar.message =
+                            initiateMOS?.message || "Onboarding initiate successfully"
+                        snackbar.color = "success"
+                        snackbar.show = true
+                    } else {
+                        snackbar.message =
+                            initiateMOS?.message || "Unable to initiate onboarding"
+                        snackbar.color = "error"
+                        snackbar.show = true
+                        return
+                    }
+                } else {
+                    snackbar.message =
+                        createdMerchant?.message || "Merchant created successfully"
+                    snackbar.color = "success"
+                    snackbar.show = true
                 }
             }
 
-            const initiateOnboardingRes = await initiateOnboarding(payload, merchantId);
-
-            console.log("Initiate Onboarding Response", initiateOnboardingRes)
-
-            if (initiateOnboardingRes?.statusCode === "00") {
-                snackbar.message =
-                    initiateOnboardingRes?.message || "Onboarding initiate successfully"
-                snackbar.color = "success"
-                snackbar.show = true
-            } else {
-                snackbar.message =
-                    initiateOnboardingRes?.message || "Unable to initiate onboarding"
-                snackbar.color = "error"
-                snackbar.show = true
-                return
-            }
-
-        } else if (user_merchant?.statusCode === "10") {
-            const merchantInfo = user_merchant?.data?.merchant?.merchantinfo
-            const address = user_merchant?.data?.merchant?.address
-
-            form.dba_name = merchantInfo?.dba_name || null
-            form.mobile_number = merchantInfo?.mobile_number || ""
-            form.phone = merchantInfo?.phone || ""
-
-            form.gender = merchantInfo?.gender || ""
-            form.lat = merchantInfo?.lat || ""
-            form.long = merchantInfo?.long || ""
-            form.nature_of_business = merchantInfo?.nature_of_business || null
-            form.business_type = merchantInfo?.business_type || null
-
-            selectedBusinessType.value = merchantInfo?.business_type || null
-
-            form.mcc = merchantInfo?.mcc || ""
-            form.std_code = merchantInfo?.std_code || "091"
-            form.lead_source = merchantInfo?.lead_source || "BUCKSBOX"
-            form.lg_code = merchantInfo?.lg_code || ""
-            form.annual_turn_over = merchantInfo?.annual_turn_over || null
-            form.website = merchantInfo?.website || ""
-
-            form.beneficiary_email = merchantInfo?.beneficiary_email || ""
-            form.beneficiary_mobile = merchantInfo?.beneficiary_mobile || ""
-
-            if (address) {
-                form.official_address = address?.official_address || ""
-                form.address1 = address?.address1 || ""
-                form.address2 = address?.address2 || ""
-                form.address3 = address?.address3 || ""
-                form.city = address?.city || ""
-                form.state = address?.state || ""
-                form.pincode = address?.pincode || ""
-                form.phone = address?.phone || ""
-            }
-
-            if (address) {
-                form.residential_address = address?.residential_address || ""
-                form.res_address1 = address?.res_address1 || ""
-                form.res_address2 = address?.res_address2 || ""
-                form.res_address3 = address?.res_address3 || ""
-                form.res_mobile = address?.res_mobile || ""
-                form.res_phone_number = address?.res_phone_number || ""
-                form.res_city = address?.res_city || ""
-                form.res_state = address?.res_state || ""
-                form.res_pincode = address?.res_pincode || ""
-            }
-
-            if (address) {
-                form.vister_address = address?.vister_address || ""
-                form.v_address1 = address?.v_address1 || ""
-                form.v_address2 = address?.v_address2 || ""
-                form.v_address3 = address?.v_address3 || ""
-                form.v_mobile = address?.v_mobile || ""
-                form.v_phone_number = address?.v_phone_number || ""
-                form.v_city = address?.v_city || ""
-                form.v_state = address?.v_state || ""
-                form.v_pincode = address?.v_pincode || ""
-            }
-
-            activeMerchant.value = user_merchant?.data?.merchant
-
-            snackbar.message =
-                user_merchant?.message || "Incomplete merchant onboarding"
-            snackbar.color = "error"
-            snackbar.show = true
         } else {
-            snackbar.message = user_merchant?.message || "Unable to create merchant"
+            snackbar.message = createdMerchant?.message || "Unable to create merchant"
             snackbar.color = "error"
             snackbar.show = true
             return
@@ -1583,19 +1692,48 @@ const next = async () => {
         console.log("Active Merchant after creation:", activeMerchant.value);
     }
 
-    if (step.value === 2) {
+    if (step.value === 3) {
         const res = await formOfficial.value.validate()
         if (!res.valid) return
     }
 
-    if (step.value === 3) {
-        const res1 = await formResidential.value.validate()
-        const res2 = await formVisitor.value.validate()
+    if (step.value === 4) {
+        const r1 = await formResidential.value.validate();
+        const r2 = await formVisitor.value.validate();
+        if (!r1.valid || !r2.valid) return;
 
-        if (!res1.valid || !res2.valid) return
+        if (form.payment_method === "AEPS") {
+            submitting.value = true;
+
+            try {
+                const payload = buildAepsPayload();
+                console.log("AEPS Payload:", payload);
+
+                const merchantId = activeMerchant.value.id
+
+                console.log("AEPS Param Merchant Id:", merchantId);
+
+                const res = await onboadingAEPS(payload, merchantId);
+
+                if (res.data.statusCode === "00") {
+                    snackbar.message = res.data.message;
+                    snackbar.color = "success";
+                    snackbar.show = true;
+                    router.push("/aggregator/onboarding/success");
+                } else {
+                    snackbar.message = res.data.message;
+                    snackbar.color = "error";
+                    snackbar.show = true;
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                submitting.value = false;
+            }
+        }
     }
 
-    if (step.value === 4) {
+    if (step.value === 5) {
         if (!selectedBusinessType.value) {
             snackbar.message = "Please select a business type"
             snackbar.color = "error"
@@ -1636,7 +1774,7 @@ const next = async () => {
         }
     }
 
-    if (step.value === 5) {
+    if (step.value === 6) {
 
         if (isBusinessPan.value && !documents.BUSINESS_PAN) {
             snackbar.message = "Business PAN is required"
@@ -1669,12 +1807,47 @@ const next = async () => {
     step.value++
 }
 
+
+onMounted(async () => {
+    try {
+        paymentMethods.value = await getPaymentMethods();
+
+        console.log("Payment Methods-", paymentMethods.value);
+    } catch (err) {
+        console.error("Failed to load payment methods options:", err);
+    }
+});
+
+onMounted(async () => {
+    try {
+        await businessTurnOver();
+        console.log(turnOverList.value);
+    } catch (err) {
+        console.error("Failed to load payment methods options:", err);
+    }
+});
+
+
+onMounted(async () => {
+    try {
+        await businessType();
+        console.log("Loaded Business Types:", businessTypeList.value);
+    } catch (err) {
+        console.error("Failed to load business types:", err);
+    }
+});
+
 onMounted(async () => {
     if (props.merchantId) {
         getMerchant(props.merchantId);
     }
-    businessTurnOver();
-    businessType();
+
+    // Merchant Id from localstorage
+    const onboardingMerchantId = localStorage.getItem("activeMerchantOnboarding");
+    if (onboardingMerchantId) {
+        console.log("Found merchant in onboarding:", onboardingMerchantId);
+        getMerchant(onboardingMerchantId);
+    }
 
     const res = await fetchCompliance();
     if (res) {

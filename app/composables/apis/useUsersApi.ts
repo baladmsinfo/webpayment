@@ -89,7 +89,7 @@ export function useUsersApi() {
       // }
     }
 
-    return res;
+    return res.data;
   };
 
   const forgotPassword = async (payload: any) => {
@@ -180,19 +180,19 @@ export function useUsersApi() {
     return res;
   };
 
-  const addMerchant = async (payload) => {
-    try {
-      const res = await post("/add-merchant", payload)
+  // const addMerchant = async (payload) => {
+  //   try {
+  //     const res = await post("/add-merchant", payload)
 
-      console.log("User Merchant Register Response-", res.data)
+  //     console.log("User Merchant Register Response-", res.data)
 
-      return res.data
-    } catch (err) {
-      console.log("Add Merchant API Error:", err.response.data)
+  //     return res.data
+  //   } catch (err) {
+  //     console.log("Add Merchant API Error:", err.response.data)
 
-      return err.response.data
-    }
-  }
+  //     return err.response.data
+  //   }
+  // }
 
   const addVendor = async (payload) => {
     try {
@@ -274,5 +274,5 @@ export function useUsersApi() {
     }
   };
 
-  return { SendOtp, addMerchant, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  return { SendOtp, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }

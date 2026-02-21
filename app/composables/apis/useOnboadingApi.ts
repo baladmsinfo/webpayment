@@ -110,6 +110,13 @@ export function useOnboadingApi() {
     return await post("/Onboarding", payload, { params: { merchantId } });
   };
 
+  const onboadingAEPS = async (payload: any, merchantId: any) => {
+    //console.log(payload);
+    return await post("/onboarding/aeps/vendor-onboard", payload, {
+      params: { merchantId }
+    });
+  };
+
   const initiateOnboarding = async (payload: any, merchantId: any) => {
     //console.log(payload);
     return await post("/initiateOnboarding", payload, { params: { merchantId } });
@@ -167,6 +174,16 @@ export function useOnboadingApi() {
     }
   };
 
+  const getPaymentMethods = async () => {
+    try {
+      const res = await get(`/vendor/payments/methods`);
+      return res.data?.data || [];
+    } catch (error) {
+      console.error("Error fetching payment methods:", error);
+      return [];
+    }
+  };
+
 
   return {
     MCCSearch,
@@ -181,9 +198,11 @@ export function useOnboadingApi() {
     onboading,
     initiateOnboarding,
     onboadingVendor,
+    onboadingAEPS,
     fetchCompliance,
     updateVendor,
     getMerchantById,
+    getPaymentMethods,
     complianceInitVendor,
   };
 }
