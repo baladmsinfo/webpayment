@@ -4,7 +4,7 @@
         <div class="d-flex align-center justify-space-between mb-8">
             <h1 class="text-h5 font-weight-bold mb-0">Pending Merchants</h1>
             <v-btn color="primary" class="d-flex pa-6 align-center text-h6 font-weight-medium" elevation="2" rounded
-                @click="router.push('/vendor/onboarding')">
+                @click="router.push('/vendor/merchants/create')">
                 <v-icon left>mdi-plus</v-icon>
                 Add Merchant
             </v-btn>

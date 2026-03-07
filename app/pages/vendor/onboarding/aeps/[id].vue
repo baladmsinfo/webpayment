@@ -1,15 +1,17 @@
 <template>
-  <v-container class="pa-0" fluid>
-    <ManageMerchant :merchant-id="merchantId" />
-  </v-container>
+  <div>
+    <AEPSOnboarding :merchant-id="merchantId" />
+  </div>
 </template>
 
 <script setup>
 import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import ManageMerchant from "~/components/ManageMerchant.vue";
 
 const route = useRoute();
 const merchantId = computed(() => route.params.id);
 
+onMounted(() => {
+  console.log("Merchant ID from route:", merchantId.value);
+});
 </script>

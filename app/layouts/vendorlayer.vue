@@ -20,12 +20,12 @@ const menus = ref([
     // 👇 Two submenu pages
     children: [
       {
-        title: "Merchants",
+        title: "Onboarded Merchants",
         icon: "mdi-account-check",
         url: "/vendor/merchants/onboarded",
       },
       {
-        title: "Onboarding Merchants",
+        title: "Merchants",
         icon: "mdi-account-clock",
         url: "/vendor/merchants/pending",
       },

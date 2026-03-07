@@ -1,6 +1,6 @@
 <template>
   <div>
-    <SuccessOnboardingVendor />
+    <AddMerchantSuccess(Vendor) />
   </div>
 </template>
 

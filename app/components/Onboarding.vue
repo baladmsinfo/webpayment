@@ -115,20 +115,6 @@
                                                     :rules="[req]" dense />
                                             </v-col>
 
-                                            <!-- DATE OF BIRTH -->
-                                            <v-col cols="12" md="6">
-                                                <v-text-field v-model="form.dob" :disabled="disableMerchantInput"
-                                                    label="Business DOB" type="date" variant="outlined" :rules="[req]"
-                                                    :max="maxDob" />
-                                            </v-col>
-
-                                            <v-col cols="12" md="6">
-                                                <v-text-field v-model.trim="form.dba_name"
-                                                    :disabled="disableMerchantInput" label="DBA / Trade Name"
-                                                    placeholder="Public-facing business name" variant="outlined"
-                                                    :rules="[req]" dense />
-                                            </v-col>
-
                                             <v-col cols="12" md="6">
                                                 <v-combobox v-model="mcc" :items="mccOptions"
                                                     :disabled="disableMerchantInput" item-title="descr" item-value="id"
@@ -141,38 +127,6 @@
                                                             @click:close="removeSelection(index)" />
                                                     </template>
                                                 </v-combobox>
-                                            </v-col>
-
-                                            <v-col cols="12" md="6">
-                                                <v-autocomplete v-model="form.annual_turn_over"
-                                                    :items="turnOverList.data" item-title="label" item-value="value"
-                                                    label="Annual Turnover" placeholder="Select turnover range"
-                                                    variant="outlined" :rules="[req]" dense />
-                                            </v-col>
-                                        </v-row>
-                                    </v-card-text>
-                                </v-card>
-
-                                <!-- OPTIONAL CONTACT -->
-                                <v-card class="mb-6 pa-6" rounded="xl" elevation="1">
-                                    <v-card-title class="text-h6 font-weight-bold">
-                                        Beneficiary Contact (Optional)
-                                    </v-card-title>
-
-                                    <v-card-text>
-                                        <v-row dense>
-                                            <v-col cols="12" md="6">
-                                                <v-text-field v-model.trim="form.beneficiary_email"
-                                                    label="Beneficiary Email" :disabled="disableMerchantInput"
-                                                    placeholder="Optional" variant="outlined" :rules="[emailOrEmpty]"
-                                                    dense />
-                                            </v-col>
-
-                                            <v-col cols="12" md="6">
-                                                <v-text-field v-model.trim="form.beneficiary_mobile"
-                                                    label="Beneficiary Mobile" :disabled="disableMerchantInput"
-                                                    placeholder="Optional" prefix="+91" variant="outlined"
-                                                    :rules="[phoneOrEmpty]" dense />
                                             </v-col>
                                         </v-row>
                                     </v-card-text>
@@ -207,8 +161,81 @@
                     </v-container>
                 </v-window-item>
 
-                <!-- STEP 2: Official Address -->
                 <v-window-item :value="3">
+                    <v-container class="pa-6">
+                        <v-form ref="formAdditional" v-model="validAdditional">
+
+                            <v-container fluid class="pa-2">
+
+                                <!-- BUSINESS EXTRA DETAILS -->
+                                <v-card class="mb-6 pa-6" rounded="xl" elevation="1">
+                                    <v-card-title class="text-h6 font-weight-bold">
+                                        Additional Business Information
+                                    </v-card-title>
+
+                                    <v-card-text>
+                                        <v-row dense>
+
+                                            <!-- DATE OF BIRTH -->
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model="form.dob" :disabled="disableMerchantInfoInput" label="Business DOB" type="date"
+                                                    variant="outlined" :rules="[req]" :max="maxDob" />
+                                            </v-col>
+
+                                            <!-- DBA NAME -->
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model.trim="form.dba_name" :disabled="disableMerchantInfoInput" label="DBA / Trade Name"
+                                                    placeholder="Public-facing business name" variant="outlined"
+                                                    :rules="[req]" dense />
+                                            </v-col>
+
+                                            <!-- ANNUAL TURNOVER -->
+                                            <v-col cols="12" md="6">
+                                                <v-autocomplete v-model="form.annual_turn_over" :disabled="disableMerchantInfoInput"
+                                                    :items="turnOverList.data" item-title="label" item-value="value"
+                                                    label="Annual Turnover" placeholder="Select turnover range"
+                                                    variant="outlined" :rules="[req]" dense />
+                                            </v-col>
+
+                                        </v-row>
+                                    </v-card-text>
+                                </v-card>
+
+                                <!-- BENEFICIARY CONTACT -->
+                                <v-card class="pa-6" rounded="xl" elevation="1">
+                                    <v-card-title class="text-h6 font-weight-bold">
+                                        Beneficiary Contact (Optional)
+                                    </v-card-title>
+
+                                    <v-card-text>
+                                        <v-row dense>
+
+                                            <!-- BENEFICIARY EMAIL -->
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model.trim="form.beneficiary_email"
+                                                    label="Beneficiary Email" placeholder="Optional" variant="outlined"
+                                                    :rules="[emailOrEmpty]" dense />
+                                            </v-col>
+
+                                            <!-- BENEFICIARY MOBILE -->
+                                            <v-col cols="12" md="6">
+                                                <v-text-field v-model.trim="form.beneficiary_mobile"
+                                                    label="Beneficiary Mobile" placeholder="Optional" prefix="+91"
+                                                    variant="outlined" :rules="[phoneOrEmpty]" dense />
+                                            </v-col>
+
+                                        </v-row>
+                                    </v-card-text>
+                                </v-card>
+
+                            </v-container>
+
+                        </v-form>
+                    </v-container>
+                </v-window-item>
+
+                <!-- STEP 2: Official Address -->
+                <v-window-item :value="4">
                     <v-container class="pa-6" rounded="xl">
                         <v-form ref="formOfficial" v-model="validOfficial">
                             <v-card class="pa-6" rounded="xl" elevation="1">
@@ -269,7 +296,7 @@
                 </v-window-item>
 
                 <!-- STEP 3: Residential & Visitor Address -->
-                <v-window-item :value="4">
+                <v-window-item :value="5">
                     <v-container class="pa-6" rounded="xl">
 
                         <!-- ░░ RESIDENTIAL ADDRESS ░░ -->
@@ -642,6 +669,7 @@ const { MCCSearch,
     onboadingAEPS,
     getPaymentMethods,
     updateMerchant,
+    updateMerchantInfo,
     initiateOnboarding } = useOnboadingApi();
 const { registor } = useUsersApi();
 const Onboarding = useOnboardingStore();
@@ -710,6 +738,7 @@ const selectedBusinessType = ref(null)
 const activeDoc = ref(null)
 
 const disableMerchantInput = ref(false)
+const disableMerchantInfoInput = ref(false)
 
 const accNumberRule = (v) =>
     /^[0-9]*$/.test(v) || "Account number must contain only digits";
@@ -1159,6 +1188,7 @@ async function takePartnerDoc(index, type) {
 const steps = [
     { key: "payment-method/business-type", label: "Payment Method & Business Type" },
     { key: "business", label: "Business Details" },
+    { key: "merchantinfo", label: "Other Information" },
     { key: "official", label: "Official Address" },
     { key: "residential", label: "Address Details" },
     { key: "documents", label: "Documents" },
@@ -1253,9 +1283,10 @@ const title = computed(() => {
     switch (step.value) {
         case 1: return "SELECT SERVICES & BUSINESS TYPE"
         case 2: return "BUSINESS DETAILS"
-        case 3: return "OFFICIAL ADDRESS"
-        case 4: return "ADDRESS DETAILS"
-        case 5: return "DOCUMENT UPLOAD"
+        case 3: return "OTHER INFORMATION"
+        case 4: return "OFFICIAL ADDRESS"
+        case 5: return "ADDRESS DETAILS"
+        case 6: return "DOCUMENT UPLOAD"
         default: return "ONBOARDING"
     }
 });
@@ -1310,8 +1341,8 @@ const latRule = v => v === "" || v === null || v === undefined ? true : (Number(
 const lngRule = v => v === "" || v === null || v === undefined ? true : (Number(v) >= -180 && Number(v) <= 180) || "Lng -180 to 180";
 
 // Step validation refs
-const formBusiness = ref(), formReg = ref(), formOfficial = ref(), formResidential = ref(), formVisitor = ref();
-const validBusiness = ref(false), validOfficial = ref(false), validResidential = ref(false), validVisitor = ref(false);
+const formBusiness = ref(), formReg = ref(), formOfficial = ref(), formResidential = ref(), formVisitor = ref(), formAdditional = ref();
+const validBusiness = ref(false), validOfficial = ref(false), validResidential = ref(false), validVisitor = ref(false), validAdditional = ref(false);
 
 async function uploadPhoto(docType) {
     try {
@@ -1407,7 +1438,7 @@ const buildAepsPayload = () => {
 
     return {
         dba_name: form.dba_name,
-        business_dob: form.dob,                 
+        business_dob: form.dob,
         primary_email_id: form.primary_email_id,
         primary_mobile: form.primary_mobile,
 
@@ -1535,41 +1566,58 @@ async function submit() {
 
 const getMerchant = async (id) => {
     try {
-        if (id) {
-            disableMerchantInput.value = true
-        }
 
-        const res = await getMerchantById(id);
-        // Object.assign(merchantForm, res.data || {});
+        const res = await getMerchantById(id)
+
+        console.log("Merchant API Response:", res)
 
         const Merchant = res.data
-        console.log("Merchant Res", Merchant);
+        const hasMerchantInfo = res.merchantInfoExists
 
         activeMerchant.value = Merchant
 
-        form.legal_name = Merchant.legal_name
-        form.business_name = Merchant.business_name
-        form.primary_email_id = Merchant.user?.email
-        form.primary_mobile = Merchant.user?.mobile_no
-        form.dob = Merchant.dob ? Merchant.dob.split("T")[0] : "";
-        form.dba_name = Merchant.dba_name
-        form.annual_turn_over = Merchant.annual_turn_over
-        form.lat = Merchant.lat
-        form.long = Merchant.long
-        form.beneficiary_email = Merchant.user?.email
-        form.beneficiary_mobile = Merchant.user?.mobile_no
-        form.payment_method = Merchant.paymethods[0].paymentMethod
+        if (Merchant) {
+            disableMerchantInput.value = true
+        }
 
-        selectedBusinessType.value = Merchant.businesstype?.type
+        form.legal_name = Merchant.legal_name || ""
+        form.business_name = Merchant.business_name || ""
 
-        mcc.value = Merchant.mcc
+        form.primary_email_id = Merchant.user?.email || ""
+        form.primary_mobile = Merchant.user?.mobile_no || ""
 
-        step.value = 3
+        form.lat = Merchant.lat || ""
+        form.long = Merchant.long || ""
+
+        form.payment_method = Merchant.paymethods?.[0]?.paymentMethod || ""
+
+        selectedBusinessType.value = Merchant.businesstype?.type || null
+
+        mcc.value = Merchant.mcc || null
+
+        if (hasMerchantInfo) {
+
+            disableMerchantInfoInput.value = true
+
+            const info = Merchant.merchantinfo
+
+            form.dob = info?.dob || ""
+            form.dba_name = info?.dba_name || ""
+            form.annual_turn_over = info?.annual_turn_over || ""
+            form.beneficiary_email = info?.beneficiary_email || ""
+            form.beneficiary_mobile = info?.beneficiary_mobile || ""
+
+            step.value = 4
+
+        } else {
+
+            step.value = 3
+        }
 
     } catch (e) {
-        console.error("Failed to fetch merchant:", e);
+        console.error("Failed to fetch merchant:", e)
     }
-};
+}
 
 const next = async () => {
 
@@ -1605,17 +1653,17 @@ const next = async () => {
         const payload = {
             legal_name: form.legal_name,
             business_name: form.business_name,
-            dob: form.dob,
-            dba_name: form.dba_name,
+            // dob: form.dob,
+            // dba_name: form.dba_name,
             mcc: form.mcc,
             location: {
                 latitude: form.lat,
                 longitude: form.long,
             },
             business_type: selectedBusinessType.value,
-            beneficiary_email: form.beneficiary_email,
-            beneficiary_mobile: form.beneficiary_mobile,
-            annual_turn_over: form.annual_turn_over,
+            // beneficiary_email: form.beneficiary_email,
+            // beneficiary_mobile: form.beneficiary_mobile,
+            // annual_turn_over: form.annual_turn_over,
             email: form.primary_email_id,
             mobile_no: form.primary_mobile,
             role: "merchant",
@@ -1693,11 +1741,49 @@ const next = async () => {
     }
 
     if (step.value === 3) {
+        const res = await formAdditional.value.validate()
+        if (!res.valid) return
+
+        const merchantId = activeMerchant.value?.id
+
+        const payload = {
+            dob: form.dob,
+            dba_name: form.dba_name,
+            annual_turn_over: form.annual_turn_over,
+            beneficiary_email: form.beneficiary_email,
+            beneficiary_mobile: form.beneficiary_mobile
+        }
+
+        const updatedMerchant = await updateMerchantInfo(merchantId, payload)
+
+        console.log("Updated Merchant Info:", updatedMerchant)
+
+        if (updatedMerchant?.statusCode === "00") {
+
+            snackbar.message =
+                updatedMerchant?.message || "Merchant information updated successfully"
+            snackbar.color = "success"
+            snackbar.show = true
+
+            step.value++
+
+        } else {
+
+            snackbar.message =
+                updatedMerchant?.message || "Unable to update merchant information"
+            snackbar.color = "error"
+            snackbar.show = true
+            return
+
+        }
+    }
+
+    if (step.value === 4) {
         const res = await formOfficial.value.validate()
         if (!res.valid) return
     }
 
-    if (step.value === 4) {
+    if (step.value === 5) {
         const r1 = await formResidential.value.validate();
         const r2 = await formVisitor.value.validate();
         if (!r1.valid || !r2.valid) return;
@@ -1733,7 +1819,7 @@ const next = async () => {
         }
     }
 
-    if (step.value === 5) {
+    if (step.value === 6) {
         if (!selectedBusinessType.value) {
             snackbar.message = "Please select a business type"
             snackbar.color = "error"
@@ -1774,7 +1860,7 @@ const next = async () => {
         }
     }
 
-    if (step.value === 6) {
+    if (step.value === 7) {
 
         if (isBusinessPan.value && !documents.BUSINESS_PAN) {
             snackbar.message = "Business PAN is required"

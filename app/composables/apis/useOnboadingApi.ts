@@ -162,6 +162,39 @@ export function useOnboadingApi() {
     return res;
   };
 
+  const createMerchant = async (payload: any) => {
+    try {
+
+      const res = await post(`/Onboarding`, payload)
+
+      console.log("Create Merchant Response-", res.data)
+
+      return res.data
+
+    } catch (err) {
+
+      console.log("Create Merchant API Error:", err)
+
+      return err?.response?.data
+    }
+  }
+
+  const VendorOnboardingAEPS = async (payload: any) => {
+    try {
+
+      const res = await post(`/aeps/onboarding`, payload)
+
+      console.log("AEPS Vendor Onboarding Response:", res.data)
+
+      return res.data
+
+    } catch (err) {
+
+      console.log("AEPS Vendor Onboarding API Error:", err)
+
+      return err?.response?.data
+    }
+  }
 
   const getMerchantById = async (id: string) => {
     try {
@@ -201,6 +234,8 @@ export function useOnboadingApi() {
     onboadingAEPS,
     fetchCompliance,
     updateVendor,
+    createMerchant,
+    VendorOnboardingAEPS,
     getMerchantById,
     getPaymentMethods,
     complianceInitVendor,
