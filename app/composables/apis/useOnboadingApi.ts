@@ -196,11 +196,74 @@ export function useOnboadingApi() {
     }
   }
 
+
+  const validateAEPSOTP = async (payload: any) => {
+    try {
+
+      const res = await post(`/onboarding/aeps/validate_otp`, payload)
+
+      console.log("AEPS Validate OTP Response:", res.data)
+
+      return res.data
+
+    } catch (err) {
+
+      console.log("AEPS Validate OTP API Error:", err)
+
+      return err?.response?.data
+    }
+  }
+
+  const verifyPANAEPS = async (payload: any) => {
+    try {
+
+      const res = await post(`/onboarding/aeps/verify_pan`, payload)
+
+      console.log("AEPS Verify Pan Response:", res.data)
+
+      return res.data
+
+    } catch (err) {
+
+      console.log("AEPS Verify Pan API Error:", err)
+
+      return err?.response?.data
+    }
+  }
+
+  const verifyAadhaarAEPS = async (payload: any) => {
+    try {
+
+      const res = await post(`/onboarding/aeps/update_UID`, payload)
+
+      console.log("AEPS Update UID Response:", res.data)
+
+      return res.data
+
+    } catch (err) {
+
+      console.log("AEPS Update UID API Error:", err)
+
+      return err?.response?.data
+    }
+  }
+
+  const getMerchantForOnboarding = async (id: string) => {
+    try {
+      const res = await get(`/api/merchants/onboarding/${id}`);
+      console.log("Merchant Details:", res.data);
+      return res.data; 
+    } catch (error) {
+      console.error("Error fetching merchant by ID:", error);
+      return null;
+    }
+  };
+
   const getMerchantById = async (id: string) => {
     try {
       const res = await get(`/api/merchants/${id}`);
       console.log("Merchant Details:", res.data);
-      return res.data; // return the single merchant object
+      return res.data; 
     } catch (error) {
       console.error("Error fetching merchant by ID:", error);
       return null;
@@ -235,7 +298,11 @@ export function useOnboadingApi() {
     fetchCompliance,
     updateVendor,
     createMerchant,
+    verifyAadhaarAEPS,
     VendorOnboardingAEPS,
+    validateAEPSOTP,
+    verifyPANAEPS,
+    getMerchantForOnboarding,
     getMerchantById,
     getPaymentMethods,
     complianceInitVendor,

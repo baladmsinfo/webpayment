@@ -125,7 +125,7 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 
 /* API */
-const { getAllVendorTransactions } = useVendorApi();
+const { getAllVendorTransactions, getMerchants } = useVendorApi();
 
 /* Table State */
 const loading = ref(false);
@@ -201,7 +201,7 @@ const clearFilters = () => {
 }
 
 const loadMerchants = async () => {
-    const { getMerchants } = useAggregatorApi();
+    
     const res = await getMerchants({ page: "1", limit: "1000" });
     merchants.value = res.data || [];
 };
