@@ -719,7 +719,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
-import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
+import { useOnboadingApi } from "~/composables/apis/useOnboadingApi";
 import { useUsersApi } from "~/composables/apis/useUsersApi";
 
 const dropdownOpen = ref(false);
@@ -767,7 +767,7 @@ const onboardService = async (svc) => {
 
 const props = defineProps({ merchantId: String });
 const router = useRouter();
-const { getMerchantById, verifyOnboarding } = useAggregatorApi();
+const { getMerchantById } = useOnboadingApi();
 const { getTransactionsByMerchantId } = useUsersApi();
 
 const merchantForm = reactive({});

@@ -118,7 +118,7 @@ async function onSubmit() {
     console.log("login page response", res);
 
     if (res.data.user.role === "vendor") {
-      router.push("/vendor");
+      router.push("/vendor/dashboard");
     } else if (res.data.user.role === "aggregator") {
       router.push("/aggregator");
     } else {
