@@ -98,7 +98,7 @@ const vendor = computed(() => authStore.vendor);
 
 onMounted(async () => {
     try {
-        await getAggregator();
+        await getVendor();
     } catch (err) {
         console.error("Failed to load vendor:", err);
     } finally {

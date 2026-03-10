@@ -7,36 +7,21 @@ export function useOnboadingApi() {
   const Onboading = useOnboardingStore();
 
   const MCCSearch = async (searchBy: string) => {
-    return await get("/api/search/mcc?q=" + searchBy);
+    return await get("/admin/onboarding/search/mcc?q=" + searchBy);
   };
 
   const pincodeSearch = async (searchBy: string) => {
-    return await get("/api/search/pincode?q=" + searchBy);
+    return await get("/admin/onboarding/search/pincode?q=" + searchBy);
   };
 
-  // const verifyPan = async (payload: any) => {
-  //   //console.log(payload);
-  //   return await post("/onboading/verify/pan", payload);
-  // };
-
-  // const verifyAccount = async (payload: ) => {
-  //   //console.log(payload);
-  //   return await post("/onboading/verify/account", payload);
-  // };
-
-  // const onboading = async (payload: any) => {
-  //   //console.log(payload);
-  //   return await post("/onboading/onboading", payload);
-  // };
-
   const businessTurnOver = async () => {
-    const res = await get("/api/trunOver");
+    const res = await get("/admin/onboarding/trunOver");
     Onboading.setTurnOver(res.data);
     return res.data;
   };
 
   const businessType = async () => {
-    const res = await get("/api/businessType");
+    const res = await get("/admin/onboarding/businessType");
     console.log(res.data);
     if (res.data.statusCode == "00") {
       Onboading.setBusinessTypes(res.data.data);
@@ -165,7 +150,7 @@ export function useOnboadingApi() {
   const createMerchant = async (payload: any) => {
     try {
 
-      const res = await post(`/Onboarding`, payload)
+      const res = await post(`onboading/Onboarding`, payload)
 
       console.log("Create Merchant Response-", res.data)
 
@@ -200,7 +185,7 @@ export function useOnboadingApi() {
   const validateAEPSOTP = async (payload: any) => {
     try {
 
-      const res = await post(`/onboarding/aeps/validate_otp`, payload)
+      const res = await post(`/aeps/validate_otp`, payload)
 
       console.log("AEPS Validate OTP Response:", res.data)
 
@@ -217,7 +202,7 @@ export function useOnboadingApi() {
   const verifyPANAEPS = async (payload: any) => {
     try {
 
-      const res = await post(`/onboarding/aeps/verify_pan`, payload)
+      const res = await post(`/aeps/verify_pan`, payload)
 
       console.log("AEPS Verify Pan Response:", res.data)
 
@@ -234,7 +219,7 @@ export function useOnboadingApi() {
   const verifyAadhaarAEPS = async (payload: any) => {
     try {
 
-      const res = await post(`/onboarding/aeps/update_UID`, payload)
+      const res = await post(`/aeps/update_UID`, payload)
 
       console.log("AEPS Update UID Response:", res.data)
 
@@ -250,7 +235,7 @@ export function useOnboadingApi() {
 
   const getMerchantForOnboarding = async (id: string) => {
     try {
-      const res = await get(`/api/merchants/onboarding/${id}`);
+      const res = await get(`/onboading/merchants/onboarding/${id}`);
       console.log("Merchant Details:", res.data);
       return res.data; 
     } catch (error) {
