@@ -55,26 +55,26 @@ export const useAuthStore = defineStore("auth", {
       this.mobile_number = mobile_number;
     },
     setTransactionStatusSummary(data: Array<{
-      responceCode: string;
+      responseCode: string;
       reason: string;
       status: string;
       count: number;
       amount: number;
     }>) {
       this.transactionStatusSummary = data.reduce((acc, t) => {
-        acc[t.responceCode] = t;
+        acc[t.responseCode] = t;
         return acc;
       }, {} as Record<string, any>);
     },
     setTransactionStatusSummaryVendor(data: Array<{
-      responceCode: string;
+      responseCode: string;
       reason: string;
       status: string;
       count: number;
       amount: number;
     }>) {
       this.transactionStatusSummary = data.reduce((acc, t) => {
-        acc[t.responceCode] = t;
+        acc[t.responseCode] = t;
         return acc;
       }, {} as Record<string, any>);
     },

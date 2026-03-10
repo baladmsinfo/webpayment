@@ -26,9 +26,9 @@
           </div>
           <div class="stat-value">{{ stat.value }}</div>
           <div class="stat-sub" v-if="stat.sub">{{ stat.sub }}</div>
-          <div class="stat-bar">
+          <!-- <div class="stat-bar">
             <div class="stat-bar-fill" :style="{ width: statBarWidths[i] + '%' }"></div>
-          </div>
+          </div> -->
         </div>
       </template>
       <template v-else>
@@ -226,8 +226,8 @@ const rankClass = (idx) => {
 definePageMeta({ layout: "vendorlayer", middleware: "auth" });
 
 const overallStats = computed(() => [
-  { title: "Active Merchants",   value: `${authStore.merchants.active}`, sub: "currently online" },
-  { title: "Total Merchants",    value: `${authStore.merchants.total}`,  sub: "all time" },
+  { title: "Active Merchants",   value: `${authStore.merchants.active}`, sub: "Onboarded Merchants" },
+  { title: "Total Merchants",    value: `${authStore.merchants.total}`,  sub: "All Merchants" },
   { title: "Today Collection",   value: `₹${authStore.summary.today.totalAmount.toFixed(2)}`, sub: `${authStore.summary.today.count} transactions` },
   { title: "Weekly Collection",  value: `₹${authStore.summary.week.totalAmount.toFixed(2)}`,  sub: `${authStore.summary.week.count} transactions` },
   { title: "Monthly Collection", value: `₹${authStore.summary.month.totalAmount.toFixed(2)}`, sub: `${authStore.summary.month.count} transactions` },
@@ -388,8 +388,6 @@ onMounted(async () => {
 .stat-card-accent .stat-label { color: rgba(255,255,255,0.75); }
 .stat-card-accent .stat-value { color: #fff; }
 .stat-card-accent .stat-sub { color: rgba(255,255,255,0.65); }
-.stat-card-accent .stat-bar { background: rgba(255,255,255,0.2); }
-.stat-card-accent .stat-bar-fill { background: rgba(255,255,255,0.7); }
 .stat-card-accent:hover { box-shadow: 0 8px 24px rgba(17,66,212,0.35); }
 
 .stat-card-sm { padding: 14px 18px 12px; }
@@ -423,15 +421,6 @@ onMounted(async () => {
 .stat-sub { font-size: 11px; color: #94a3b8; margin-top: 3px; }
 .stat-row { display: flex; align-items: baseline; gap: 8px; }
 .stat-sub-inline { font-size: 11px; color: #94a3b8; }
-
-.stat-bar {
-  margin-top: 12px; height: 3px; background: #f1f5f9;
-  border-radius: 9999px; overflow: hidden;
-}
-.stat-bar-fill {
-  height: 100%; background: #1142d4; border-radius: 9999px;
-  transition: width 1s ease;
-}
 
 /* ── Mid Grid ── */
 .mid-grid {
