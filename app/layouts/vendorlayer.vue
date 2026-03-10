@@ -37,8 +37,8 @@ const menus = ref([
     icon: "mdi-store-outline",
     open: false,
     children: [
-      { title: "Onboarded Merchants", icon: "mdi-account-check-outline", url: "/vendor/merchants/onboarded" },
-      { title: "Pending Merchants",   icon: "mdi-account-clock-outline",  url: "/vendor/merchants/pending"   },
+      { title: "Merchants", icon: "mdi-account-check-outline", url: "/vendor/merchants/onboarded" },
+      { title: "Onboarding",   icon: "mdi-account-clock-outline",  url: "/vendor/merchants/pending"   },
     ],
   },
   {

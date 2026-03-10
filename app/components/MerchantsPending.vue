@@ -2,7 +2,7 @@
     <v-container fluid>
         <!-- Header -->
         <div class="d-flex align-center justify-space-between mb-8">
-            <h1 class="text-h5 font-weight-bold mb-0">Pending Merchants</h1>
+            <h1 class="text-h5 font-weight-bold mb-0"></h1>
             <v-btn color="primary" class="d-flex pa-6 align-center text-h6 font-weight-medium" elevation="2" rounded
                 @click="router.push('/aggregator/onboarding')">
                 <v-icon left>mdi-plus</v-icon>
