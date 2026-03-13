@@ -24,9 +24,9 @@
                             <v-row dense>
                                 <v-col cols="12" sm="12" md="6" lg="4">
                                     <label class="field-label">MERCHANT NAME</label>
-                                    <v-text-field v-model.trim="form.legal_name" placeholder="As per official documents"
+                                    <v-text-field v-model.trim="form.legal_name" placeholder="As per PAN"
                                         variant="outlined" density="comfortable" :rules="[req]"
-                                        prepend-inner-icon="mdi-badge-account-outline" class="mh-field"
+                                        prepend-inner-icon="mdi-badge-account-outline" class="mh-field" 
                                         hide-details="auto" />
                                 </v-col>
 
@@ -109,15 +109,7 @@
 
                             <v-row dense>
 
-                                <!-- Business Type dropdown — moved here -->
-                                <v-col cols="12" sm="6" md="6" lg="4">
-                                    <label class="field-label">BUSINESS TYPE</label>
-                                    <v-select v-model="form.business_type" :items="businessTypeList" item-title="label"
-                                        item-value="value" placeholder="Choose Business Type" variant="outlined"
-                                        density="comfortable" :rules="[req]" prepend-inner-icon="mdi-briefcase-outline"
-                                        class="mh-field" hide-details="auto" />
-                                </v-col>
-
+                                
                                 <v-col cols="12" sm="6" md="6" lg="4">
                                     <label class="field-label">BUSINESS NAME</label>
                                     <v-text-field v-model.trim="form.business_name" placeholder="Business Name"
@@ -130,6 +122,15 @@
                                     <v-text-field v-model.trim="form.dba_name" placeholder="DBA / Trade Name"
                                         variant="outlined" density="comfortable" :rules="[req]"
                                         prepend-inner-icon="mdi-tag-outline" class="mh-field" hide-details="auto" />
+                                </v-col>
+
+                                <!-- Business Type dropdown — moved here -->
+                                <v-col cols="12" sm="6" md="6" lg="4">
+                                    <label class="field-label">BUSINESS TYPE</label>
+                                    <v-select v-model="form.business_type" :items="businessTypeList" item-title="label"
+                                        item-value="value" placeholder="Choose Business Type" variant="outlined"
+                                        density="comfortable" :rules="[req]" prepend-inner-icon="mdi-briefcase-outline"
+                                        class="mh-field" hide-details="auto" />
                                 </v-col>
 
                                 <!-- MCC / Nature of Business -->

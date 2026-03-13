@@ -233,6 +233,23 @@ export function useOnboadingApi() {
     }
   }
 
+  const UpdateBiodevice = async (payload: any) => {
+    try {
+
+      const res = await post(`/aeps/updatebiodetail`, payload)
+
+      console.log("AEPS Update UID Response:", res.data)
+
+      return res.data
+
+    } catch (err) {
+
+      console.log("AEPS Update Updatebiodetails API Error:", err)
+
+      return err?.response?.data
+    }
+  }
+
   const getMerchantForOnboarding = async (id: string) => {
     try {
       const res = await get(`/onboading/merchants/onboarding/${id}`);
@@ -291,5 +308,6 @@ export function useOnboadingApi() {
     getMerchantById,
     getPaymentMethods,
     complianceInitVendor,
+    UpdateBiodevice
   };
 }
