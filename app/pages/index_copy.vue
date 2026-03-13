@@ -4,46 +4,44 @@
     <!-- ── Left Panel ── -->
     <div class="login-left">
       <div class="left-inner">
-
+        <!-- Brand -->
         <div class="left-brand">
           <div class="brand-icon">
-            <span class="mdi mdi-shield-crown-outline"></span>
+            <span class="mdi mdi-wallet-outline"></span>
           </div>
           <span class="brand-name">BUCKSBOX</span>
         </div>
 
+        <!-- Illustration -->
         <div class="illustration-wrap">
           <img
             src="https://img.freepik.com/free-vector/scan-pay-concept-illustration_114360-7415.jpg"
-            alt="Platform Illustration"
+            alt="Merchant Payment Illustration"
             class="illustration-img"
           />
         </div>
 
+        <!-- Copy -->
         <div class="left-copy">
-          <h2 class="left-headline">One platform.<br />Every role.</h2>
-          <p class="left-sub">Whether you're an admin, merchant, vendor, or aggregator — sign in once and get routed to exactly where you need to be.</p>
+          <h2 class="left-headline">Payments made<br/>simple & fast.</h2>
+          <p class="left-sub">Access your dashboard to manage payments, settlements, transactions, and your onboarding status — all in one place.</p>
         </div>
 
+        <!-- Feature pills -->
         <div class="feature-pills">
           <div class="feature-pill">
-            <span class="mdi mdi-store-check-outline"></span>
-            Merchants
-          </div>
-          <div class="feature-pill">
-            <span class="mdi mdi-shield-lock-outline"></span>
-            Admin
+            <span class="mdi mdi-cash-multiple"></span>
+            Instant Payments
           </div>
           <div class="feature-pill">
             <span class="mdi mdi-bank-transfer"></span>
-            Vendors
+            Settlements
           </div>
           <div class="feature-pill">
-            <span class="mdi mdi-account-group-outline"></span>
-            Aggregators
+            <span class="mdi mdi-chart-areaspline"></span>
+            Analytics
           </div>
         </div>
-
       </div>
     </div>
 
@@ -54,15 +52,19 @@
         <!-- Mobile brand -->
         <div class="mobile-brand">
           <div class="brand-icon brand-icon-solid">
-            <span class="mdi mdi-shield-crown-outline"></span>
+            <span class="mdi mdi-wallet-outline"></span>
           </div>
           <span class="brand-name brand-name-dark">BUCKSBOX</span>
         </div>
 
         <!-- Heading -->
         <div class="form-heading">
-          <h1 class="form-title">Sign in</h1>
-          <p class="form-sub">Enter your credentials — you'll be routed to your dashboard automatically.</p>
+          <div class="heading-greeting">
+            <span class="greeting-wave">👋</span>
+            <span class="greeting-text">Welcome back!</span>
+          </div>
+          <h1 class="form-title">Merchant Login</h1>
+          <p class="form-sub">Sign in to manage your payments and track your business.</p>
         </div>
 
         <!-- Alert -->
@@ -142,9 +144,16 @@
           >
             <span v-if="loading" class="btn-spinner"></span>
             <span v-else class="mdi mdi-login-variant"></span>
-            {{ loading ? 'Signing in…' : 'Sign In' }}
+            {{ loading ? 'Signing in…' : 'Login to Dashboard' }}
           </button>
 
+        </div>
+
+        <!-- Divider -->
+        <div class="divider">
+          <span class="divider-line"></span>
+          <span class="divider-text">Secure Login</span>
+          <span class="divider-line"></span>
         </div>
 
         <!-- Trust badges -->
@@ -180,87 +189,54 @@ const router    = useRouter();
 definePageMeta({ middleware: "guest" });
 
 /* ── State ── */
-const mobilenumber = ref('');
-const password     = ref('');
-const loading      = ref(false);
-const showPassword = ref(false);
-const passwordRef  = ref(null);
+const mobilenumber  = ref('');
+const password      = ref('');
+const loading       = ref(false);
+const showPassword  = ref(false);
+const passwordRef   = ref(null);
 
 const focuses = reactive({ mobile: false, password: false });
 const errors  = reactive({ mobile: '',    password: '' });
 const alert   = ref({ show: false, message: '' });
 
-/* ── Role hints displayed on the form ── */
-const roleHints = [
-  { label: 'Admin',      dest: 'Admin Dashboard',      icon: 'mdi-shield-crown-outline', bg: '#e0e7ff', color: '#4338ca' },
-  { label: 'Merchant',   dest: 'Merchant Dashboard',   icon: 'mdi-store-outline',         bg: '#d1fae5', color: '#065f46' },
-  { label: 'Vendor',     dest: 'Vendor Dashboard',     icon: 'mdi-truck-outline',         bg: '#fef3c7', color: '#92400e' },
-  { label: 'Aggregator', dest: 'Aggregator Dashboard', icon: 'mdi-account-group-outline', bg: '#e0f2fe', color: '#0369a1' },
-];
-
-/* ── Role → route map ── */
-const ROLE_ROUTES = {
-  admin:      '/admin/dashboard',
-  vendor:     '/vendor/dashboard',
-  aggregator: '/aggregator',
-  merchant:   '/merchant',
-};
-
 /* ── Validation ── */
 function validateMobile() {
-  if (!mobilenumber.value.trim()) {
-    errors.mobile = 'Email or mobile number is required';
-    return false;
-  }
+  if (!mobilenumber.value.trim()) { errors.mobile = 'Email or mobile number is required'; return false; }
   errors.mobile = '';
   return true;
 }
-
 function validatePassword() {
-  if (!password.value) {
-    errors.password = 'Password is required';
-    return false;
-  }
+  if (!password.value) { errors.password = 'Password is required'; return false; }
   errors.password = '';
   return true;
 }
-
-const canSubmit = computed(() =>
-  mobilenumber.value.trim() !== '' && password.value !== ''
-);
+const canSubmit = computed(() => mobilenumber.value.trim() !== '' && password.value !== '');
 
 function focusPassword() { passwordRef.value?.focus(); }
 
-/* ── Submit — login with all roles, route by returned role ── */
+/* ── Submit ── */
 async function onSubmit() {
   const mOk = validateMobile();
   const pOk = validatePassword();
   if (!mOk || !pOk) return;
 
   loading.value = true;
-  alert.value.show = false;
-
   try {
-    const res   = await login(
-      { emailOrMobile: mobilenumber.value, password: password.value },
-      ['admin', 'vendor', 'aggregator', 'merchant']
-    );
+    const res  = await login({ emailOrMobile: mobilenumber.value, password: password.value }, ["merchant"]);
+    const role = res?.data?.user?.role;
 
-    const role  = res?.data?.user?.role?.toLowerCase();
-    const route = ROLE_ROUTES[role];
-
-    if (route) {
-      router.push(route);
+    if (role === "merchant") {
+      router.push("/merchant");
     } else {
       alert.value = {
         show: true,
-        message: `Unrecognised role "${role}". Please contact support.`,
+        message: "This account belongs to an Aggregator or Vendor. Please use the correct login portal.",
       };
     }
   } catch (e) {
     alert.value = {
       show: true,
-      message: e?.data?.message || 'Invalid credentials. Please try again.',
+      message: e?.data?.message || "Login failed. Please check your credentials and try again.",
     };
   } finally {
     loading.value = false;
@@ -269,13 +245,10 @@ async function onSubmit() {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ════════════════════════════════════
-   ROOT
-════════════════════════════════════ */
+/* ── Root ── */
 .login-root {
   font-family: 'DM Sans', sans-serif;
   min-height: 100dvh;
@@ -284,100 +257,83 @@ async function onSubmit() {
 }
 @media (min-width: 768px) { .login-root { flex-direction: row; } }
 
-/* ════════════════════════════════════
-   LEFT PANEL
-════════════════════════════════════ */
+/* ─────────────── LEFT PANEL ─────────────── */
 .login-left {
   display: none;
-  background: linear-gradient(150deg, #08267a 0%, #1142d4 55%, #1a52f5 100%);
-  position: relative;
-  overflow: hidden;
+  background: linear-gradient(150deg, #0a2fa8 0%, #1142d4 50%, #1654f8 100%);
+  position: relative; overflow: hidden;
 }
 @media (min-width: 768px) { .login-left { display: flex; flex: 1; } }
 
 .login-left::before {
   content: '';
-  position: absolute; top: -90px; right: -90px;
-  width: 320px; height: 320px; border-radius: 50%;
-  background: rgba(255,255,255,.05); pointer-events: none;
+  position: absolute; top: -100px; right: -100px;
+  width: 350px; height: 350px; border-radius: 50%;
+  background: rgba(255,255,255,.05);
 }
 .login-left::after {
   content: '';
-  position: absolute; bottom: -110px; left: -70px;
-  width: 380px; height: 380px; border-radius: 50%;
-  background: rgba(255,255,255,.04); pointer-events: none;
+  position: absolute; bottom: -120px; left: -80px;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: rgba(255,255,255,.04);
+}
+/* Extra decorative dot */
+.login-left .left-inner::before {
+  content: '';
+  position: absolute; top: 45%; left: -30px;
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(255,255,255,.06);
 }
 
 .left-inner {
   position: relative; z-index: 1;
-  width: 100%;
-  display: flex; flex-direction: column;
-  padding: 44px 48px;
-  gap: 30px;
+  width: 100%; display: flex; flex-direction: column;
+  padding: 40px 44px; gap: 28px;
 }
 
 .left-brand { display: flex; align-items: center; gap: 10px; }
-
 .brand-icon {
-  width: 38px; height: 38px; border-radius: 11px;
-  background: rgba(255,255,255,.18);
-  border: 1px solid rgba(255,255,255,.28);
+  width: 36px; height: 36px; border-radius: 10px;
+  background: rgba(255,255,255,.2);
+  border: 1px solid rgba(255,255,255,.3);
   display: flex; align-items: center; justify-content: center;
-  font-size: 19px; color: #fff; flex-shrink: 0;
+  font-size: 18px; color: #fff; flex-shrink: 0;
 }
-.brand-name {
-  font-size: 16px; font-weight: 800; color: #fff;
-  letter-spacing: .1em;
-}
+.brand-name { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: .08em; }
 
 .illustration-wrap {
-  flex: 1;
-  display: flex; align-items: center; justify-content: center;
-  padding: 0 16px;
+  flex: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px;
 }
 .illustration-img {
-  width: 100%; max-width: 370px; height: auto; object-fit: contain;
-  filter: drop-shadow(0 24px 48px rgba(0,0,0,.25));
+  width: 100%; max-width: 360px; height: auto; object-fit: contain;
+  filter: drop-shadow(0 24px 48px rgba(0,0,0,.22));
   animation: float 4.5s ease-in-out infinite;
 }
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-14px); }
-}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
 
-.left-headline {
-  font-size: 28px; font-weight: 800; color: #fff;
-  line-height: 1.25; margin-bottom: 10px;
-}
-.left-sub {
-  font-size: 13px; color: rgba(255,255,255,.72);
-  line-height: 1.7; max-width: 360px;
-}
+.left-copy { }
+.left-headline { font-size: 26px; font-weight: 800; color: #fff; line-height: 1.3; margin-bottom: 10px; }
+.left-sub { font-size: 13px; color: rgba(255,255,255,.72); line-height: 1.65; max-width: 360px; }
 
 .feature-pills { display: flex; flex-wrap: wrap; gap: 8px; }
 .feature-pill {
   display: flex; align-items: center; gap: 6px;
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
   padding: 6px 14px; border-radius: 9999px;
   font-size: 12px; font-weight: 600; color: #fff;
 }
 .feature-pill .mdi { font-size: 14px; }
 
-/* ════════════════════════════════════
-   RIGHT PANEL
-════════════════════════════════════ */
+/* ─────────────── RIGHT PANEL ─────────────── */
 .login-right {
   display: flex; align-items: center; justify-content: center;
-  background: #f4f5f7;
-  min-height: 100dvh;
-  padding: 32px 20px;
+  background: #f6f6f8; min-height: 100dvh; padding: 32px 20px;
 }
-@media (min-width: 768px)  { .login-right { flex: 0 0 460px; } }
-@media (min-width: 1024px) { .login-right { flex: 0 0 500px; } }
+@media (min-width: 768px)  { .login-right { flex: 0 0 440px; } }
+@media (min-width: 1024px) { .login-right { flex: 0 0 480px; } }
 
 .login-form-wrap {
-  width: 100%; max-width: 420px;
+  width: 100%; max-width: 400px;
   display: flex; flex-direction: column; gap: 20px;
 }
 
@@ -386,24 +342,23 @@ async function onSubmit() {
   display: flex; align-items: center; gap: 8px; justify-content: center;
 }
 @media (min-width: 768px) { .mobile-brand { display: none; } }
-.brand-icon-solid {
-  background: #1142d4; border: none;
-  box-shadow: 0 4px 14px rgba(17,66,212,.3);
-}
-.brand-name-dark { color: #0f172a; }
+.brand-icon-solid { background: #1142d4; border: none; box-shadow: 0 4px 14px rgba(17,66,212,.3); }
+.brand-name-dark  { color: #0f172a; }
 
 /* Heading */
-.form-title {
-  font-size: 26px; font-weight: 800; color: #0f172a;
-  letter-spacing: -.4px; margin-bottom: 6px;
+.heading-greeting {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
 }
-.form-sub { font-size: 13px; color: #64748b; line-height: 1.6; }
+.greeting-wave { font-size: 20px; }
+.greeting-text { font-size: 13px; font-weight: 600; color: #1142d4; }
+.form-title { font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+.form-sub   { font-size: 13px; color: #64748b; line-height: 1.55; }
 
 /* Alert */
 .alert-box {
   display: flex; align-items: flex-start; gap: 10px;
   background: #fff7ed; border: 1px solid #fed7aa;
-  border-radius: 11px; padding: 12px 14px;
+  border-radius: 10px; padding: 12px 14px;
   font-size: 13px; font-weight: 500; color: #92400e;
 }
 .alert-icon  { font-size: 17px; flex-shrink: 0; margin-top: 1px; color: #d97706; }
@@ -411,44 +366,35 @@ async function onSubmit() {
 .alert-close {
   background: none; border: none; cursor: pointer;
   font-size: 16px; color: #d97706; opacity: .7;
-  display: flex; align-items: center; flex-shrink: 0;
-  transition: opacity .13s;
+  display: flex; align-items: center; flex-shrink: 0; transition: opacity .13s;
 }
 .alert-close:hover { opacity: 1; }
 .t-alert-enter-active, .t-alert-leave-active { transition: all .22s ease; }
-.t-alert-enter-from,   .t-alert-leave-to    { opacity: 0; transform: translateY(-6px); }
+.t-alert-enter-from, .t-alert-leave-to { opacity: 0; transform: translateY(-6px); }
 
 /* Form */
 .form-fields { display: flex; flex-direction: column; gap: 16px; }
 .field-group { display: flex; flex-direction: column; gap: 6px; }
 .field-label-row { display: flex; align-items: center; justify-content: space-between; }
 .field-label {
-  font-size: 10.5px; font-weight: 700; color: #64748b;
+  font-size: 11px; font-weight: 700; color: #64748b;
   text-transform: uppercase; letter-spacing: .07em;
 }
 .forgot-link {
   font-size: 12px; font-weight: 600; color: #1142d4;
   background: none; border: none; cursor: pointer;
-  font-family: 'DM Sans', sans-serif; padding: 0;
-  transition: opacity .13s;
+  font-family: 'DM Sans', sans-serif; padding: 0; transition: opacity .13s;
 }
 .forgot-link:hover { opacity: .75; }
 
 .input-wrap {
   display: flex; align-items: center; gap: 8px;
-  background: #fff;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 11px; padding: 0 13px; height: 48px;
+  background: #fff; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; padding: 0 12px; height: 46px;
   transition: border-color .15s, box-shadow .15s;
 }
-.input-wrap.input-focused {
-  border-color: #1142d4;
-  box-shadow: 0 0 0 3px rgba(17,66,212,.1);
-}
-.input-wrap.input-error {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239,68,68,.08);
-}
+.input-wrap.input-focused { border-color: #1142d4; box-shadow: 0 0 0 3px rgba(17,66,212,.1); }
+.input-wrap.input-error   { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
 .input-icon { font-size: 17px; color: #94a3b8; flex-shrink: 0; }
 .field-input {
   flex: 1; border: none; background: transparent;
@@ -477,23 +423,19 @@ async function onSubmit() {
 }
 .field-error-msg .mdi { font-size: 13px; }
 
-/* Submit */
+/* Login button */
 .btn-login {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; height: 50px; border-radius: 11px;
-  background: linear-gradient(135deg, #1142d4 0%, #1a52f5 100%);
+  width: 100%; height: 48px; border-radius: 10px;
+  background: linear-gradient(135deg, #1142d4 0%, #1654f8 100%);
   color: #fff; border: none;
   font-size: 15px; font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
+  font-family: 'DM Sans', sans-serif; cursor: pointer;
   box-shadow: 0 4px 18px rgba(17,66,212,.3);
   transition: filter .15s, box-shadow .15s, opacity .15s;
   margin-top: 4px;
 }
-.btn-login:hover:not(:disabled) {
-  filter: brightness(1.07);
-  box-shadow: 0 6px 24px rgba(17,66,212,.38);
-}
+.btn-login:hover:not(:disabled) { filter: brightness(1.07); box-shadow: 0 6px 24px rgba(17,66,212,.38); }
 .btn-login:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
 .btn-login .mdi { font-size: 18px; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -506,38 +448,7 @@ async function onSubmit() {
 /* Divider */
 .divider { display: flex; align-items: center; gap: 10px; }
 .divider-line { flex: 1; height: 1px; background: #e2e8f0; }
-.divider-text {
-  font-size: 11px; font-weight: 600; color: #94a3b8;
-  white-space: nowrap; letter-spacing: .04em;
-}
-
-/* Role hint grid */
-.role-hints {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.role-hint {
-  display: flex; align-items: center; gap: 10px;
-  background: #fff;
-  border: 1px solid #e8edf3;
-  border-radius: 11px;
-  padding: 10px 12px;
-  transition: border-color .15s, box-shadow .15s;
-}
-.role-hint:hover {
-  border-color: #c7d2fe;
-  box-shadow: 0 2px 10px rgba(17,66,212,.07);
-}
-.role-hint__icon {
-  width: 32px; height: 32px; border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
-}
-.role-hint__label {
-  font-size: 12px; font-weight: 700; color: #0f172a; line-height: 1.2;
-}
-.role-hint__dest { font-size: 10.5px; color: #94a3b8; margin-top: 2px; }
+.divider-text { font-size: 11px; font-weight: 600; color: #94a3b8; white-space: nowrap; }
 
 /* Trust badges */
 .trust-row {
