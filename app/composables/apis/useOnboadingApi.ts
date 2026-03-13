@@ -164,6 +164,29 @@ export function useOnboadingApi() {
     }
   }
 
+  const createKyc = async (payload: any) => {
+    try {
+      const builtPayload = {
+        service : payload.service,
+        interfaceName : payload.interfaceName,
+      }
+
+      const merchantId = payload.merchantId
+
+      const res = await post(`/services/createServceKyc/${merchantId}`, builtPayload)
+
+      console.log("Create Merchant Response-", res.data)
+
+      return res.data
+
+    } catch (err) {
+
+      console.log("Create Merchant API Error:", err)
+
+      return err?.response?.data
+    }
+  }
+
   const VendorOnboardingAEPS = async (payload: any) => {
     try {
 
@@ -272,6 +295,17 @@ export function useOnboadingApi() {
     }
   };
 
+  const getServices = async () => {
+    try {
+      const res = await get(`/services/List`);
+      console.log("Services Details:", res.data);
+      return res.data;
+    } catch (error) {
+      console.error("Error fetching services by merchant ID:", error);
+      return null;
+    }
+  };
+
   const getPaymentMethods = async () => {
     try {
       const res = await get(`/vendor/payments/methods`);
@@ -304,6 +338,8 @@ export function useOnboadingApi() {
     VendorOnboardingAEPS,
     validateAEPSOTP,
     verifyPANAEPS,
+    createKyc,
+    getServices,
     getMerchantForOnboarding,
     getMerchantById,
     getPaymentMethods,
