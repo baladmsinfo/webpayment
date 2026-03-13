@@ -9,15 +9,11 @@
       </div>
     </div>
 
-    <!-- ── Top 3 Stat Cards ── -->
+    <!-- ── Row 1: Active & Total Merchants ── -->
     <div class="stats-grid stats-grid-top">
       <template v-if="!loading">
-        <div
-          v-for="(stat, i) in overallStats.slice(0, 3)"
-          :key="i"
-          class="stat-card"
-          :class="i === 0 ? 'stat-card-accent' : ''"
-        >
+        <div v-for="(stat, i) in overallStats.slice(0, 2)" :key="i" class="stat-card"
+          :class="i === 0 ? 'stat-card-accent' : ''">
           <div class="stat-card-header">
             <span class="stat-label">{{ stat.title }}</span>
             <div class="stat-icon-wrap" :class="'stat-icon-' + i">
@@ -26,13 +22,10 @@
           </div>
           <div class="stat-value">{{ stat.value }}</div>
           <div class="stat-sub" v-if="stat.sub">{{ stat.sub }}</div>
-          <!-- <div class="stat-bar">
-            <div class="stat-bar-fill" :style="{ width: statBarWidths[i] + '%' }"></div>
-          </div> -->
         </div>
       </template>
       <template v-else>
-        <div v-for="i in 3" :key="i" class="stat-card stat-skeleton">
+        <div v-for="i in 2" :key="i" class="stat-card stat-skeleton">
           <div class="skel skel-sm"></div>
           <div class="skel skel-lg"></div>
           <div class="skel skel-md"></div>
@@ -40,7 +33,7 @@
       </template>
     </div>
 
-    <!-- ── Charts + Next Stats Row ── -->
+    <!-- ── Row 2: Payment Methods + Transaction Status ── -->
     <div class="mid-grid">
 
       <!-- Payment Methods Donut -->
@@ -105,34 +98,29 @@
         </template>
       </div>
 
-      <!-- Next 3 Stat Cards stacked -->
-      <div class="stats-grid stats-grid-right">
-        <template v-if="!loading">
-          <div
-            v-for="(stat, i) in overallStats.slice(3, 6)"
-            :key="i"
-            class="stat-card stat-card-sm"
-          >
-            <div class="stat-card-header">
-              <span class="stat-label">{{ stat.title }}</span>
-              <div class="stat-icon-wrap" :class="'stat-icon-' + (i + 3)">
-                <span class="mdi" :class="statIcons[i + 3]"></span>
-              </div>
-            </div>
-            <div class="stat-row">
-              <div class="stat-value stat-value-sm">{{ stat.value }}</div>
-              <div class="stat-sub stat-sub-inline" v-if="stat.sub">{{ stat.sub }}</div>
-            </div>
-          </div>
-        </template>
-        <template v-else>
-          <div v-for="i in 3" :key="i" class="stat-card stat-card-sm stat-skeleton">
-            <div class="skel skel-sm"></div>
-            <div class="skel skel-lg"></div>
-          </div>
-        </template>
-      </div>
+    </div>
 
+    <!-- ── Row 3: Today / Weekly / Monthly / Yearly Collections ── -->
+    <div class="stats-grid stats-grid-bottom">
+      <template v-if="!loading">
+        <div v-for="(stat, i) in overallStats.slice(2, 6)" :key="i" class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">{{ stat.title }}</span>
+            <div class="stat-icon-wrap" :class="'stat-icon-' + (i + 2)">
+              <span class="mdi" :class="statIcons[i + 2]"></span>
+            </div>
+          </div>
+          <div class="stat-value">{{ stat.value }}</div>
+          <div class="stat-sub" v-if="stat.sub">{{ stat.sub }}</div>
+        </div>
+      </template>
+      <template v-else>
+        <div v-for="i in 4" :key="i" class="stat-card stat-skeleton">
+          <div class="skel skel-sm"></div>
+          <div class="skel skel-lg"></div>
+          <div class="skel skel-md"></div>
+        </div>
+      </template>
     </div>
 
     <!-- ── Top Merchants ── -->
@@ -143,11 +131,7 @@
 
     <div class="merchants-grid">
       <template v-if="!loading">
-        <div
-          v-for="(list, period) in topMerchants"
-          :key="period"
-          class="merchant-card"
-        >
+        <div v-for="(list, period) in topMerchants" :key="period" class="merchant-card">
           <div class="merchant-card-header">
             <div>
               <h3 class="merchant-period">{{ capitalize(period) }}</h3>
@@ -157,14 +141,8 @@
               <span class="mdi mdi-trophy-variant-outline trophy-icon"></span>
             </div>
           </div>
-
           <div class="merchant-list">
-            <div
-              v-for="(m, idx) in list"
-              :key="m.id"
-              class="merchant-item"
-              :class="{ 'merchant-item-top': idx === 0 }"
-            >
+            <div v-for="(m, idx) in list" :key="m.id" class="merchant-item" :class="{ 'merchant-item-top': idx === 0 }">
               <div class="merchant-rank" :class="rankClass(idx)">{{ idx + 1 }}</div>
               <div class="merchant-info">
                 <p class="merchant-name">{{ m.name }}</p>
@@ -174,7 +152,6 @@
                 <span class="amount-currency">₹</span>{{ m.totalAmount.toLocaleString() }}
               </div>
             </div>
-
             <div v-if="list.length === 0" class="empty-state empty-state-sm">
               <span class="mdi mdi-store-off-outline empty-icon-sm"></span>
               <p class="empty-desc">No merchants found</p>
@@ -213,8 +190,6 @@ const statIcons = [
   "mdi-calendar-star-outline",
 ];
 
-const statBarWidths = [72, 100, 55, 38, 61, 44];
-
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const rankClass = (idx) => {
   if (idx === 0) return "rank-gold";
@@ -226,12 +201,12 @@ const rankClass = (idx) => {
 definePageMeta({ layout: "vendorlayer", middleware: "auth" });
 
 const overallStats = computed(() => [
-  { title: "Active Merchants",   value: `${authStore.merchants.active}`, sub: "Onboarded Merchants" },
-  { title: "Total Merchants",    value: `${authStore.merchants.total}`,  sub: "All Merchants" },
-  { title: "Today Collection",   value: `₹${authStore.summary.today.totalAmount.toFixed(2)}`, sub: `${authStore.summary.today.count} transactions` },
-  { title: "Weekly Collection",  value: `₹${authStore.summary.week.totalAmount.toFixed(2)}`,  sub: `${authStore.summary.week.count} transactions` },
+  { title: "Active Merchants", value: `${authStore.merchants.active}`, sub: "Onboarded Merchants" },
+  { title: "Total Merchants", value: `${authStore.merchants.total}`, sub: "All Merchants" },
+  { title: "Today Collection", value: `₹${authStore.summary.today.totalAmount.toFixed(2)}`, sub: `${authStore.summary.today.count} transactions` },
+  { title: "Weekly Collection", value: `₹${authStore.summary.week.totalAmount.toFixed(2)}`, sub: `${authStore.summary.week.count} transactions` },
   { title: "Monthly Collection", value: `₹${authStore.summary.month.totalAmount.toFixed(2)}`, sub: `${authStore.summary.month.count} transactions` },
-  { title: "Yearly Collection",  value: `₹${authStore.summary.year.totalAmount.toFixed(2)}`,  sub: `${authStore.summary.year.count} transactions` },
+  { title: "Yearly Collection", value: `₹${authStore.summary.year.totalAmount.toFixed(2)}`, sub: `${authStore.summary.year.count} transactions` },
 ]);
 
 const topMerchants = computed(() => authStore.topMerchants);
@@ -305,7 +280,11 @@ onMounted(async () => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 /* ── Root ── */
 .dash-root {
@@ -314,8 +293,18 @@ onMounted(async () => {
   min-height: 100vh;
   padding: 20px 16px 40px;
 }
-@media (min-width: 768px) { .dash-root { padding: 28px 28px 48px; } }
-@media (min-width: 1200px) { .dash-root { padding: 32px 36px 56px; } }
+
+@media (min-width: 768px) {
+  .dash-root {
+    padding: 28px 28px 48px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .dash-root {
+    padding: 32px 36px 56px;
+  }
+}
 
 /* ── Page Header ── */
 .dash-page-header {
@@ -326,153 +315,321 @@ onMounted(async () => {
   gap: 12px;
   flex-wrap: wrap;
 }
+
 .dash-page-title {
-  font-size: 22px; font-weight: 700; color: #0f172a; line-height: 1.2;
-}
-@media (min-width: 640px) { .dash-page-title { font-size: 26px; } }
-.dash-page-sub { font-size: 13px; color: #64748b; margin-top: 3px; }
-.dash-date-chip {
-  display: flex; align-items: center; gap: 6px;
-  background: #fff; border: 1px solid #e2e8f0;
-  padding: 7px 14px; border-radius: 8px;
-  font-size: 12px; font-weight: 600; color: #475569;
-  white-space: nowrap; align-self: flex-start;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
 }
 
-/* ── Stat Cards Grid ── */
+@media (min-width: 640px) {
+  .dash-page-title {
+    font-size: 26px;
+  }
+}
+
+.dash-page-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+/* ── Row 1: 2 Merchant Stat Cards ── */
 .stats-grid-top {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-@media (min-width: 480px) { .stats-grid-top { grid-template-columns: 1fr 1fr; } }
-@media (min-width: 900px) { .stats-grid-top { grid-template-columns: repeat(3, 1fr); } }
-
-.stats-grid-right {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: 100%;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 16px;
 }
 
+@media (max-width: 560px) {
+  .stats-grid-top {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Row 2: 2 Chart Cards ── */
+.mid-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .mid-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Row 3: 4 Collection Stat Cards ── */
+.stats-grid-bottom {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 1024px) {
+  .stats-grid-bottom {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .stats-grid-bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Stat Card ── */
 .stat-card {
   background: #fff;
   border: 1px solid #e8edf3;
   border-radius: 12px;
   padding: 18px 20px 14px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.2s, transform 0.2s;
   position: relative;
   overflow: hidden;
 }
+
 .stat-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 3px;
   background: linear-gradient(90deg, #1142d4, #4169e1);
   opacity: 0;
   transition: opacity 0.2s;
 }
-.stat-card:hover { box-shadow: 0 6px 20px rgba(17,66,212,0.10); transform: translateY(-2px); }
-.stat-card:hover::before { opacity: 1; }
+
+.stat-card:hover {
+  box-shadow: 0 6px 20px rgba(17, 66, 212, 0.10);
+  transform: translateY(-2px);
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
 
 .stat-card-accent {
   background: linear-gradient(135deg, #1142d4 0%, #2255e8 100%);
   border-color: transparent;
   color: #fff;
 }
-.stat-card-accent::before { background: rgba(255,255,255,0.3); opacity: 1; }
-.stat-card-accent .stat-label { color: rgba(255,255,255,0.75); }
-.stat-card-accent .stat-value { color: #fff; }
-.stat-card-accent .stat-sub { color: rgba(255,255,255,0.65); }
-.stat-card-accent:hover { box-shadow: 0 8px 24px rgba(17,66,212,0.35); }
 
-.stat-card-sm { padding: 14px 18px 12px; }
+.stat-card-accent::before {
+  background: rgba(255, 255, 255, 0.3);
+  opacity: 1;
+}
+
+.stat-card-accent .stat-label {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.stat-card-accent .stat-value {
+  color: #fff;
+}
+
+.stat-card-accent .stat-sub {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.stat-card-accent:hover {
+  box-shadow: 0 8px 24px rgba(17, 66, 212, 0.35);
+}
 
 .stat-card-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 10px;
 }
+
 .stat-label {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.08em; color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
 }
+
 .stat-icon-wrap {
-  width: 30px; height: 30px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 15px;
 }
-.stat-icon-0 { background: rgba(255,255,255,0.2); color: #fff; }
-.stat-icon-1 { background: rgba(17,66,212,0.08); color: #1142d4; }
-.stat-icon-2 { background: rgba(34,197,94,0.1);  color: #22c55e; }
-.stat-icon-3 { background: rgba(245,158,11,0.1); color: #f59e0b; }
-.stat-icon-4 { background: rgba(6,182,212,0.1);  color: #06b6d4; }
-.stat-icon-5 { background: rgba(168,85,247,0.1); color: #a855f7; }
+
+.stat-icon-0 {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.stat-icon-1 {
+  background: rgba(17, 66, 212, 0.08);
+  color: #1142d4;
+}
+
+.stat-icon-2 {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.stat-icon-3 {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.stat-icon-4 {
+  background: rgba(6, 182, 212, 0.1);
+  color: #06b6d4;
+}
+
+.stat-icon-5 {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
 
 .stat-value {
-  font-size: 22px; font-weight: 700; color: #0f172a;
-  font-family: 'DM Mono', monospace; letter-spacing: -0.5px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: -0.5px;
   line-height: 1.1;
 }
-.stat-value-sm { font-size: 18px; }
-.stat-sub { font-size: 11px; color: #94a3b8; margin-top: 3px; }
-.stat-row { display: flex; align-items: baseline; gap: 8px; }
-.stat-sub-inline { font-size: 11px; color: #94a3b8; }
 
-/* ── Mid Grid ── */
-.mid-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-  margin-bottom: 14px;
+.stat-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 3px;
 }
-@media (min-width: 640px)  { .mid-grid { grid-template-columns: 1fr 1fr; } }
-@media (min-width: 1024px) { .mid-grid { grid-template-columns: 1fr 1fr 1fr; } }
 
-/* ── Chart Cards ── */
+/* ── Chart Card ── */
 .chart-card {
   background: #fff;
   border: 1px solid #e8edf3;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
+
 .chart-card-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  margin-bottom: 16px; gap: 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 8px;
 }
-.chart-title { font-size: 14px; font-weight: 700; color: #0f172a; }
-.chart-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.chart-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
 
 .chart-badge {
-  font-size: 10px; font-weight: 700; padding: 3px 10px;
-  border-radius: 9999px; white-space: nowrap; flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.chart-badge-blue  { background: rgba(17,66,212,0.08); color: #1142d4; }
-.chart-badge-green { background: rgba(34,197,94,0.1);  color: #16a34a; }
+
+.chart-badge-blue {
+  background: rgba(17, 66, 212, 0.08);
+  color: #1142d4;
+}
+
+.chart-badge-green {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
 
 /* ── Empty State ── */
 .empty-state {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 32px 16px; text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
   min-height: 220px;
 }
+
 .empty-icon-wrap {
-  width: 56px; height: 56px; border-radius: 16px;
-  background: rgba(17,66,212,0.06); color: #1142d4;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 26px; margin-bottom: 14px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(17, 66, 212, 0.06);
+  color: #1142d4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin-bottom: 14px;
 }
-.empty-title { font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 6px; }
-.empty-desc { font-size: 12px; color: #94a3b8; max-width: 200px; line-height: 1.5; }
+
+.empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.empty-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  max-width: 200px;
+  line-height: 1.5;
+}
+
+.empty-state-sm {
+  min-height: 80px;
+  padding: 20px;
+}
+
+.empty-icon-sm {
+  font-size: 28px;
+  color: #cbd5e1;
+  display: block;
+  margin-bottom: 8px;
+}
 
 /* ── Section Header ── */
-.section-header { margin: 8px 0 14px; }
-.section-title { font-size: 17px; font-weight: 700; color: #0f172a; }
-.section-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+.section-header {
+  margin: 8px 0 14px;
+}
+
+.section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.section-sub {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
 
 /* ── Merchants Grid ── */
 .merchants-grid {
@@ -480,101 +637,233 @@ onMounted(async () => {
   grid-template-columns: 1fr;
   gap: 14px;
 }
-@media (min-width: 640px)  { .merchants-grid { grid-template-columns: 1fr 1fr; } }
-@media (min-width: 1024px) { .merchants-grid { grid-template-columns: repeat(3, 1fr); } }
+
+@media (min-width: 640px) {
+  .merchants-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .merchants-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 .merchant-card {
   background: #fff;
   border: 1px solid #e8edf3;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
+
 .merchant-card-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   margin-bottom: 16px;
 }
-.merchant-period { font-size: 14px; font-weight: 700; color: #0f172a; }
-.merchant-period-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+.merchant-period {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.merchant-period-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
 
 .trophy-wrap {
-  width: 34px; height: 34px; border-radius: 10px;
-  background: rgba(245,158,11,0.1);
-  display: flex; align-items: center; justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.trophy-icon { font-size: 18px; color: #f59e0b; }
 
-.merchant-list { display: flex; flex-direction: column; gap: 8px; }
+.trophy-icon {
+  font-size: 18px;
+  color: #f59e0b;
+}
+
+.merchant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
 .merchant-item {
-  display: flex; align-items: center; gap: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 12px;
   border-radius: 8px;
   background: #f8fafc;
   border: 1px solid transparent;
   transition: all 0.2s;
 }
+
 .merchant-item:hover {
-  background: rgba(17,66,212,0.04);
-  border-color: rgba(17,66,212,0.12);
+  background: rgba(17, 66, 212, 0.04);
+  border-color: rgba(17, 66, 212, 0.12);
 }
+
 .merchant-item-top {
-  background: linear-gradient(90deg, rgba(17,66,212,0.05), rgba(17,66,212,0.02));
-  border-color: rgba(17,66,212,0.1);
+  background: linear-gradient(90deg, rgba(17, 66, 212, 0.05), rgba(17, 66, 212, 0.02));
+  border-color: rgba(17, 66, 212, 0.1);
 }
 
 .merchant-rank {
-  width: 28px; height: 28px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
-.rank-gold   { background: #fef3c7; color: #d97706; }
-.rank-silver { background: #f1f5f9; color: #64748b; }
-.rank-bronze { background: #fef2e8; color: #c2763a; }
-.rank-default { background: #f1f5f9; color: #94a3b8; }
 
-.merchant-info { flex: 1; min-width: 0; }
-.merchant-name {
-  font-size: 13px; font-weight: 600; color: #1e293b;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.rank-gold {
+  background: #fef3c7;
+  color: #d97706;
 }
-.merchant-txn { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+
+.rank-silver {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.rank-bronze {
+  background: #fef2e8;
+  color: #c2763a;
+}
+
+.rank-default {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.merchant-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.merchant-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.merchant-txn {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
 
 .merchant-amount {
-  font-size: 13px; font-weight: 700; color: #1142d4;
-  font-family: 'DM Mono', monospace; white-space: nowrap; flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1142d4;
+  font-family: 'DM Mono', monospace;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.amount-currency { font-size: 10px; margin-right: 1px; }
 
-.empty-state-sm { min-height: 80px; padding: 20px; }
-.empty-icon-sm { font-size: 28px; color: #cbd5e1; display: block; margin-bottom: 8px; }
+.amount-currency {
+  font-size: 10px;
+  margin-right: 1px;
+}
 
-/* ── Skeleton Loaders ── */
-.stat-skeleton { pointer-events: none; }
+/* ── Skeleton ── */
+.stat-skeleton {
+  pointer-events: none;
+}
+
 .skel {
   background: linear-gradient(90deg, #f1f5f9 25%, #e8edf3 50%, #f1f5f9 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 6px;
 }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-.skel-sm  { height: 12px; width: 55%; margin-bottom: 10px; }
-.skel-lg  { height: 28px; width: 45%; margin-bottom: 8px; }
-.skel-md  { height: 10px; width: 60%; }
-.skel-row { height: 40px; width: 100%; }
-.mb-2 { margin-bottom: 8px; }
-.mb-3 { margin-bottom: 12px; }
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skel-sm {
+  height: 12px;
+  width: 55%;
+  margin-bottom: 10px;
+}
+
+.skel-lg {
+  height: 28px;
+  width: 45%;
+  margin-bottom: 8px;
+}
+
+.skel-md {
+  height: 10px;
+  width: 60%;
+}
+
+.skel-row {
+  height: 40px;
+  width: 100%;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
+}
 
 .chart-skeleton {
-  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
   padding: 16px 0;
 }
+
 .skel-donut {
-  width: 140px; height: 140px; border-radius: 50%;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
   background: linear-gradient(90deg, #f1f5f9 25%, #e8edf3 50%, #f1f5f9 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
-.skel-legend { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.skel-legend-item { height: 10px; width: 64px; border-radius: 4px; }
+
+.skel-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.skel-legend-item {
+  height: 10px;
+  width: 64px;
+  border-radius: 4px;
+}
 </style>

@@ -467,11 +467,21 @@ import { ref, reactive, onMounted } from "vue";
 import { useOnboadingApi } from "@/composables/apis/useOnboadingApi";
 import { useOnboardingStore } from "@/stores/onboading";
 import { storeToRefs } from "pinia";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
 const { VendorOnboardingAEPS, getMerchantForOnboarding, validateAEPSOTP, verifyAadhaarAEPS, verifyPANAEPS } = useOnboadingApi();
 const Onboarding = useOnboardingStore();
 const router = useRouter();
+const route = useRoute();
+
+const kycStatus = reactive({
+  pan_status:       route.query.pan_status       || "PENDING",
+  otp_status:       route.query.otp_status === "true" || route.query.otp_status === true,
+  aadhaar_status:   route.query.aadhaar_status   || "PENDING",
+  bank_status:      route.query.bank_status      || "PENDING",
+  gst_status:       route.query.gst_status       || "PENDING",
+  store_img_status: route.query.store_img_status || "PENDING",
+});
 
 const props = defineProps({ merchantId: String });
 
@@ -765,22 +775,45 @@ const next = async () => {
 };
 
 onMounted(async () => {
-    if (props.merchantId) {
-        try {
-            const res = await getMerchantForOnboarding(props.merchantId);
-            if (res?.statusCode === "00" && res.data) {
-                merchantProfile.value = res.data;
-            } else {
-                showSnack("Failed to load merchant details", "error");
-            }
-        } catch (e) {
-            showSnack("Could not fetch merchant profile", "error");
-        } finally {
-            fetchingMerchant.value = false;
-        }
-    } else {
-        fetchingMerchant.value = false;
+  if (props.merchantId) {
+    try {
+      const res = await getMerchantForOnboarding(props.merchantId);
+      if (res?.statusCode === "00" && res.data) {
+        merchantProfile.value = res.data;
+      } else {
+        showSnack("Failed to load merchant details", "error");
+      }
+    } catch (e) {
+      showSnack("Could not fetch merchant profile", "error");
+    } finally {
+      fetchingMerchant.value = false;
     }
+  } else {
+    fetchingMerchant.value = false;
+  }
+
+  // Determine starting step based on kycStatus
+  // Step flow: 1=Verify → 2=OTP → 3=PAN → 4=Aadhaar → 5=Biometric
+  const isVerified = (s) => s === "VERIFIED";
+
+  console.log("Kyc Status on Load", kycStatus);
+
+  if (!isVerified(kycStatus.pan_status) && kycStatus.otp_status !== "true" && kycStatus.otp_status !== true) {
+    // Nothing done yet → start from Step 1 (Verify Details)
+    step.value = 1;
+  } else if (kycStatus.otp_status !== "true" && kycStatus.otp_status !== true) {
+    // Details confirmed but OTP not done
+    step.value = 2;
+  } else if (!isVerified(kycStatus.pan_status)) {
+    // OTP done but PAN not verified
+    step.value = 3;
+  } else if (!isVerified(kycStatus.aadhaar_status)) {
+    // PAN done but Aadhaar not verified
+    step.value = 4;
+  } else {
+    // PAN + Aadhaar done → go to Biometric
+    step.value = 5;
+  }
 });
 </script>
 
