@@ -151,7 +151,7 @@ async function logout() {
   try {
     const authToken = useCookie("authToken")
     authToken.value = null
-    await navigateTo("/admin")
+    await navigateTo("/")
   } finally {
     loading.value = false
   }
