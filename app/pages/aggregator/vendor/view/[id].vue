@@ -1,7 +1,5 @@
 <template>
-  <v-container fluid>
     <VendorView :vendor-id="vendorId" />
-  </v-container>
 </template>
 
 <script setup>

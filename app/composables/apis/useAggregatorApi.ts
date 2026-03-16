@@ -103,7 +103,7 @@ export function useAggregatorApi() {
 
     const getVendorById = async (id: string) => {
         try {
-            const res = await get(`/api/vendor/${id}`);
+            const res = await get(`/vendor/${id}`);
             console.log("Vendor Details:", res.data);
             return res.data;
         } catch (error) {
