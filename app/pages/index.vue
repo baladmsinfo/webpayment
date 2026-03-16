@@ -202,8 +202,8 @@ const roleHints = [
 const ROLE_ROUTES = {
   admin:      '/admin/dashboard',
   vendor:     '/vendor/dashboard',
-  aggregator: '/aggregator',
-  merchant:   '/merchant',
+  aggregator: '/aggregator/dashboard',
+  merchant:   '/merchant/dashboard',
 };
 
 /* ── Validation ── */
