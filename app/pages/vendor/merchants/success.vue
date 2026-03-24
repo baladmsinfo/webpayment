@@ -1,6 +1,6 @@
 <template>
   <div>
-    <VendorMerchantsCreate />
+    <VendorMerchantsCreateSuccess />
   </div>
 </template>
 

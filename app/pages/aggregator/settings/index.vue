@@ -1,6 +1,6 @@
 <template>
   <div>
-    <SettingsAggregator />
+    <AggregatorSettings />
   </div>
 </template>
 

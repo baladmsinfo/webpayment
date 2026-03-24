@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Transactions />
+    <AggregatorTransactions />
   </div>
 </template>
 

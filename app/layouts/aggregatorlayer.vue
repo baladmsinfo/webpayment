@@ -1,6 +1,6 @@
 <template>
   <div>
-    <aggregator-nav
+    <AggregatorNavbar
       title="BUCKSBOX"
       :menus="menus"
     >
@@ -9,7 +9,7 @@
           <slot />
         </div>
       </template>
-    </aggregator-nav>
+    </AggregatorNavbar>
   </div>
 </template>
 
@@ -25,20 +25,17 @@ const menus = ref([
   {
     title: "Merchants",
     icon: "mdi-storefront-outline",
-    open: false,
-    children: [
-      { title: "Onboarded Merchants", icon: "mdi-store-check-outline",  url: "/aggregator/merchants/onboarded" },
-      { title: "Pending Merchants",   icon: "mdi-store-clock-outline",  url: "/aggregator/merchants/pending"   },
-    ],
+    url: "/aggregator/merchants",
   },
   {
     title: "Vendors",
     icon: "mdi-factory",
-    open: false,
-    children: [
-      { title: "Onboarded Vendors", icon: "mdi-account-check-outline", url: "/aggregator/vendor/onboarded" },
-      { title: "Pending Vendors",   icon: "mdi-account-clock-outline", url: "/aggregator/vendor/pending"   },
-    ],
+    url: "/aggregator/vendor",
+    // open: false,
+    // children: [
+    //   { title: "Onboarded Vendors", icon: "mdi-account-check-outline", url: "/aggregator/vendor/onboarded" },
+    //   { title: "Pending Vendors",   icon: "mdi-account-clock-outline", url: "/aggregator/vendor/pending"   },
+    // ],
   },
   {
     title: "Transactions",

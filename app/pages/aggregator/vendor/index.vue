@@ -1,12 +1,13 @@
 <template>
   <div>
-    <VendorSettings />
+    <AggregatorVendorsList />
   </div>
 </template>
 
 <script setup>
+
 definePageMeta({
-  layout: "vendorlayer",
+  layout: "aggregatorlayer",
   middleware: "auth",
 });
 </script>

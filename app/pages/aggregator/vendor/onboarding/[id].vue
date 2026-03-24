@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <VendorOnboarding :merchant-id="merchantId" />
+    <AggregatorVendorsOnboardingCreate :vendor-id="vendorId" />
   </v-container>
 </template>
 
@@ -9,9 +9,9 @@ import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
-const merchantId = computed(() => route.params.id);
+const vendorId = computed(() => route.params.id);
 
 onMounted(() => {
-  console.log("Merchant ID from route:", merchantId.value);
+  console.log("vendor ID from route:", vendorId.value);
 });
 </script>

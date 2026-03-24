@@ -92,7 +92,7 @@ export function useAggregatorApi() {
 
     const getMerchantById = async (id: string) => {
         try {
-            const res = await get(`/api/merchants/${id}`);
+            const res = await get(`/merchant/${id}`);
             console.log("Merchant Details:", res.data);
             return res.data; // return the single merchant object
         } catch (error) {

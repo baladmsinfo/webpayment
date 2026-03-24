@@ -1,5 +1,5 @@
 <template>
-    <VendorView :vendor-id="vendorId" />
+    <AggregatorVendorsView :vendor-id="vendorId" />
 </template>
 
 <script setup>

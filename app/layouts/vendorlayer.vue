@@ -1,6 +1,6 @@
 <template>
   <div class="admin-layout">
-    <VendorNav :menus="menus" />
+    <VendorNavbar :menus="menus" />
 
     <!-- main shifts right only when drawer is open on desktop -->
     <main class="admin-main" :class="{ 'admin-main-shifted': drawerOpen && !isMobile }">
@@ -35,11 +35,12 @@ const menus = ref([
   {
     title: "Merchants",
     icon: "mdi-store-outline",
-    open: false,
-    children: [
-      { title: "Onboarded Merchants", icon: "mdi-account-check-outline", url: "/vendor/merchants/onboarded" },
-      { title: "Pending Merchants",   icon: "mdi-account-clock-outline",  url: "/vendor/merchants/pending"   },
-    ],
+    url: "/vendor/merchants",
+    // open: false,
+    // children: [
+    //   { title: "Onboarded Merchants", icon: "mdi-account-check-outline", url: "/vendor/merchants/onboarding" },
+    //   { title: "Pending Merchants",   icon: "mdi-account-clock-outline",  url: "/vendor/merchants/pending"   },
+    // ],
   },
   {
     title: "Transactions",

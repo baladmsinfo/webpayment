@@ -1,6 +1,6 @@
 <template>
   <div>
-    <admin-nav :menus="menus" />
+    <MerchantNavbar :menus="menus" />
     <v-container>
       <slot />
     </v-container>

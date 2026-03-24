@@ -1,6 +1,6 @@
 <template>
   <div>
-    <VendorMerchantsCreate />
+    <AEPSonboardingsuccess />
   </div>
 </template>
 

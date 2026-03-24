@@ -1,6 +1,6 @@
 <template>
   <div>
-    <VendorMerchantsCreate />
+    <AggregatorVendorOnboardingSuccess />
   </div>
 </template>
 

@@ -1,13 +1,12 @@
 <template>
   <v-container class="pa-0" fluid>
-    <ManageMerchant :merchant-id="merchantId" />
+    <VendorMerchantsManage :merchant-id="merchantId" />
   </v-container>
 </template>
 
 <script setup>
 import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import ManageMerchant from "~/components/ManageMerchant.vue";
 
 const route = useRoute();
 const merchantId = computed(() => route.params.id);

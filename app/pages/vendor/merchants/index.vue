@@ -1,6 +1,6 @@
 <template>
   <div>
-    <VendorSettings />
+    <VendorMerchantsList />
   </div>
 </template>
 

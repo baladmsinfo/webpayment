@@ -1,6 +1,6 @@
 <template>
   <div>
-    <AEPSOnboarding :merchant-id="merchantId" />
+    <VendorOnboardingAEPSOnboard :merchant-id="merchantId" />
   </div>
 </template>
 

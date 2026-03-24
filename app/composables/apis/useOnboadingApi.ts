@@ -1,4 +1,4 @@
-// src/composables/useUsersApi.ts
+// src/composables/useOnboadingApi.ts
 import { useApi } from "./useApi";
 import { useOnboardingStore } from "~/stores/onboading";
 
@@ -38,7 +38,7 @@ export function useOnboadingApi() {
   }
 
   const vendorCompliance = async (vendorId: any) => {
-    const res = await get(`/api/compliance-vendor/status`, {
+    const res = await get(`/aggregator/compliance-vendor/status`, {
       params: { vendorId }
     })
 
@@ -67,13 +67,13 @@ export function useOnboadingApi() {
     const { vendorId, ...body } = payload
 
     const res = await put(
-      `/api/vendor/business-type`,
+      `/aggregator/vendor/business-type`,
       payload,
     )
 
     console.log("Update Vendor Response", res)
 
-    if (res?.data.success) {
+    if (res.data?.statusCode == "00") {
       return res.data
     }
 
@@ -81,7 +81,7 @@ export function useOnboadingApi() {
   }
 
   const fetchCompliance = async (type: any) => {
-    const res = await get(`/fetch-compliance`);
+    const res = await get(`/aggregator/fetch-compliance`);
 
     if (res?.data?.statusCode === "00") {
       return res.data.data;
@@ -110,7 +110,7 @@ export function useOnboadingApi() {
   const onboadingVendor = async (vendorId: any) => {
     //console.log(payload);
 
-    return await post("/OnboardingVendor", { vendorId });
+    return await post("/onboading/onboarding/vendor", { vendorId });
   };
 
   const uploadDoc = async (
@@ -132,7 +132,7 @@ export function useOnboadingApi() {
       formData.append("docid", String(options.docid))
     }
 
-    return await post("/api/compliance/images", formData)
+    return await post("/aggregator/compliance/images", formData)
   }
 
   const complianceInit = async (payload: any, merchantId: any) => {
@@ -142,7 +142,7 @@ export function useOnboadingApi() {
   };
 
   const complianceInitVendor = async (payload: any, vendorId: any) => {
-    const res = await post(`/api/vendor/init-compliance`, payload, { params: { vendorId } });
+    const res = await post(`/aggregator/vendor/init-compliance`, payload, { params: { vendorId } });
 
     return res;
   };

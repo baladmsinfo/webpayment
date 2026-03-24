@@ -1,6 +1,6 @@
 <template>
   <div>
-    <TransactionsVendor />
+    <VendorTransactions />
   </div>
 </template>
 
