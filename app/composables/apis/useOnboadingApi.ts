@@ -30,11 +30,11 @@ export function useOnboadingApi() {
   };
 
   const complianceStatus = async (merchantId: any) => {
-    const res = await get(`/api/compliance/status`, {
+    const res = await get(`/onboarding/upi/isg/compliance/status`, {
       params: { merchantId }
     })
 
-    return res
+    return res.data
   }
 
   const vendorCompliance = async (vendorId: any) => {
@@ -258,7 +258,7 @@ export function useOnboadingApi() {
 
   const getMerchantForOnboarding = async (id: string) => {
     try {
-      const res = await get(`/onboading/merchants/onboarding/${id}`);
+      const res = await get(`/onboarding/merchants/onboarding/${id}`);
       console.log("Merchant Details:", res.data);
       return res.data; 
     } catch (error) {

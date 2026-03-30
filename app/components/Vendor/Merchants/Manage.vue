@@ -1449,6 +1449,30 @@ const onboardService = async (svc, intf, kycStatus) => {
           store_img_status: kycStatus?.store_img_status || "PENDING",
         }
       });
+    } else if (svc === "UPI" && intf === "MOS") {
+      router.push({
+        path: `/vendor/onboarding/mos/${props.merchantId}`,
+        query: {
+          pan_status: kycStatus?.pan_status || "PENDING",
+          otp_status: kycStatus?.otp_status || false,
+          aadhaar_status: kycStatus?.aadhaar_status || "PENDING",
+          bank_status: kycStatus?.bank_status || "PENDING",
+          gst_status: kycStatus?.gst_status || "PENDING",
+          store_img_status: kycStatus?.store_img_status || "PENDING",
+        }
+      });
+    } else if (svc === "UPI" && intf === "ISG") {
+      router.push({
+        path: `/vendor/onboarding/isg/${props.merchantId}`,
+        query: {
+          pan_status: kycStatus?.pan_status || "PENDING",
+          otp_status: kycStatus?.otp_status || false,
+          aadhaar_status: kycStatus?.aadhaar_status || "PENDING",
+          bank_status: kycStatus?.bank_status || "PENDING",
+          gst_status: kycStatus?.gst_status || "PENDING",
+          store_img_status: kycStatus?.store_img_status || "PENDING",
+        }
+      });
     }
 
     snackbar.message = `${svc} → ${intf} onboarding initiated`;
