@@ -274,6 +274,171 @@
 
       </section>
 
+      <!-- ════ TAB: LINKED SERVICES ════ -->
+<section v-show="activeTab === 'linkedservices'" class="tab-section">
+
+  <div class="card">
+    <div class="card__head">
+      <div class="card__head-dot card__head-dot--sky"></div>
+      <h3 class="card__title">Allowed Services and Interface</h3>
+      <span class="ml-2">
+        <span class="pill pill--sky pill--sm">{{ linkedServices.length }} linked</span>
+      </span>
+      <button class="btn-primary ml-auto" @click="openAddLs">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Service
+      </button>
+    </div>
+
+    <div class="table-scroll-wrap" v-if="linkedServices.length">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Interface</th>
+            <th>Interface API Key</th>
+            <th>Status</th>
+            <th>Linked On</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="ls in linkedServices" :key="ls.id">
+            <td>
+              <span class="pill pill--indigo pill--sm">{{ ls.service?.service }}</span>
+            </td>
+            <td>
+              <span class="pill pill--slate pill--sm">{{ ls.interface?.interface }}</span>
+            </td>
+            <td>
+              <span class="font-mono text-xs" v-if="ls.interface?.apiKey">
+                {{ ls.interface.apiKey.slice(0, 20) }}…
+              </span>
+              <span class="text-xs" style="color:#94a3b8" v-else>—</span>
+            </td>
+            <td>
+              <span :class="['flag', ls.status ? 'flag--on' : 'flag--off']">
+                {{ ls.status ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td>{{ formatDate(ls.createdAt) }}</td>
+            <td>
+              <div class="action-btns">
+                <button class="icon-btn icon-btn--edit" @click="openEditLs(ls)" title="Edit">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="icon-btn icon-btn--delete" @click="deleteLs(ls.id)" title="Delete">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14H6L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/>
+                    <path d="M9 6V4h6v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" v-else>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>
+      <p>No services linked to this vendor yet</p>
+      <button class="btn-primary" style="margin-top:10px" @click="openAddLs">Link First Service</button>
+    </div>
+  </div>
+
+  <!-- Linked Service Modal -->
+  <Teleport to="body">
+    <Transition name="modal-fade">
+      <div v-if="lsModal.open" class="modal-overlay" @click.self="closeLsModal">
+        <div class="modal-box">
+
+          <div class="modal-box__header">
+            <h3 class="modal-box__title">
+              {{ lsModal.mode === 'add' ? 'Link New Service' : 'Update Linked Service' }}
+            </h3>
+            <button class="modal-close" @click="closeLsModal">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="modal-box__body">
+            <div class="modal-grid">
+
+              <div class="modal-field modal-field--full">
+                <label>Service <span class="req">*</span></label>
+                <select v-model="lsForm.serviceId" @change="lsForm.interfaceId = ''">
+                  <option value="">Select a service</option>
+                  <option v-for="svc in allServices" :key="svc.id" :value="svc.id">
+                    {{ svc.service }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="modal-field modal-field--full">
+                <label>Interface <span class="req">*</span></label>
+                <select v-model="lsForm.interfaceId" :disabled="!lsForm.serviceId">
+                  <option value="">{{ lsForm.serviceId ? 'Select an interface' : 'Select a service first' }}</option>
+                  <option v-for="iface in availableInterfaces" :key="iface.id" :value="iface.id">
+                    {{ iface.interface }}
+                  </option>
+                </select>
+                <p v-if="lsForm.serviceId && availableInterfaces.length === 0"
+                  style="font-size:11px;color:#ef4444;margin-top:4px">
+                  No active interfaces for this service
+                </p>
+              </div>
+
+              <div class="modal-field modal-field--full">
+                <label class="toggle-label">
+                  <span>Activate this link immediately</span>
+                  <div class="toggle-wrap">
+                    <input type="checkbox" v-model="lsForm.status" class="toggle-input" id="lsStatusToggle" />
+                    <label for="lsStatusToggle" class="toggle-track"></label>
+                  </div>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="modal-box__footer">
+            <button class="btn-cancel" @click="closeLsModal">Cancel</button>
+            <button class="btn-primary" :disabled="lsSaving" @click="saveLs">
+              <svg v-if="lsSaving" class="spin-icon" width="14" height="14" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+              {{ lsSaving ? 'Saving…' : lsModal.mode === 'add' ? 'Link Service' : 'Update' }}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+</section>
+
 <!-- ════ TAB: COMMISSIONS ════ -->
 <section v-show="activeTab === 'commissions'" class="tab-section">
 
@@ -907,7 +1072,100 @@ import { useRouter } from "vue-router";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 import { useUsersApi } from "~/composables/apis/useUsersApi";
 
-// ── Commission imports & state ────────────────────────────────────────
+import { useVendorLinkedServiceApi } from '~/composables/apis/useVendorLinkedServiceApi'
+import { useOnboadingApi } from '~/composables/apis/useOnboadingApi'
+
+const { getLinkedServices, createLinkedService, updateLinkedService, deleteLinkedService } = useVendorLinkedServiceApi()
+const { getServices } = useOnboadingApi()
+
+// ── Linked Services state ─────────────────────────────────────────────
+const linkedServices     = ref([])
+const allServices        = ref([])   // from /services/List
+const lsModal            = reactive({ open: false, mode: 'add' })
+const lsSaving           = ref(false)
+
+const defaultLsForm = () => ({
+  id:          null,
+  serviceId:   '',
+  interfaceId: '',
+  status:      false,
+})
+const lsForm = reactive(defaultLsForm())
+
+const fetchLinkedServices = async () => {
+  const res = await getLinkedServices(props.vendorId)
+  linkedServices.value = res?.data ?? []
+}
+
+const openAddLs = () => {
+  Object.assign(lsForm, defaultLsForm())
+  lsModal.mode = 'add'
+  lsModal.open = true
+}
+
+const openEditLs = (row) => {
+  Object.assign(lsForm, {
+    id:          row.id,
+    serviceId:   row.serviceId,
+    interfaceId: row.interfaceId,
+    status:      row.status,
+  })
+  lsModal.mode = 'edit'
+  lsModal.open = true
+}
+
+const closeLsModal = () => { lsModal.open = false }
+
+const saveLs = async () => {
+  if (!lsForm.serviceId || !lsForm.interfaceId) {
+    showSnack('Service and Interface are required', 'error')
+    return
+  }
+  lsSaving.value = true
+  try {
+    const payload = {
+      serviceId:   lsForm.serviceId,
+      interfaceId: lsForm.interfaceId,
+      status:      lsForm.status,
+    }
+    const res = lsModal.mode === 'add'
+      ? await createLinkedService(props.vendorId, payload)
+      : await updateLinkedService(props.vendorId, lsForm.id, payload)
+
+    const ok = res?.statusCode === '00'
+    showSnack(ok ? res.message : (res?.message || 'Something went wrong'), ok ? 'success' : 'error')
+    if (ok) { closeLsModal(); fetchLinkedServices() }
+  } catch {
+    showSnack('Failed to save', 'error')
+  } finally {
+    lsSaving.value = false
+  }
+}
+
+const deleteLs = async (id) => {
+  if (!confirm('Remove this linked service?')) return
+  const res = await deleteLinkedService(props.vendorId, id)
+  const ok  = res?.statusCode === '00'
+  showSnack(ok ? 'Deleted' : (res?.message || 'Delete failed'), ok ? 'success' : 'error')
+  if (ok) fetchLinkedServices()
+}
+
+// Fix fetchAllServices to extract the services array correctly
+const fetchAllServices = async () => {
+  const res = await getServices()
+  // getServices returns res.data from axios, so res = { services: [...] }
+  allServices.value = res?.services ?? []
+}
+
+// availableInterfaces is already correct — no change needed since
+// the nested interfaces array is already on each service object
+const availableInterfaces = computed(() => {
+  if (!lsForm.serviceId) return []
+  const svc = allServices.value.find(s => s.id === lsForm.serviceId)
+  return svc?.interfaces ?? []
+})
+
+// Commission 
 import { useVendorCommissionApi } from '~/composables/apis/useVendorCommissionApi'
 const { createVendorCommission, updateVendorCommission, deleteVendorCommission } = useVendorCommissionApi()
 
@@ -1042,6 +1300,7 @@ const snackbar = reactive({ show: false, message: '', color: 'success' });
 
 const tabs = computed(() => [
   { key: 'info',         label: 'Vendor Info',    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>` },
+  { key: 'linkedservices', label: 'Services and Interfaces', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`, count: linkedServices.value.length },
   { key: 'commissions',  label: 'Commissions',    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>` },
   { key: 'merchants',    label: 'Merchants',      count: vendorForm.merchants?.length || 0, icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
   { key: 'terminals',    label: 'Terminals',      count: vendorForm.terminals?.length || 0, icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>` },
@@ -1120,6 +1379,8 @@ watch(docDialog, v => { if (!v) selectedDoc.value = null; });
 onMounted(() => {
   getVendor(props.vendorId);
   getAllTransactionsUnderVendor?.(props.vendorId,1,10).then(r => transactions.value = r).catch(()=>{});
+  fetchLinkedServices()   // 👈 ADD
+  fetchAllServices()      // 👈 ADD
 });
 </script>
 

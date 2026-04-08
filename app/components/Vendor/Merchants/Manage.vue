@@ -539,6 +539,15 @@
                         Onboarded
                       </span>
 
+                      <div v-else-if="svc.status !== 'PENDING'">
+                        <span class="pill--emerald ml-auto pill mr-5">
+                          {{ svc.status }}</span>
+
+                        <button class="svc-process-btn" disabled>
+                          Onboard
+                        </button>
+                      </div>
+
                       <div v-else class="svc-inline-onboard">
                         <span class="mr-5" :class="['ml-auto pill', statusPillClass(svc.status)]">{{ svc.status
                         }}</span>
@@ -1335,6 +1344,9 @@ import { ref, reactive, onMounted, computed, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { useOnboadingApi } from "~/composables/apis/useOnboadingApi";
 import { useUsersApi } from "~/composables/apis/useUsersApi";
+import { useVendorLinkedServiceApi } from '~/composables/apis/useVendorLinkedServiceApi'
+
+const { getMyLinkedServices } = useVendorLinkedServiceApi()
 
 const dropdownOpen = ref(false);
 const dropdownInterface = ref(false);
@@ -1489,7 +1501,7 @@ const onboardService = async (svc, intf, kycStatus) => {
 
 const props = defineProps({ merchantId: String });
 const router = useRouter();
-const { getMerchantById, createKyc, getServices } = useOnboadingApi();
+const { getMerchantById, createKyc } = useOnboadingApi();
 const { getTransactionsByMerchantId } = useUsersApi();
 
 const merchantForm = reactive({});
@@ -1768,11 +1780,12 @@ const getTransactions = async (merchantId, page = 1, limit = 10) => {
 
 const getServicesFunc = async () => {
   try {
-    const res = await getServices();
-    servicesOptions.value = res.services || [];
-    console.log("Services:", servicesOptions.value);
+    const res = await getMyLinkedServices();
+    // res.services is already grouped: [{ id, service, interfaces: [...] }]
+    servicesOptions.value = res?.services ?? [];
+    console.log("Vendor linked services:", servicesOptions.value);
   } catch (e) {
-    console.error("Failed to fetch services:", e);
+    console.error("Failed to fetch vendor linked services:", e);
   }
 };
 
@@ -2568,6 +2581,32 @@ onBeforeUnmount(() => {
 }
 
 .svc-onboard-btn:hover {
+  background: #1e293b;
+}
+
+.svc-process-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.svc-process-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 11px;
+  background: #0f172a;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+
+.svc-process-btn:hover {
   background: #1e293b;
 }
 
