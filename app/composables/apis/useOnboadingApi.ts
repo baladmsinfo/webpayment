@@ -110,7 +110,7 @@ export function useOnboadingApi() {
   const onboadingVendor = async (vendorId: any) => {
     //console.log(payload);
 
-    return await post("/onboading/onboarding/vendor", { vendorId });
+    return await post("/onboarding/OnboardingVendor", { vendorId });
   };
 
   const uploadDoc = async (

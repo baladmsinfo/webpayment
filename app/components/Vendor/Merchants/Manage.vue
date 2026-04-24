@@ -1185,10 +1185,23 @@
                 </div>
               </div>
               <div class="outlet-terminals" v-if="outlet.terminals?.length">
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-3 mb-2">Terminals</p>
-                <div v-for="t in outlet.terminals" :key="t.id" class="terminal-item">{{ t.terminalId }}</div>
-              </div>
-              <div v-else class="text-xs text-slate-400 mt-3">No terminals assigned</div>
+  <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-3 mb-2">Terminals</p>
+  <div v-for="t in outlet.terminals" :key="t.id" class="terminal-item">
+    <div class="terminal-item__row">
+      <span class="terminal-item__tid font-mono">TID: {{ t.tid }}</span>
+      <span class="terminal-item__mid font-mono">MID: {{ t.mid }}</span>
+    </div>
+    <div class="terminal-item__meta">
+      <span class="pill pill--sky" style="font-size:9px;">{{ t.service }}</span>
+      <span class="pill pill--slate" style="font-size:9px;">{{ t.interfaceType }}</span>
+      <span class="pill pill--slate" style="font-size:9px;">{{ t.interface }}</span>
+      <span :class="['pill', t.status ? 'pill--emerald' : 'pill--red']" style="font-size:9px;">
+        {{ t.status ? 'Active' : 'Inactive' }}
+      </span>
+    </div>
+  </div>
+</div>
+<div v-else class="text-xs text-slate-400 mt-3">No terminals assigned</div>
             </div>
           </div>
         </div>
@@ -4180,5 +4193,37 @@ onBeforeUnmount(() => {
   .modal-grid { grid-template-columns: 1fr; }
   .modal-overlay { align-items: flex-end; padding: 0; }
   .modal-box { border-radius: 20px 20px 0 0; max-height: 92vh; }
+}
+
+.terminal-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+
+.terminal-item:last-child {
+  margin-bottom: 0;
+}
+
+.terminal-item__row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+
+.terminal-item__tid,
+.terminal-item__mid {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.terminal-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 </style>

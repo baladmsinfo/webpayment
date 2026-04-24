@@ -713,17 +713,21 @@ const vpinSearch = async (query) => {
 async function submitMerchant() {
     submitting.value = true;
 
+    console.log("Mcc selected:", mcc.value);
+
     if (mcc.value) {
         form.mcc = mcc.value.id
         form.nature_of_business = mcc.value.descr
     }
+
+    console.log("Mcc and Nature of Business:", form.mcc, form.nature_of_business);
 
     try {
         const payload = {
             dba_name: form.dba_name,
             merchant_name: form.legal_name,
             business_name: form.business_name,
-            mcc: form.mcc || null,
+            mcc: form.mcc,
 
             business_type: form.business_type,
 
@@ -774,7 +778,7 @@ async function submitMerchant() {
 
             gender: form.gender,
 
-            nature_of_business: form.nature_of_business || "",
+            nature_of_business: form.nature_of_business,
 
             std_code: "091",
 
