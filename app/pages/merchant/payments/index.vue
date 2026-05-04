@@ -1,6 +1,6 @@
 <template>
   <div>
-    <transactions-merchant/>
+    <MerchantTransactions/>
   </div>
 </template>
 

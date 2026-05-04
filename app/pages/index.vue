@@ -20,7 +20,8 @@
                 <div class="left-copy">
                     <h2 class="left-headline">One platform.<br />Every service.</h2>
                     <p class="left-sub">From AEPS and UPI to DMT and BBPS — a unified fintech platform powering every
-                        transaction.</p>
+                        transaction.
+                    </p>
                 </div>
 
                 <div class="feature-pills">
