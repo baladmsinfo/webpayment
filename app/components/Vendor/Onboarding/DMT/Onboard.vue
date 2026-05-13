@@ -365,7 +365,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOnboadingApi } from '~/composables/apis/useOnboadingApi'
-import { useDmtBcApi } from '~/composables/apis/useDmtBcApi'
+import { useDmtBcApi } from '~/composables/apis/Usedmtbcapi'
 
 const props = defineProps({ merchantId: String })
 const router = useRouter()
