@@ -439,286 +439,285 @@
 
 </section>
 
-<!-- ════ TAB: COMMISSIONS ════ -->
-<section v-show="activeTab === 'commissions'" class="tab-section">
+    <!-- ════ TAB: COMMISSIONS ════ -->
+    <section v-show="activeTab === 'commissions'" class="tab-section">
 
-  <!-- Aggregator Info -->
-  <div class="card" v-if="vendorForm.aggregator">
-    <div class="card__head">
-      <div class="card__head-dot card__head-dot--violet"></div>
-      <h3 class="card__title">Aggregator: {{ vendorForm.aggregator.name }}</h3>
-      <span class="ml-auto text-xs text-slate-400">Code: {{ vendorForm.aggregator.code }}</span>
-    </div>
-    <div class="info-grid info-grid--4">
-      <div class="info-item"><label>Name</label><p>{{ vendorForm.aggregator.name }}</p></div>
-      <div class="info-item"><label>Email</label><p>{{ vendorForm.aggregator.email }}</p></div>
-      <div class="info-item"><label>Mobile</label><p>{{ vendorForm.aggregator.mobile_no }}</p></div>
-      <div class="info-item"><label>Code</label><p class="font-mono">{{ vendorForm.aggregator.code }}</p></div>
-      <div class="info-item"><label>Default Rate</label><p>{{ vendorForm.aggregator.rate }}% ({{ vendorForm.aggregator.rateType }})</p></div>
-    </div>
-  </div>
-
-  <!-- Vendor Commission Slabs (editable) -->
-  <div class="card">
-    <div class="card__head">
-      <div class="card__head-dot card__head-dot--indigo"></div>
-      <h3 class="card__title">Vendor Commission Slabs</h3>
-      <span class="ml-2"><span class="pill pill--indigo pill--sm">{{ vendorForm.commissions?.length || 0 }} slabs</span></span>
-      <button class="btn-primary ml-auto" @click="openAddCommission">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-          stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        Add Slab
-      </button>
-    </div>
-
-    <div class="table-scroll-wrap" v-if="vendorForm.commissions?.length">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Method</th>
-            <th>Provider</th>
-            <th>Txn Type</th>
-            <th>Min ₹</th>
-            <th>Max ₹</th>
-            <th>Rate</th>
-            <th>Rate Type</th>
-            <th>Default</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in vendorForm.commissions" :key="c.id">
-            <td><span class="pill pill--indigo pill--sm">{{ c.paymentMethod }}</span></td>
-            <td>{{ c.provider }}</td>
-            <td><span class="pill pill--slate pill--sm">{{ c.txnType }}</span></td>
-            <td class="font-mono">₹ {{ Number(c.minAmount).toLocaleString('en-IN') }}</td>
-            <td class="font-mono">₹ {{ Number(c.maxAmount).toLocaleString('en-IN') }}</td>
-            <td class="rate-val font-bold">{{ c.commissionRate }}{{ c.rateType === 'PERCENTAGE' ? '%' : ' ₹' }}</td>
-            <td>
-              <span :class="['pill pill--sm', c.rateType === 'PERCENTAGE' ? 'pill--sky' : 'pill--violet']">
-                {{ c.rateType }}
-              </span>
-            </td>
-            <td>
-              <span :class="['flag', c.isDefault ? 'flag--on' : 'flag--off']">
-                {{ c.isDefault ? 'Yes' : 'No' }}
-              </span>
-            </td>
-            <td>
-              <div class="action-btns">
-                <button class="icon-btn icon-btn--edit" @click="openEditCommission(c)" title="Edit">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button class="icon-btn icon-btn--delete" @click="deleteCommissionSlab(c.id)" title="Delete">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6l-1 14H6L5 6"/>
-                    <path d="M10 11v6"/><path d="M14 11v6"/>
-                    <path d="M9 6V4h6v2"/>
-                  </svg>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="empty-state" v-else>
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-        stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-      </svg>
-      <p>No commission slabs configured for this vendor</p>
-      <button class="btn-primary" style="margin-top:10px;" @click="openAddCommission">Add First Slab</button>
-    </div>
-  </div>
-
-  <!-- Aggregator Commission Slabs (read-only reference) -->
-  <!-- <div class="card" v-if="vendorForm.aggregator?.commissions?.length">
-    <div class="card__head">
-      <div class="card__head-dot card__head-dot--amber"></div>
-      <h3 class="card__title">Aggregator Commission Reference</h3>
-      <span class="ml-auto"><span class="pill pill--amber pill--sm">{{ vendorForm.aggregator.commissions.length }} slabs</span></span>
-    </div>
-    <div class="table-scroll-wrap">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Method</th><th>Provider</th><th>Txn Type</th>
-            <th>Min ₹</th><th>Max ₹</th><th>Rate</th><th>Rate Type</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in vendorForm.aggregator.commissions" :key="c.id">
-            <td><span class="pill pill--indigo pill--sm">{{ c.paymentMethod }}</span></td>
-            <td>{{ c.provider }}</td>
-            <td><span class="pill pill--slate pill--sm">{{ c.txnType }}</span></td>
-            <td class="font-mono">₹ {{ Number(c.minAmount).toLocaleString('en-IN') }}</td>
-            <td class="font-mono">₹ {{ Number(c.maxAmount).toLocaleString('en-IN') }}</td>
-            <td class="rate-val font-bold">{{ c.rate }}{{ c.rateType === 'PERCENTAGE' ? '%' : ' ₹' }}</td>
-            <td><span :class="['pill pill--sm', c.rateType === 'PERCENTAGE' ? 'pill--sky' : 'pill--violet']">{{ c.rateType }}</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div> -->
-
-  <!-- Bank Commission Reference (read-only) -->
-  <!-- <div class="card" v-if="vendorForm.aggregator?.bankcommissions?.length">
-    <div class="card__head">
-      <div class="card__head-dot card__head-dot--emerald"></div>
-      <h3 class="card__title">Bank Commission Reference</h3>
-      <span class="ml-auto"><span class="pill pill--emerald pill--sm">{{ vendorForm.aggregator.bankcommissions.length }} slabs</span></span>
-    </div>
-    <div class="table-scroll-wrap">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Method</th><th>Provider</th><th>Txn Type</th>
-            <th>Min ₹</th><th>Max ₹</th><th>Rate</th><th>Rate Type</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in vendorForm.aggregator.bankcommissions" :key="c.id">
-            <td><span class="pill pill--indigo pill--sm">{{ c.paymentMethod }}</span></td>
-            <td>{{ c.provider }}</td>
-            <td><span class="pill pill--slate pill--sm">{{ c.txnType }}</span></td>
-            <td class="font-mono">₹ {{ Number(c.minAmount).toLocaleString('en-IN') }}</td>
-            <td class="font-mono">₹ {{ Number(c.maxAmount).toLocaleString('en-IN') }}</td>
-            <td class="rate-val font-bold">{{ c.rate }}{{ c.rateType === 'PERCENTAGE' ? '%' : ' ₹' }}</td>
-            <td><span :class="['pill pill--sm', c.rateType === 'PERCENTAGE' ? 'pill--sky' : 'pill--violet']">{{ c.rateType }}</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div> -->
-
-  <!-- Commission Modal -->
-  <Teleport to="body">
-    <Transition name="modal-fade">
-      <div v-if="commissionModal.open" class="modal-overlay" @click.self="closeCommissionModal">
-        <div class="modal-box">
-          <div class="modal-box__header">
-            <h3 class="modal-box__title">
-              {{ commissionModal.mode === 'add' ? 'Add Commission Slab' : 'Edit Commission Slab' }}
-            </h3>
-            <button class="modal-close" @click="closeCommissionModal">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
-
-          <div class="modal-box__body">
-            <div class="modal-grid">
-
-              <div class="modal-field">
-                <label>Payment Method <span class="req">*</span></label>
-                <select v-model="commissionForm.paymentMethod">
-                  <option value="">Select</option>
-                  <option v-for="m in paymentMethods" :key="m" :value="m">{{ m }}</option>
-                </select>
-              </div>
-
-              <div class="modal-field">
-                <label>Provider <span class="req">*</span></label>
-                <select v-model="commissionForm.provider">
-                  <option value="">Select</option>
-                  <option v-for="p in providers" :key="p" :value="p">{{ p }}</option>
-                </select>
-              </div>
-
-              <div class="modal-field">
-                <label>Txn Type <span class="req">*</span></label>
-                <select v-model="commissionForm.txnType">
-                  <option v-for="t in txnTypes" :key="t" :value="t">{{ t }}</option>
-                </select>
-              </div>
-
-              <div class="modal-field">
-                <label>Min Amount (₹) <span class="req">*</span></label>
-                <input type="number" v-model.number="commissionForm.minAmount" min="0" placeholder="0" />
-              </div>
-
-              <div class="modal-field">
-                <label>Max Amount (₹) <span class="req">*</span></label>
-                <input type="number" v-model.number="commissionForm.maxAmount" min="0" placeholder="99999999" />
-              </div>
-
-              <div class="modal-field">
-                <label>Commission Rate <span class="req">*</span></label>
-                <input type="number" v-model.number="commissionForm.commissionRate" min="0" step="0.01" placeholder="0.00" />
-              </div>
-
-              <div class="modal-field">
-                <label>Rate Type <span class="req">*</span></label>
-                <select v-model="commissionForm.rateType">
-                  <option value="PERCENTAGE">PERCENTAGE</option>
-                  <option value="FLAT">FLAT</option>
-                </select>
-              </div>
-
-              <div class="modal-field modal-field--full">
-                <label class="toggle-label">
-                  <span>Mark as Default Slab</span>
-                  <div class="toggle-wrap">
-                    <input type="checkbox" v-model="commissionForm.isDefault" class="toggle-input" id="isDefaultToggle" />
-                    <label for="isDefaultToggle" class="toggle-track"></label>
-                  </div>
-                </label>
-              </div>
-
-            </div>
-
-            <!-- Rate comparison helper -->
-            <div class="rate-hint" v-if="commissionForm.paymentMethod && commissionForm.provider">
-              <p class="rate-hint__title">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                Aggregator reference for {{ commissionForm.paymentMethod }} / {{ commissionForm.provider }}
-              </p>
-              <div class="rate-hint__rows">
-                <template v-for="ref in aggregatorRateRef" :key="ref.id">
-                  <div class="rate-hint__row">
-                    <span class="pill pill--slate pill--sm">{{ ref.txnType }}</span>
-                    <span class="rate-hint__range">₹{{ ref.minAmount }} – ₹{{ ref.maxAmount }}</span>
-                    <span class="rate-hint__rate">
-                      {{ ref.rate }}{{ ref.rateType === 'PERCENTAGE' ? '%' : ' ₹ flat' }}
-                    </span>
-                  </div>
-                </template>
-                <p v-if="!aggregatorRateRef.length" class="rate-hint__none">No aggregator slab for this combination</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-box__footer">
-            <button class="btn-cancel" @click="closeCommissionModal">Cancel</button>
-            <button class="btn-primary" :disabled="commissionSaving" @click="saveCommission">
-              <svg v-if="commissionSaving" class="spin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-              </svg>
-              {{ commissionSaving ? 'Saving…' : commissionModal.mode === 'add' ? 'Add Slab' : 'Update Slab' }}
-            </button>
-          </div>
+      <!-- Aggregator Info -->
+      <div class="card" v-if="vendorForm.aggregator">
+        <div class="card__head">
+          <div class="card__head-dot card__head-dot--violet"></div>
+          <h3 class="card__title">Aggregator: {{ vendorForm.aggregator.name }}</h3>
+          <span class="ml-auto text-xs text-slate-400">Code: {{ vendorForm.aggregator.code }}</span>
+        </div>
+        <div class="info-grid info-grid--4">
+          <div class="info-item"><label>Name</label><p>{{ vendorForm.aggregator.name }}</p></div>
+          <div class="info-item"><label>Email</label><p>{{ vendorForm.aggregator.email }}</p></div>
+          <div class="info-item"><label>Mobile</label><p>{{ vendorForm.aggregator.mobile_no }}</p></div>
+          <div class="info-item"><label>Code</label><p class="font-mono">{{ vendorForm.aggregator.code }}</p></div>
+          <div class="info-item"><label>Default Rate</label><p>{{ vendorForm.aggregator.rate }}% ({{ vendorForm.aggregator.rateType }})</p></div>
         </div>
       </div>
-    </Transition>
-  </Teleport>
 
-</section>
+      <!-- Commission Configs -->
+      <div class="card">
+        <div class="card__head">
+          <div class="card__head-dot card__head-dot--indigo"></div>
+          <h3 class="card__title">Commission Configs</h3>
+          <span class="ml-2">
+            <span class="pill pill--indigo pill--sm">{{ vendorForm.commissionconfig?.length || 0 }} configs</span>
+          </span>
+          <button class="btn-primary ml-auto" @click="openAddConfig">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Commission
+          </button>
+        </div>
+
+        <!-- Config list with expandable components -->
+        <div v-if="vendorForm.commissionconfig?.length">
+          <div
+            v-for="cfg in vendorForm.commissionconfig"
+            :key="cfg.id"
+            class="cc-row"
+          >
+            <!-- Config header row -->
+            <div class="cc-row__head" @click="toggleCfgExpand(cfg.id)">
+              <div class="cc-row__pills">
+                <span class="pill pill--indigo pill--sm">{{ cfg.paymentMethod }}</span>
+                <span class="pill pill--slate pill--sm">{{ cfg.provider }}</span>
+                <span class="pill pill--sky pill--sm">{{ cfg.txnType }}</span>
+                <span class="pill pill--amber pill--sm">{{ cfg.level }}</span>
+                <span :class="['flag', cfg.isDefault ? 'flag--on' : 'flag--off']" style="font-size:10px">
+                  {{ cfg.isDefault ? 'Default' : 'Custom' }}
+                </span>
+              </div>
+              <div class="cc-row__range font-mono">
+                ₹{{ Number(cfg.minAmount).toLocaleString('en-IN') }} – ₹{{ Number(cfg.maxAmount).toLocaleString('en-IN') }}
+              </div>
+              <div class="cc-row__meta">
+                <span class="pill pill--sm pill--slate">{{ cfg.components?.length || 0 }} components</span>
+                <span :class="['flag', cfg.active ? 'flag--on' : 'flag--off']" style="font-size:10px">
+                  {{ cfg.active ? 'Active' : 'Inactive' }}
+                </span>
+                <span class="cc-expand-caret">{{ expandedCfg === cfg.id ? '▲' : '▼' }}</span>
+              </div>
+            </div>
+
+            <!-- Expanded: components table -->
+            <div v-if="expandedCfg === cfg.id" class="cc-row__body">
+              <div class="table-scroll-wrap" v-if="cfg.components?.length">
+                <table class="data-table data-table--compact">
+                  <thead>
+                    <tr>
+                      <th>Component</th>
+                      <th>Charge Type</th>
+                      <th>Value</th>
+                      <th>Min</th>
+                      <th>Max</th>
+                      <th>Applies On</th>
+                      <th>Depends On</th>
+                      <th>Receiver</th>
+                      <th>Merchant %</th>
+                      <th>Distributor %</th>
+                      <th>Super Dist %</th>
+                      <th>Platform %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="comp in cfg.components" :key="comp.id">
+                      <td>
+                        <span :class="['pill pill--sm', componentPillClass(comp.name)]">{{ comp.name }}</span>
+                      </td>
+                      <td>
+                        <span class="pill pill--sm pill--slate">{{ comp.chargeType }}</span>
+                      </td>
+                      <td class="font-mono font-bold">
+                        {{ comp.chargeType === 'PERCENTAGE' ? comp.value + '%' : '₹' + comp.value }}
+                      </td>
+                      <td class="font-mono text-xs">{{ comp.minValue ?? '—' }}</td>
+                      <td class="font-mono text-xs">{{ comp.maxValue ?? '—' }}</td>
+                      <td><span class="pill pill--sm pill--sky">{{ comp.appliesOn }}</span></td>
+                      <td class="text-xs" style="color:#64748b">{{ comp.dependsOn ?? '—' }}</td>
+                      <td>
+                        <span :class="['pill pill--sm', receiverPillClass(comp.receiver)]">{{ comp.receiver ?? '—' }}</span>
+                      </td>
+                      <td class="font-mono text-xs">{{ comp.merchantShare != null ? comp.merchantShare + '%' : '—' }}</td>
+                      <td class="font-mono text-xs">{{ comp.distributorShare != null ? comp.distributorShare + '%' : '—' }}</td>
+                      <td class="font-mono text-xs">{{ comp.superDistributorShare != null ? comp.superDistributorShare + '%' : '—' }}</td>
+                      <td class="font-mono text-xs">{{ comp.platformShare != null ? comp.platformShare + '%' : '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="empty-state" style="padding:16px" v-else>
+                <p>No components for this config</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-state" v-else>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          <p>No commission configs configured for this vendor</p>
+          <button class="btn-primary" style="margin-top:10px;" @click="openAddConfig">Add First Config</button>
+        </div>
+      </div>
+
+      <!-- ── Add Commission Config Modal ── -->
+      <Teleport to="body">
+        <Transition name="modal-fade">
+          <div v-if="cfgModal.open" class="modal-overlay" @click.self="closeCfgModal">
+            <div class="modal-box modal-box--wide">
+
+              <div class="modal-box__header">
+                <h3 class="modal-box__title">Add Commission Config</h3>
+                <button class="modal-close" @click="closeCfgModal">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="modal-box__body">
+
+                <!-- Step 1: Method + Provider + TxnType -->
+                <p class="cfg-section-label">1. Scope</p>
+                <div class="modal-grid">
+                  <div class="modal-field">
+                    <label>Payment Method <span class="req">*</span></label>
+                    <select v-model="cfgForm.paymentMethod" @change="onCfgMethodChange">
+                      <option value="">Select</option>
+                      <option v-for="m in cfgPaymentMethods" :key="m" :value="m">{{ m }}</option>
+                    </select>
+                  </div>
+                  <div class="modal-field">
+                    <label>Provider <span class="req">*</span></label>
+                    <select v-model="cfgForm.provider" @change="onCfgProviderChange" :disabled="!cfgForm.paymentMethod">
+                      <option value="">Select</option>
+                      <option v-for="p in cfgAvailableProviders" :key="p" :value="p">{{ p }}</option>
+                    </select>
+                  </div>
+                  <div class="modal-field">
+                    <label>Txn Type <span class="req">*</span></label>
+                    <select v-model="cfgForm.txnType" :disabled="!cfgForm.provider">
+                      <option value="">Select</option>
+                      <option v-for="t in cfgAvailableTxnTypes" :key="t" :value="t">{{ t }}</option>
+                    </select>
+                  </div>
+                  <div class="modal-field">
+                    <label>Min Amount (₹) <span class="req">*</span></label>
+                    <input type="number" v-model.number="cfgForm.minAmount" min="0" />
+                  </div>
+                  <div class="modal-field">
+                    <label>Max Amount (₹) <span class="req">*</span></label>
+                    <input type="number" v-model.number="cfgForm.maxAmount" min="0" />
+                  </div>
+                  <div class="modal-field modal-field--full">
+                    <label class="toggle-label">
+                      <span>Mark as Default Config</span>
+                      <div class="toggle-wrap">
+                        <input type="checkbox" v-model="cfgForm.isDefault" class="toggle-input" id="cfgIsDefault" />
+                        <label for="cfgIsDefault" class="toggle-track"></label>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Step 2: Components (auto-filled, shares editable) -->
+                <template v-if="cfgForm.paymentMethod && cfgForm.provider && cfgForm.txnType">
+                  <p class="cfg-section-label" style="margin-top:20px">2. Commission Components</p>
+                  <div
+                    v-for="(comp, idx) in cfgForm.components"
+                    :key="idx"
+                    class="comp-block"
+                  >
+                    <div class="comp-block__head">
+                      <span :class="['pill pill--sm', componentPillClass(comp.name)]">{{ comp.name }}</span>
+                      <span class="pill pill--sm pill--slate">{{ comp.chargeType }}</span>
+                      <span class="comp-val">
+                        {{ comp.chargeType === 'PERCENTAGE' ? comp.value + '%' : '₹' + comp.value }}
+                        <template v-if="comp.minValue"> · min {{ comp.minValue }}</template>
+                        <template v-if="comp.maxValue"> · max {{ comp.maxValue }}</template>
+                      </span>
+                      <span class="pill pill--sm pill--sky">{{ comp.appliesOn }}</span>
+                      <span v-if="comp.dependsOn" class="text-xs" style="color:#64748b">depends: {{ comp.dependsOn }}</span>
+                      <span :class="['pill pill--sm', receiverPillClass(comp.receiver)]">{{ comp.receiver }}</span>
+                    </div>
+
+                    <!-- Only show share inputs if this component has shares -->
+                    <div v-if="comp.merchantShare != null || comp.distributorShare != null" class="comp-block__shares">
+                      <div class="share-field">
+                        <label>Merchant %</label>
+                        <input type="number" v-model.number="comp.merchantShare" min="0" max="100" step="1" />
+                      </div>
+                      <div class="share-field">
+                        <label>Distributor %</label>
+                        <input type="number" v-model.number="comp.distributorShare" min="0" max="100" step="1" />
+                      </div>
+                      <div class="share-field">
+                        <label>Super Dist %</label>
+                        <input type="number" v-model.number="comp.superDistributorShare" min="0" max="100" step="1" />
+                      </div>
+                      <div class="share-field">
+                        <label>Platform %</label>
+                        <input type="number" v-model.number="comp.platformShare" min="0" max="100" step="1"
+                          :disabled="true"
+                          :value="autoplatformShare(comp)"
+                        />
+                      </div>
+                      <div class="share-total" :class="shareTotal(comp) === 100 ? 'share-total--ok' : 'share-total--err'">
+                        Total: {{ shareTotal(comp) }}%
+                      </div>
+                    </div>
+
+                    <!-- minAmount/maxAmount editable per component if applicable -->
+                    <div v-if="cfgForm.paymentMethod === 'AEPS' || cfgForm.paymentMethod === 'DMT'" class="comp-block__range">
+                      <div class="share-field" v-if="comp.name === 'INTERCHANGE' || comp.name === 'CUSTOMER_FEE'">
+                        <label>Value</label>
+                        <input type="number" v-model.number="comp.value" min="0" step="0.01" />
+                      </div>
+                      <div class="share-field" v-if="comp.minValue !== undefined">
+                        <label>Min Value</label>
+                        <input type="number" v-model.number="comp.minValue" min="0" step="0.01" />
+                      </div>
+                      <div class="share-field" v-if="comp.maxValue !== undefined">
+                        <label>Max Value</label>
+                        <input type="number" v-model.number="comp.maxValue" min="0" step="0.01" />
+                      </div>
+                    </div>
+                  </div>
+                </template>
+
+                <div v-else class="empty-state" style="padding:20px 0">
+                  <p>Select Payment Method, Provider and Txn Type to configure components</p>
+                </div>
+
+              </div>
+
+              <div class="modal-box__footer">
+                <button class="btn-cancel" @click="closeCfgModal">Cancel</button>
+                <button class="btn-primary" :disabled="cfgSaving" @click="saveCfg">
+                  <svg v-if="cfgSaving" class="spin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  </svg>
+                  {{ cfgSaving ? 'Saving…' : 'Save Config' }}
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
+
+    </section>
 
       <!-- ════ TAB: MERCHANTS ════ -->
       <section v-show="activeTab === 'merchants'" class="tab-section">
@@ -1075,10 +1074,313 @@ import { useUsersApi } from "~/composables/apis/useUsersApi";
 import { useVendorLinkedServiceApi } from '~/composables/apis/useVendorLinkedServiceApi'
 import { useOnboadingApi } from '~/composables/apis/useOnboadingApi'
 
+// New Commission Config and Components
+
+// ── Commission Config ──────────────────────────────────────────────
+import { useVendorCommissionConfigApi } from '~/composables/apis/useVendorCommissionConfigApi'
+const { createCommissionConfig } = useVendorCommissionConfigApi()
+
+const expandedCfg  = ref(null)
+const cfgModal     = reactive({ open: false })
+const cfgSaving    = ref(false)
+
+const toggleCfgExpand = (id) => {
+  expandedCfg.value = expandedCfg.value === id ? null : id
+}
+
+// ── Pill helpers ──────────────────────────────────────────────────
+const componentPillClass = (name) => {
+  const map = {
+    INTERCHANGE: 'pill--indigo',
+    CUSTOMER_FEE: 'pill--sky',
+    GST: 'pill--amber',
+    BANK_SHARE: 'pill--emerald',
+    MERCHANT_COMMISSION: 'pill--violet',
+    DISTRIBUTOR_COMMISSION: 'pill--rose',
+    PLATFORM_COMMISSION: 'pill--slate',
+    BANK_COMMISSION: 'pill--emerald',
+  }
+  return map[name] ?? 'pill--slate'
+}
+
+const receiverPillClass = (r) => {
+  const map = {
+    BANK: 'pill--emerald',
+    GOVERNMENT: 'pill--amber',
+    PLATFORM: 'pill--indigo',
+    BC_NETWORK: 'pill--sky',
+    MERCHANT: 'pill--violet',
+    DISTRIBUTOR: 'pill--rose',
+  }
+  return map[r] ?? 'pill--slate'
+}
+
+// ── Method / Provider / TxnType maps ─────────────────────────────
+const cfgPaymentMethods = ['DMT', 'AEPS', 'UPI', 'CARD', 'NETBANKING', 'WALLET']
+
+const cfgProviderMap = {
+  DMT:        ['NSDL'],
+  AEPS:       ['NSDL', 'FINO', 'CANARA'],
+  UPI:        ['ISG', 'MOS'],
+  CARD:       ['ISG', 'WORLD'],
+  NETBANKING: ['ISG'],
+  WALLET:     ['BUCKSBOX'],
+}
+
+const cfgTxnTypeMap = {
+  'DMT:NSDL':        ['TRANSFER'],
+  'AEPS:NSDL':       ['CASH_WITHDRAWAL', 'MINI_STATEMENT', 'BALANCE_ENQUIRY'],
+  'AEPS:FINO':       ['CASH_WITHDRAWAL', 'MINI_STATEMENT', 'BALANCE_ENQUIRY'],
+  'AEPS:CANARA':     ['CASH_WITHDRAWAL', 'MINI_STATEMENT', 'BALANCE_ENQUIRY'],
+  'UPI:ISG':         ['PAYIN'],
+  'UPI:MOS':         ['PAYIN'],
+  'CARD:ISG':        ['PAYIN'],
+  'CARD:WORLD':      ['PAYIN'],
+  'NETBANKING:ISG':  ['PAYIN'],
+  'WALLET:BUCKSBOX': ['PAYIN', 'NONE'],
+}
+
+// ── Component templates ───────────────────────────────────────────
+const cfgComponentTemplates = {
+  'DMT:NSDL:TRANSFER': [
+    {
+      name: 'CUSTOMER_FEE', chargeType: 'HYBRID', value: 1,
+      minValue: 10, maxValue: null,
+      appliesOn: 'TRANSACTION',
+      merchantShare: 0, distributorShare: 20,
+      superDistributorShare: 0, platformShare: 80,
+      receiver: 'PLATFORM',
+    },
+    {
+      name: 'GST', chargeType: 'PERCENTAGE', value: 18,
+      minValue: null, maxValue: null,
+      dependsOn: 'CUSTOMER_FEE',
+      appliesOn: 'TRANSACTION',
+      merchantShare: null, distributorShare: null,
+      superDistributorShare: null, platformShare: null,
+      receiver: 'GOVERNMENT',
+    },
+    {
+      name: 'BANK_SHARE', chargeType: 'FIXED', value: 2.5,
+      minValue: null, maxValue: null,
+      appliesOn: 'TRANSACTION',
+      merchantShare: null, distributorShare: null,
+      superDistributorShare: null, platformShare: null,
+      receiver: 'BANK',
+    },
+  ],
+  'AEPS:NSDL:MINI_STATEMENT': [
+    {
+      name: 'INTERCHANGE', chargeType: 'FIXED', value: 3,
+      appliesOn: 'TRANSACTION',
+      merchantShare: 60, distributorShare: 20,
+      superDistributorShare: 10, platformShare: 10,
+      receiver: 'BC_NETWORK',
+    },
+    {
+      name: 'BANK_SHARE', chargeType: 'FIXED', value: 1.4,
+      appliesOn: 'TRANSACTION',
+      merchantShare: null, distributorShare: null,
+      superDistributorShare: null, platformShare: null,
+      receiver: 'BANK',
+    },
+    {
+      name: 'GST', chargeType: 'PERCENTAGE', value: 18,
+      dependsOn: 'INTERCHANGE',
+      appliesOn: 'TRANSACTION',
+      merchantShare: null, distributorShare: null,
+      superDistributorShare: null, platformShare: null,
+      receiver: 'GOVERNMENT',
+    },
+  ],
+  'AEPS:NSDL:CASH_WITHDRAWAL': [
+    {
+      name: 'INTERCHANGE', chargeType: 'PERCENTAGE', value: 0.5,
+      minValue: null, maxValue: 15,
+      appliesOn: 'TRANSACTION',
+      merchantShare: 60, distributorShare: 20,
+      superDistributorShare: 10, platformShare: 10,
+      receiver: 'BC_NETWORK',
+    },
+    {
+      name: 'BANK_SHARE', chargeType: 'PERCENTAGE', value: 15,
+      minValue: 0.5, maxValue: null,
+      dependsOn: 'INTERCHANGE',
+      appliesOn: 'TRANSACTION',
+      merchantShare: null, distributorShare: null,
+      superDistributorShare: null, platformShare: null,
+      receiver: 'BANK',
+    },
+    {
+      name: 'GST', chargeType: 'PERCENTAGE', value: 18,
+      dependsOn: 'INTERCHANGE',
+      appliesOn: 'TRANSACTION',
+      merchantShare: null, distributorShare: null,
+      superDistributorShare: null, platformShare: null,
+      receiver: 'GOVERNMENT',
+    },
+  ],
+  'AEPS:NSDL:BALANCE_ENQUIRY': [
+    {
+      name: 'INTERCHANGE', chargeType: 'FIXED', value: 0,
+      appliesOn: 'TRANSACTION',
+      merchantShare: 60, distributorShare: 20,
+      superDistributorShare: 10, platformShare: 10,
+      receiver: 'BC_NETWORK',
+    },
+    {
+      name: 'BANK_SHARE', chargeType: 'FIXED', value: 0,
+      appliesOn: 'TRANSACTION',
+      merchantShare: null, distributorShare: null,
+      superDistributorShare: null, platformShare: null,
+      receiver: 'BANK',
+    },
+    {
+      name: 'GST', chargeType: 'PERCENTAGE', value: 18,
+      dependsOn: 'INTERCHANGE',
+      appliesOn: 'TRANSACTION',
+      merchantShare: null, distributorShare: null,
+      superDistributorShare: null, platformShare: null,
+      receiver: 'GOVERNMENT',
+    },
+  ],
+}
+
+// ── cfgForm ───────────────────────────────────────────────────────
+const defaultCfgForm = () => ({
+  paymentMethod: '',
+  provider:      '',
+  txnType:       '',
+  minAmount:     1,
+  maxAmount:     10000,
+  isDefault:     true,
+  components:    [],
+})
+
+const cfgForm = reactive(defaultCfgForm())
+
+const cfgAvailableProviders = computed(() => {
+  return cfgProviderMap[cfgForm.paymentMethod] ?? []
+})
+
+const cfgAvailableTxnTypes = computed(() => {
+  const key = `${cfgForm.paymentMethod}:${cfgForm.provider}`
+  return cfgTxnTypeMap[key] ?? []
+})
+
+const onCfgMethodChange = () => {
+  cfgForm.provider  = ''
+  cfgForm.txnType   = ''
+  cfgForm.components = []
+}
+
+const onCfgProviderChange = () => {
+  cfgForm.txnType   = ''
+  cfgForm.components = []
+}
+
+watch(
+  () => cfgForm.txnType,
+  (val) => {
+    if (!val) { cfgForm.components = []; return }
+    const key = `${cfgForm.paymentMethod}:${cfgForm.provider}:${val}`
+    const tpl = cfgComponentTemplates[key]
+    // Deep clone so edits don't mutate the template
+    cfgForm.components = tpl ? JSON.parse(JSON.stringify(tpl)) : []
+  }
+)
+
+// Auto-compute platform share (100 - others)
+const autoplatformShare = (comp) => {
+  const others = (comp.merchantShare ?? 0)
+    + (comp.distributorShare ?? 0)
+    + (comp.superDistributorShare ?? 0)
+  comp.platformShare = Math.max(0, 100 - others)
+  return comp.platformShare
+}
+
+const shareTotal = (comp) => {
+  return (comp.merchantShare ?? 0)
+    + (comp.distributorShare ?? 0)
+    + (comp.superDistributorShare ?? 0)
+    + (comp.platformShare ?? 0)
+}
+
+// ── Modal open/close ──────────────────────────────────────────────
+const openAddConfig = () => {
+  Object.assign(cfgForm, defaultCfgForm())
+  cfgModal.open = true
+}
+
+const closeCfgModal = () => {
+  cfgModal.open = false
+}
+
+const saveCfg = async () => {
+  if (!cfgForm.paymentMethod || !cfgForm.provider || !cfgForm.txnType) {
+    showSnack('Method, Provider and Txn Type are required', 'error')
+    return
+  }
+  if (!cfgForm.components.length) {
+    showSnack('No components generated — check your selection', 'error')
+    return
+  }
+  // Validate shares sum to 100 for components that have shares
+  for (const comp of cfgForm.components) {
+    if (comp.merchantShare != null) {
+      autoplatformShare(comp) // sync platformShare
+      const total = shareTotal(comp)
+      if (Math.abs(total - 100) > 0.01) {
+        showSnack(`${comp.name}: shares must total 100% (currently ${total}%)`, 'error')
+        return
+      }
+    }
+  }
+
+  cfgSaving.value = true
+  try {
+    const payload = {
+      level:         'DISTRIBUTOR',
+      vendorId:      props.vendorId,
+      aggregatorId:  vendorForm.aggregatorId,
+      paymentMethod: cfgForm.paymentMethod,
+      provider:      cfgForm.provider,
+      txnType:       cfgForm.txnType,
+      minAmount:     cfgForm.minAmount,
+      maxAmount:     cfgForm.maxAmount,
+      active:        true,
+      isDefault:     cfgForm.isDefault,
+      components:    cfgForm.components,
+    }
+
+    const res = await createCommissionConfig(payload)
+    const ok  = res?.statusCode === '00' || res?.id
+    
+
+    showSnack(ok ? 'Config saved successfully' : (res?.message || 'Failed to save'), ok ? 'success' : 'error')
+    if (ok) {
+      closeCfgModal()
+      getVendor(props.vendorId)
+    }
+  } catch (err) {
+    console.log("Error on saving Commissions", err)
+    const ErrMessage = err.response.data.message
+    showSnack(ErrMessage || 'Failed to save config', 'error')
+    closeCfgModal();
+  } finally {
+    cfgSaving.value = false
+  }
+}
+
+
+// ─────────────────── End of Commission Config ─────────────────────────────
+
+
+
 const { getLinkedServices, createLinkedService, updateLinkedService, deleteLinkedService } = useVendorLinkedServiceApi()
 const { getServices } = useOnboadingApi()
 
-// ── Linked Services state ─────────────────────────────────────────────
+// ── Linked Services state ───────────────────────────────
 const linkedServices     = ref([])
 const allServices        = ref([])   // from /services/List
 const lsModal            = reactive({ open: false, mode: 'add' })
@@ -1915,4 +2217,114 @@ onMounted(() => {
   .modal-overlay { align-items: flex-end; padding: 0; }
   .modal-box { border-radius: 20px 20px 0 0; max-height: 92vh; }
 }
+
+
+
+/* ── Commission Config rows ── */
+.cc-row {
+  border-bottom: 1px solid #f1f5f9;
+}
+.cc-row:last-child { border-bottom: none; }
+
+.cc-row__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: background .13s;
+  flex-wrap: wrap;
+}
+.cc-row__head:hover { background: #f8fafc; }
+
+.cc-row__pills { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
+.cc-row__range { font-size: 11.5px; color: #475569; white-space: nowrap; }
+.cc-row__meta  { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.cc-expand-caret { font-size: 10px; color: #94a3b8; }
+
+.cc-row__body {
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  padding: 14px 18px;
+}
+
+/* ── Config section label ── */
+.cfg-section-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+/* ── Component blocks in modal ── */
+.comp-block {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.comp-block__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.comp-val {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: #4f46e5;
+}
+.comp-block__shares,
+.comp-block__range {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.share-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.share-field label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.share-field input {
+  width: 80px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #fff;
+  outline: none;
+  transition: border-color .15s;
+}
+.share-field input:focus { border-color: #6366f1; }
+.share-field input:disabled { background: #f1f5f9; color: #94a3b8; }
+.share-total {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  align-self: flex-end;
+  margin-bottom: 2px;
+}
+.share-total--ok  { background: #d1fae5; color: #065f46; }
+.share-total--err { background: #fee2e2; color: #991b1b; }
+
+/* Wide modal for commission config */
+.modal-box--wide { max-width: 760px; }
 </style>

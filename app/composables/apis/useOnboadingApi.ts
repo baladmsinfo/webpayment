@@ -150,7 +150,7 @@ export function useOnboadingApi() {
   const createMerchant = async (payload: any) => {
     try {
 
-      const res = await post(`onboarding/Onboarding`, payload)
+      const res = await post(`/onboarding/Onboarding`, payload)
 
       console.log("Create Merchant Response-", res.data)
 
