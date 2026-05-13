@@ -1016,7 +1016,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
-import { useIsgOnboardingApi } from "@/composables/apis/useIsgOnboardingApi";
+import { useIsgOnboardingApi } from "@/composables/apis/Useisgonboardingapi";
 import { useOnboadingApi } from "@/composables/apis/useOnboadingApi";
 import { useRouter, useRoute } from "vue-router";
 

@@ -692,7 +692,7 @@
 </template>
 <script setup>
 import { ref, reactive, computed, onMounted } from "vue";
-import { useUpiOnboardingApi } from "@/composables/apis/useUpiOnboardingApi";
+import { useUpiOnboardingApi } from "@/composables/apis/Useupionboardingapi";
 import { transformCompliance } from "@/utils/transformCompliance";
 import { useRouter } from "vue-router";
 
