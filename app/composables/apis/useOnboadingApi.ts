@@ -344,6 +344,7 @@ export function useOnboadingApi() {
     getMerchantById,
     getPaymentMethods,
     complianceInitVendor,
-    UpdateBiodevice
+    UpdateBiodevice,
+
   };
 }

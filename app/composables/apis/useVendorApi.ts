@@ -77,7 +77,6 @@ export function useVendorApi() {
         }
     };
 
-
     const getAllVendorTransactions = async ({
         page = 1,
         limit = 20,
@@ -86,17 +85,20 @@ export function useVendorApi() {
         fromDate,
         toDate,
         merchantId,
+        transactionMethod,
+
     }: any = {}) => {
+
         const query = new URLSearchParams({
             page: String(page),
             limit: String(limit),
-            ...(status && { status }),
+            ...(status        && { status }),
             ...(paymentMethod && { paymentMethod }),
-            ...(fromDate && { fromDate }),
-            ...(toDate && { toDate }),
-            ...(merchantId && { merchantId }),
+            ...(fromDate      && { fromDate }),
+            ...(toDate        && { toDate }),
+            ...(merchantId    && { merchantId }),
+            ...(transactionMethod && { transactionMethod }),
         }).toString();
-
 
         const res = await get(`/vendor/transaction/vendor/all?${query}`);
 
@@ -109,7 +111,6 @@ export function useVendorApi() {
 
         return { data: [], meta: {} };
     };
-
 
     const resetPassword = async (payload: { oldPassword: string; newPassword: string }) => {
         try {
