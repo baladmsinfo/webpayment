@@ -26,7 +26,7 @@
                                     <label class="field-label">MERCHANT NAME</label>
                                     <v-text-field v-model.trim="form.legal_name" placeholder="As per PAN"
                                         variant="outlined" density="comfortable" :rules="[req]"
-                                        prepend-inner-icon="mdi-badge-account-outline" class="mh-field" 
+                                        prepend-inner-icon="mdi-badge-account-outline" class="mh-field"
                                         hide-details="auto" />
                                 </v-col>
 
@@ -58,6 +58,26 @@
                                         variant="outlined" density="comfortable" :rules="[req]"
                                         prepend-inner-icon="mdi-gender-male-female" class="mh-field"
                                         hide-details="auto" />
+                                </v-col>
+
+                                <v-col cols="12">
+                                    <div class="address-toggle-card mt-2">
+                                        <div class="address-toggle-info">
+                                            <div class="address-toggle-icon-wrap">
+                                                <v-icon color="#002d5a" size="20">mdi-wallet-outline</v-icon>
+                                            </div>
+                                            <div>
+                                                <p class="address-toggle-title">Wallet Agent</p>
+                                                <p class="address-toggle-sub">Is this merchant a wallet agent?</p>
+                                            </div>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" v-model="isWalletAgent" class="toggle-input" />
+                                            <div class="toggle-track">
+                                                <div class="toggle-thumb"></div>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </v-col>
                             </v-row>
                         </section>
@@ -109,7 +129,7 @@
 
                             <v-row dense>
 
-                                
+
                                 <v-col cols="12" sm="6" md="6" lg="4">
                                     <label class="field-label">BUSINESS NAME</label>
                                     <v-text-field v-model.trim="form.business_name" placeholder="Business Name"
@@ -558,64 +578,65 @@ const confirmDetails = computed(() => validForm.value);
 
 // Form state
 const form = reactive({
-  legal_name: "",
-  business_name: "",
-  dba_name: "",
-  dob: "",
-  primary_email_id: "",
-  primary_mobile: "",
-  business_type: "",
-  nature_of_business: "",
-  annual_turn_over: "",
-  gender: "M",
+    legal_name: "",
+    business_name: "",
+    dba_name: "",
+    dob: "",
+    primary_email_id: "",
+    primary_mobile: "",
+    business_type: "",
+    nature_of_business: "",
+    annual_turn_over: "",
+    gender: "M",
 
-  lat: "10.3673",
-  long: "77.9803",
+    lat: "10.3673",
+    long: "77.9803",
 
-  website: "",
+    website: "",
 
-  beneficiary_email: "",
-  beneficiary_mobile: "",
+    beneficiary_email: "",
+    beneficiary_mobile: "",
 
-  official_address: "",
-  address1: "",
-  address2: "",
-  address3: "",
-  phone: "",
-  city: "",
-  state: "",
-  pincode: "",
+    official_address: "",
+    address1: "",
+    address2: "",
+    address3: "",
+    phone: "",
+    city: "",
+    state: "",
+    pincode: "",
 
-  residential_address: "",
-  res_address1: "",
-  res_address2: "",
-  res_address3: "",
-  res_mobile: "",
-  res_phone_number: "",
-  res_city: "",
-  res_state: "",
-  res_pincode: "",
+    residential_address: "",
+    res_address1: "",
+    res_address2: "",
+    res_address3: "",
+    res_mobile: "",
+    res_phone_number: "",
+    res_city: "",
+    res_state: "",
+    res_pincode: "",
 
-  vister_address: "",
-  v_address1: "",
-  v_address2: "",
-  v_address3: "",
-  v_mobile: "",
-  v_phone_number: "",
-  v_city: "",
-  v_state: "",
-  v_pincode: "",
+    vister_address: "",
+    v_address1: "",
+    v_address2: "",
+    v_address3: "",
+    v_mobile: "",
+    v_phone_number: "",
+    v_city: "",
+    v_state: "",
+    v_pincode: "",
 
-  mcc: "", // Furniture Stores MCC code
+    mcc: "", // Furniture Stores MCC code
 
-  std_code: "",
-  lead_source: "BUCKSBOX",
-  lg_code: "",
-  ckyc: true
+    std_code: "",
+    lead_source: "BUCKSBOX",
+    lg_code: "",
+    ckyc: true
 });
 
 const sameAsOfficialResidential = ref(false);
 const sameAsOfficialVisitor = ref(false);
+const isWalletAgent = ref(false);
 
 function copyOfficialToResidential() {
     if (sameAsOfficialResidential.value) {
@@ -777,6 +798,8 @@ async function submitMerchant() {
             beneficiary_mobile: form.beneficiary_mobile,
 
             gender: form.gender,
+            
+            role: isWalletAgent.value ? "wallet-agent" : "merchant",
 
             nature_of_business: form.nature_of_business,
 

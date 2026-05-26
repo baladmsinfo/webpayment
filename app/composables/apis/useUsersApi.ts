@@ -141,7 +141,7 @@ export function useUsersApi() {
   const login = async (payload: {
     emailOrMobile: string;
     password: string;
-  }, role: any = ["merchant"]) => {
+  }, role: any) => {
     const res = await post("/login", payload);
     console.log(res);
 
