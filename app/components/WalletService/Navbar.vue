@@ -44,7 +44,7 @@
         </div>
         <div>
           <p class="drawer-brand-name">{{ title }}</p>
-          <p class="drawer-brand-role">Wallet Agent Portal</p>
+          <p class="drawer-brand-role">Wallet Service Portal</p>
         </div>
         <button v-if="isMobile" class="drawer-close-btn" @click="drawer = false">
           <span class="mdi mdi-close"></span>
@@ -113,7 +113,7 @@
             <span class="mdi mdi-account-outline"></span>
           </div>
           <div class="user-info">
-            <p class="user-name">Wallet Agent</p>
+            <p class="user-name">Wallet Service</p>
             <p class="user-role">Admin Access</p>
           </div>
         </div>

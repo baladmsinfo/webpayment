@@ -59,26 +59,6 @@
                                         prepend-inner-icon="mdi-gender-male-female" class="mh-field"
                                         hide-details="auto" />
                                 </v-col>
-
-                                <v-col cols="12">
-                                    <div class="address-toggle-card mt-2">
-                                        <div class="address-toggle-info">
-                                            <div class="address-toggle-icon-wrap">
-                                                <v-icon color="#002d5a" size="20">mdi-wallet-outline</v-icon>
-                                            </div>
-                                            <div>
-                                                <p class="address-toggle-title">Wallet Agent</p>
-                                                <p class="address-toggle-sub">Is this merchant a wallet agent?</p>
-                                            </div>
-                                        </div>
-                                        <label class="toggle-switch">
-                                            <input type="checkbox" v-model="isWalletAgent" class="toggle-input" />
-                                            <div class="toggle-track">
-                                                <div class="toggle-thumb"></div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </v-col>
                             </v-row>
                         </section>
 
@@ -636,7 +616,6 @@ const form = reactive({
 
 const sameAsOfficialResidential = ref(false);
 const sameAsOfficialVisitor = ref(false);
-const isWalletAgent = ref(false);
 
 function copyOfficialToResidential() {
     if (sameAsOfficialResidential.value) {
@@ -798,8 +777,6 @@ async function submitMerchant() {
             beneficiary_mobile: form.beneficiary_mobile,
 
             gender: form.gender,
-            
-            role: isWalletAgent.value ? "wallet-agent" : "merchant",
 
             nature_of_business: form.nature_of_business,
 

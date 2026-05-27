@@ -228,6 +228,12 @@ export function useUsersApi() {
     return merchant;
   };
 
+  const getWalletMe = async () => {
+    let wallet_user = await get("/wallet-service/me");
+    auth.setWalletProfile(wallet_user.data);
+    return wallet_user;
+  };
+
   const getAggregator = async () => {
     let aggregator = await get("/aggregator/me");
 
@@ -274,5 +280,5 @@ export function useUsersApi() {
     }
   };
 
-  return { SendOtp, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  return { SendOtp, getWalletMe, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }
