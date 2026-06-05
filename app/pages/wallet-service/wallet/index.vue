@@ -35,7 +35,7 @@
 
         <!-- Total Balance Card (live from API) -->
         <div class="panel balance-card">
-          <div class="field-label">Total Balance</div>
+          <div class="field-label">Current Balance</div>
           <div class="balance-big">
             ₹{{ formatCurrency(parseFloat(wallet.balance)) }}
             <span class="balance-currency">INR</span>
@@ -78,13 +78,15 @@
             </svg>
 
             <div class="cv-top">
-              <span class="cv-label">Current Balance</span>
+              <span class="cv-label">Card Holder</span>
               <span class="cv-network" :class="activeCard.network === 'VISA' ? 'visa-text' : 'mc-text'">
                 {{ activeCard.network }}
               </span>
             </div>
 
-            <div class="cv-balance">{{ activeCard.balance }}</div>
+            <!-- <div class="cv-balance">{{ activeCard.balance }}</div> -->
+
+            <div class="cv-balance">{{ activeCard.customer_name }}</div>
 
             <div class="cv-chip">
               <svg width="32" height="24" viewBox="0 0 32 24" fill="none">
@@ -115,9 +117,9 @@
             </div>
           </div>
 
-          <button class="apply-btn">
-            <v-icon size="15" class="mr-1">mdi-credit-card-plus-outline</v-icon>
-            Apply Card
+          <button class="apply-btn" @click="navigateTo('/wallet-service/card-enquiries')">
+            <v-icon size="15" class="mr-1">mdi-credit-card-multiple-outline</v-icon>
+            Manage Cards
           </button>
         </div>
       </div>
@@ -199,6 +201,38 @@
           </div>
         </div>
 
+        <!-- Recent Transactions List -->
+        <div class="panel transactions-panel">
+          <div class="panel-header">
+            <span class="panel-title">Recent Transactions</span>
+            <router-link to="/wallet-service/transactions" class="view-all-link">
+              View All
+            </router-link>
+          </div>
+
+          <div v-if="recentTransactions.length === 0" class="empty-state">
+            <v-icon size="32" color="#d0ccc0">mdi-swap-horizontal</v-icon>
+            <p>No transactions yet</p>
+          </div>
+
+          <div v-else class="transactions-list">
+            <div v-for="txn in recentTransactions" :key="txn.id" class="transaction-item">
+              <div class="txn-left">
+                <div class="txn-icon" :class="txn.type.toLowerCase()">
+                  <v-icon size="16">{{ txn.type === 'CREDIT' ? 'mdi-plus' : 'mdi-minus' }}</v-icon>
+                </div>
+                <div class="txn-content">
+                  <span class="txn-description">{{ txn.description || 'Transaction' }}</span>
+                  <span class="txn-date">{{ formatDateTime(txn.createdAt) }}</span>
+                </div>
+              </div>
+              <div class="txn-amount" :class="txn.type.toLowerCase()">
+                {{ txn.type === 'CREDIT' ? '+' : '-' }}₹{{ formatCurrency(parseFloat(txn.amount)) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -264,38 +298,6 @@
       </div>
     </div>
 
-    <!-- Recent Transactions List -->
-    <div class="panel transactions-panel">
-      <div class="panel-header">
-        <span class="panel-title">Recent Transactions</span>
-        <router-link to="/wallet-service/transactions" class="view-all-link">
-          View All
-        </router-link>
-      </div>
-
-      <div v-if="recentTransactions.length === 0" class="empty-state">
-        <v-icon size="32" color="#d0ccc0">mdi-swap-horizontal</v-icon>
-        <p>No transactions yet</p>
-      </div>
-
-      <div v-else class="transactions-list">
-        <div v-for="txn in recentTransactions" :key="txn.id" class="transaction-item">
-          <div class="txn-left">
-            <div class="txn-icon" :class="txn.type.toLowerCase()">
-              <v-icon size="16">{{ txn.type === 'CREDIT' ? 'mdi-plus' : 'mdi-minus' }}</v-icon>
-            </div>
-            <div class="txn-content">
-              <span class="txn-description">{{ txn.description || 'Transaction' }}</span>
-              <span class="txn-date">{{ formatDateTime(txn.createdAt) }}</span>
-            </div>
-          </div>
-          <div class="txn-amount" :class="txn.type.toLowerCase()">
-            {{ txn.type === 'CREDIT' ? '+' : '-' }}₹{{ formatCurrency(parseFloat(txn.amount)) }}
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Toast -->
     <div v-if="toastMessage" class="toast" :class="toastType">
       <v-icon size="18">{{ toastType === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}</v-icon>
@@ -354,16 +356,17 @@ const today = new Date().toLocaleDateString("en-IN", {
 });
 
 const cards = [
-  { label: "Personal", last4: "9568", network: "VISA", cardClass: "cv-blue", expiry: "12/26", balance: "₹14,200.00" },
-  { label: "Business", last4: "5641", network: "VISA", cardClass: "cv-dark", expiry: "12/27", balance: "₹12,302.50" },
-  { label: "Savings", last4: "9007", network: "MC", cardClass: "cv-teal", expiry: "03/26", balance: "₹4,890.00" },
+  { customer_name: "Arun", last4: "9568", network: "VISA", cardClass: "cv-blue", expiry: "12/26", balance: "₹14,200.00" },
+  { customer_name: "Vijay", last4: "5641", network: "VISA", cardClass: "cv-dark", expiry: "12/27", balance: "₹12,302.50" },
+  { customer_name: "Swathi", last4: "9007", network: "MC", cardClass: "cv-teal", expiry: "03/26", balance: "₹4,890.00" },
 ];
 
 const quickLinks = [
-  { label: "Deposit", icon: "mdi-plus-circle-outline" },
-  { label: "Send", icon: "mdi-send-outline" },
-  { label: "Invoice", icon: "mdi-file-document-outline" },
-  { label: "Transactions", icon: "mdi-swap-horizontal" },
+  { label: "Deposit",      icon: "mdi-plus-circle-outline"      },
+  { label: "Send",         icon: "mdi-send-outline"             },
+  { label: "Invoice",      icon: "mdi-file-document-outline"    },
+  { label: "Transactions", icon: "mdi-swap-horizontal"          },
+  { label: "Cards",        icon: "mdi-credit-card-outline"      },
 ];
 
 const activeCard = computed(() => cards[selectedCard.value]);
@@ -373,11 +376,9 @@ function selectCard(idx) { selectedCard.value = idx; }
 function handleQuickLink(link) {
   if (link.label === "Deposit") showDepositModal.value = true;
   if (link.label === "Transactions") navigateTo("/wallet-service/transactions");
+  if (link.label === "Cards") navigateTo("/wallet-service/card-enquiries");
 }
 
-// ════════════════════════════════════════════════════════════════
-// MODAL / TOAST STATE
-// ════════════════════════════════════════════════════════════════
 
 const showDepositModal = ref(false);
 const showWithdrawModal = ref(false);
@@ -822,7 +823,7 @@ onMounted(async () => {
 }
 
 .cv-label {
-  font-size: 11px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
 }
 
@@ -1113,9 +1114,7 @@ onMounted(async () => {
 }
 
 /* ── Transactions ── */
-.transactions-panel {
-  margin-top: 20px;
-}
+.transactions-panel {}
 
 .view-all-link {
   font-size: 12px;

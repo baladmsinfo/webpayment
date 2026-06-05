@@ -117,6 +117,9 @@
 
 <script setup>
 import { ref, computed, inject, onMounted, onBeforeUnmount } from "vue"
+import { useAuthStore } from "@/stores/auth";
+
+const auth = useAuthStore();
 
 const props = defineProps({
   title:  { type: String,  default: "BUCKSBOX" },
@@ -158,6 +161,7 @@ const loading = ref(false)
 async function logout() {
   loading.value = true
   try {
+    await auth.logout()
     const authToken = useCookie("authToken")
     authToken.value = null
     await navigateTo("/")

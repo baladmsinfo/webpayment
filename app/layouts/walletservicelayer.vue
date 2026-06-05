@@ -1,10 +1,10 @@
 <template>
   <div>
-    <WalletServiceNavbar title="BUCKSBOX" :menus="menus">
+    <WalletServiceNavbar :title="Title" :menus="menus">
       <template #content>
         <div class="layout-body">
 
-          <div v-if="showBanner" class="action-banner">
+          <div v-if="!docVerified" class="action-banner">
             <div class="banner-left">
               <div class="banner-icon-wrap">
                 <v-icon size="22" color="#ba1a1a">mdi-alert-outline</v-icon>
@@ -35,31 +35,47 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
-// import { getWalletMe } from "@/composables/apis/useUsersApi";
+import { useUsersApi } from "@/composables/apis/useUsersApi";
+
+const {getWalletMe} = useUsersApi();
+const auth = useAuthStore();
+
+const Title = ref();
 
 const router = useRouter();
 
 const showBanner = ref(true);
+const docVerified = ref(true);
 
 function goToDocuments() {
-  router.push("/wallet-service/settings/documents");
+  router.push("/wallet-service/verification");
 }
 
 const menus = ref([
+  // {
+  //   title: "Dashboard",
+  //   icon: "mdi-view-dashboard-outline",
+  //   url: "/wallet-service/dashboard",
+  // },
   {
-    title: "Dashboard",
-    icon: "mdi-view-dashboard-outline",
-    url: "/wallet-service/dashboard",
-  },
-  {
-    title: "Wallet",
+    title: "Home",
     icon: "mdi-wallet-outline",
     url: "/wallet-service/wallet",
   },
   {
     title: "Transactions",
     icon: "mdi-swap-horizontal",
-    url: "/wallet-service/transactions",
+    url: "/wallet-service/txn",
+  },
+  {
+    title: "Customers",
+    icon: "mdi-account-group-outline",
+    url: "/wallet-service/customer",
+  },
+  {
+    title: "Cards",
+    icon: "mdi-credit-card-outline",
+    url: "/wallet-service/card-enquiries",
   },
   {
     title: "Settings",
@@ -68,9 +84,13 @@ const menus = ref([
   },
 ]);
 
-// onMounted(async () => {
-//   await getWalletMe();
-// });
+onMounted(async () => {
+  await getWalletMe();
+  console.log("Wallet Profile (me)", auth.walletProfile.data?.kyc)
+
+  docVerified.value = auth.walletProfile.data?.kyc;
+  Title.value = auth.walletProfile.data?.data?.dba_name || "Bucksbox";
+});
 </script>
 
 <style scoped>

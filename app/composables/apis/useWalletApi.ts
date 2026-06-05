@@ -2,6 +2,36 @@
 import { ref, reactive } from "vue";
 import { useApi } from "~/composables/apis/useApi";
 
+// ── Types ──────────────────────────────────────────────────────
+export interface WalletTxnRow {
+  id: string;
+  walletId: string;
+  transactionId: string;
+  amount: string;
+  type: "CREDIT" | "DEBIT";
+  description: string;
+  createdAt: string;
+  txn: { id: string; type: string; status: string } | null;
+}
+
+export interface TxnPagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface FetchTxnParams {
+  page?: number;
+  limit?: number;
+  type?: "CREDIT" | "DEBIT" | "";
+  from?: string;
+  to?: string;
+  search?: string;
+}
+
 export const useWalletApi = () => {
   const { get, post } = useApi();
 
@@ -19,181 +49,159 @@ export const useWalletApi = () => {
     limits: [] as any[],
   });
 
-  const loading = ref(false);
-  const error = ref<string | null>(null);
+  // ── Transactions state ──
+  const txnList      = ref<WalletTxnRow[]>([]);
+  const txnPagination = ref<TxnPagination>({
+    total: 0, page: 1, limit: 10,
+    totalPages: 1, hasNext: false, hasPrev: false,
+  });
+  const txnLoading = ref(false);
+  const txnError   = ref<string | null>(null);
 
-  // ─────────────────────────────────────────────
-  // GET WALLET
-  // ─────────────────────────────────────────────
+  const loading = ref(false);
+  const error   = ref<string | null>(null);
+
+  // ── Fetch Wallet ───────────────────────────────────────────────
   const fetchWallet = async (ownerType = "profile", id: string | null = null) => {
     loading.value = true;
-    error.value = null;
-
+    error.value   = null;
     try {
       const params: Record<string, string> = {};
       if (id) params.id = id;
-
       const res = await get(`/wallet/${ownerType}`, { params });
-
-      console.log("Fetch wallet response:", res.data);
-
       if (res.data?.statusCode === "00" && res.data?.data) {
         Object.assign(walletData, res.data.data);
         return walletData;
       }
-
       throw new Error(res.data?.message || "Failed to fetch wallet");
     } catch (err: any) {
       error.value = err?.response?.data?.message || err.message;
-      console.error("Wallet fetch error:", err);
       throw err;
     } finally {
       loading.value = false;
     }
   };
 
-  // ─────────────────────────────────────────────
-  // ADD MONEY
-  // ─────────────────────────────────────────────
-  const addMoney = async (
-    amount: number,
-    description: string,
-    ownerType = "profile",
-    id: string | null = null
-  ) => {
-    loading.value = true;
-    error.value = null;
+  // ── Fetch Transactions (paginated) ─────────────────────────────
+  const fetchTransactions = async (params: FetchTxnParams = {}) => {
+    txnLoading.value = true;
+    txnError.value   = null;
+    try {
+      const query: Record<string, string> = {
+        page:  String(params.page  ?? 1),
+        limit: String(params.limit ?? 10),
+      };
+      if (params.type)   query.type   = params.type;
+      if (params.from)   query.from   = params.from;
+      if (params.to)     query.to     = params.to;
+      if (params.search) query.search = params.search;
 
+      const res = await get("/wallet-service/transactions", { params: query });
+
+      if (res.data?.statusCode === "00" && res.data?.data) {
+        txnList.value       = res.data.data.transactions;
+        txnPagination.value = res.data.data.pagination;
+        return res.data.data;
+      }
+      throw new Error(res.data?.message || "Failed to fetch transactions");
+    } catch (err: any) {
+      txnError.value = err?.response?.data?.message || err.message;
+      throw err;
+    } finally {
+      txnLoading.value = false;
+    }
+  };
+
+  // ── Add / Debit / Process (unchanged) ─────────────────────────
+  const addMoney = async (
+    amount: number, description: string,
+    ownerType = "profile", id: string | null = null
+  ) => {
+    loading.value = true; error.value = null;
     try {
       const params: Record<string, string> = {};
       if (id) params.id = id;
-
-      const res = await post(
-        `/wallet/${ownerType}/add-money`,
-        { amount, description },
-        { params }
-      );
-
+      const res = await post(`/wallet/${ownerType}/add-money`, { amount, description }, { params });
       if (res.data?.statusCode === "00" && res.data?.data) {
         Object.assign(walletData, res.data.data);
         return walletData;
       }
-
       throw new Error(res.data?.message || "Failed to add money");
     } catch (err: any) {
       error.value = err?.response?.data?.message || err.message;
-      console.error("Add money error:", err);
       throw err;
     } finally {
       loading.value = false;
     }
   };
 
-  // ─────────────────────────────────────────────
-  // DEBIT MONEY
-  // ─────────────────────────────────────────────
   const debitMoney = async (
-    amount: number,
-    description: string,
-    channel = "WALLET",
-    paymentMethod = "ALL",
-    ownerType = "profile",
-    id: string | null = null
+    amount: number, description: string,
+    channel = "WALLET", paymentMethod = "ALL",
+    ownerType = "profile", id: string | null = null
   ) => {
-    loading.value = true;
-    error.value = null;
-
+    loading.value = true; error.value = null;
     try {
       const params: Record<string, string> = {};
       if (id) params.id = id;
-
       const res = await post(
         `/wallet/${ownerType}/debit-money`,
         { amount, description, channel, paymentMethod },
         { params }
       );
-
       if (res.data?.statusCode === "00" && res.data?.data) {
         Object.assign(walletData, res.data.data);
         return walletData;
       }
-
       throw new Error(res.data?.message || "Failed to debit wallet");
     } catch (err: any) {
       error.value = err?.response?.data?.message || err.message;
-      console.error("Debit money error:", err);
       throw err;
     } finally {
       loading.value = false;
     }
   };
 
-  // ─────────────────────────────────────────────
-  // PROCESS TRANSACTION
-  // ─────────────────────────────────────────────
   const processTransaction = async (
-    amount: number,
-    direction: "CREDIT" | "DEBIT",
-    channel = "WALLET",
-    paymentMethod = "ALL",
-    description = "",
-    ownerType = "profile",
-    id: string | null = null
+    amount: number, direction: "CREDIT" | "DEBIT",
+    channel = "WALLET", paymentMethod = "ALL",
+    description = "", ownerType = "profile", id: string | null = null
   ) => {
-    loading.value = true;
-    error.value = null;
-
+    loading.value = true; error.value = null;
     try {
       const params: Record<string, string> = {};
       if (id) params.id = id;
-
       const res = await post(
         `/wallet/${ownerType}/txn`,
         { amount, direction, channel, paymentMethod, description },
         { params }
       );
-
       if (res.data?.statusCode === "00" && res.data?.data) {
         Object.assign(walletData, res.data.data);
         return walletData;
       }
-
       throw new Error(res.data?.message || "Failed to process transaction");
     } catch (err: any) {
       error.value = err?.response?.data?.message || err.message;
-      console.error("Transaction error:", err);
       throw err;
     } finally {
       loading.value = false;
     }
   };
 
-  // ─────────────────────────────────────────────
-  // HELPERS
-  // ─────────────────────────────────────────────
-  const getRecentTransactions = (limit = 10) =>
-    walletData.ledger.slice(0, limit);
-
+  const getRecentTransactions = (limit = 10) => walletData.ledger.slice(0, limit);
   const getTotalCredits = () =>
-    walletData.ledger
-      .filter((txn) => txn.type === "CREDIT")
-      .reduce((sum, txn) => sum + parseFloat(txn.amount || 0), 0);
-
+    walletData.ledger.filter(t => t.type === "CREDIT")
+      .reduce((s, t) => s + parseFloat(t.amount || 0), 0);
   const getTotalDebits = () =>
-    walletData.ledger
-      .filter((txn) => txn.type === "DEBIT")
-      .reduce((sum, txn) => sum + parseFloat(txn.amount || 0), 0);
+    walletData.ledger.filter(t => t.type === "DEBIT")
+      .reduce((s, t) => s + parseFloat(t.amount || 0), 0);
 
   return {
-    walletData,
-    loading,
-    error,
-    fetchWallet,
-    addMoney,
-    debitMoney,
-    processTransaction,
-    getRecentTransactions,
-    getTotalCredits,
-    getTotalDebits,
+    walletData, loading, error,
+    txnList, txnPagination, txnLoading, txnError,
+    fetchWallet, fetchTransactions,
+    addMoney, debitMoney, processTransaction,
+    getRecentTransactions, getTotalCredits, getTotalDebits,
   };
 };

@@ -9,7 +9,7 @@
           <div class="header-badge">
             <v-icon size="18" color="#7ecfff">mdi-wallet-outline</v-icon>
           </div>
-          <h2 class="header-title">Wallet Service Registration</h2>
+          <h2 class="header-title">Registration</h2>
         </div>
         <span class="header-step">New Account</span>
       </header>
@@ -24,7 +24,7 @@
             <section class="form-section">
               <h3 class="section-title">
                 <v-icon class="section-icon" size="20">mdi-account-circle-outline</v-icon>
-                Identity &amp; Contact
+                Contact Details
               </h3>
 
               <v-row dense>
@@ -50,8 +50,8 @@
                 </v-col>
 
                 <v-col cols="12" sm="6" md="6" lg="4">
-                  <label class="field-label">PASSWORD <span class="optional-tag">(auto-generated if blank)</span></label>
-                  <v-text-field v-model="form.password" placeholder="Leave blank to auto-generate"
+                  <label class="field-label">PASSWORD</label>
+                  <v-text-field :rules="[req]" v-model="form.password" placeholder="Enter New Password"
                     :type="showPass ? 'text' : 'password'"
                     variant="outlined" density="comfortable"
                     prepend-inner-icon="mdi-lock-outline"
@@ -349,7 +349,7 @@
                   :disabled="!validForm || submitting" @click="submitForm">
                   <span v-if="submitting">Registering…</span>
                   <template v-else>
-                    Register Wallet Service
+                    Register
                     <v-icon size="16" class="ml-1">mdi-arrow-right</v-icon>
                   </template>
                 </button>
