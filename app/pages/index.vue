@@ -175,7 +175,7 @@ const ROLE_ROUTES = {
     vendor: '/vendor/dashboard',
     aggregator: '/aggregator/dashboard',
     merchant: '/merchant/dashboard',
-    wallet_service: '/wallet-service/wallet',
+    // wallet_service: '/wallet-service/wallet',
 };
 
 /* ── Validation ── */
@@ -216,7 +216,7 @@ async function onSubmit() {
 
         const res = await login(
             { emailOrMobile: mobilenumber.value, password: password.value },
-            ['admin', 'vendor', 'aggregator', 'merchant', 'wallet_service']
+            ['admin', 'vendor', 'aggregator', 'merchant']
         );
 
         const role = res?.data?.user?.role?.toLowerCase();
@@ -227,7 +227,7 @@ async function onSubmit() {
         } else {
             alert.value = {
                 show: true,
-                message: `Unrecognised role "${role}". Please contact support.`,
+                message: `No user found for our services. Please contact support.`,
             };
         }
     } catch (e) {
