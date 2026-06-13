@@ -101,7 +101,7 @@
     </div>
 
     <!-- ── Row 3: Today / Weekly / Monthly / Yearly Collections ── -->
-    <div class="stats-grid stats-grid-bottom">
+    <!-- <div class="stats-grid stats-grid-bottom">
       <template v-if="!loading">
         <div v-for="(stat, i) in overallStats.slice(2, 6)" :key="i" class="stat-card">
           <div class="stat-card-header">
@@ -121,7 +121,7 @@
           <div class="skel skel-md"></div>
         </div>
       </template>
-    </div>
+    </div> -->
 
     <!-- ── Top Merchants ── -->
     <div class="section-header">

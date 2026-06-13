@@ -19,15 +19,13 @@
 
                 <div class="left-copy">
                     <h2 class="left-headline">One platform.<br />Every service.</h2>
-                    <p class="left-sub">From AEPS and UPI to DMT and BBPS — a unified fintech platform powering every
-                        transaction.
-                    </p>
+                    <p class="left-sub">A unified fintech platform powering every transaction, anytime, anywhere.</p>
                 </div>
 
                 <div class="feature-pills">
-                    <div v-for="svc in services" :key="svc.name" class="feature-pill">
-                        <span class="mdi" :class="svc.icon"></span>
-                        {{ svc.name }}
+                    <div v-for="feat in features" :key="feat.label" class="feature-pill">
+                        <span class="mdi" :class="feat.icon"></span>
+                        <span class="pill-label">{{ feat.label }}</span>
                     </div>
                 </div>
 
@@ -161,13 +159,13 @@ const focuses = reactive({ mobile: false, password: false });
 const errors = reactive({ mobile: '', password: '' });
 const alert = ref({ show: false, message: '' });
 
-const services = [
-    { name: 'AEPS', icon: 'mdi-fingerprint' },
-    { name: 'DMT', icon: 'mdi-bank-transfer' },
-    { name: 'UPI', icon: 'mdi-qrcode-scan' },
-    { name: 'BBPS', icon: 'mdi-lightning-bolt-outline' },
-    { name: 'MATM', icon: 'mdi-credit-card-wireless-outline' },
-    { name: 'POS', icon: 'mdi-point-of-sale' },
+const features = [
+    { label: 'Secure Payments', icon: 'mdi-shield-check-outline' },
+    { label: 'Instant Transfer', icon: 'mdi-lightning-bolt-outline' },
+    { label: 'Bill Payments', icon: 'mdi-receipt-text-outline' },
+    { label: 'Card Services', icon: 'mdi-credit-card-outline' },
+    { label: 'Bank Transfer', icon: 'mdi-bank-transfer' },
+    { label: '24/7 Support', icon: 'mdi-headset' },
 ]
 
 const ROLE_ROUTES = {
@@ -175,7 +173,7 @@ const ROLE_ROUTES = {
     vendor: '/vendor/dashboard',
     aggregator: '/aggregator/dashboard',
     merchant: '/merchant/dashboard',
-    // wallet_service: '/wallet-service/wallet',
+    wallet_service: '/wallet-service/wallet',
 };
 
 /* ── Validation ── */
@@ -216,7 +214,7 @@ async function onSubmit() {
 
         const res = await login(
             { emailOrMobile: mobilenumber.value, password: password.value },
-            ['admin', 'vendor', 'aggregator', 'merchant']
+            ['admin', 'vendor', 'aggregator', 'merchant', 'wallet_service']
         );
 
         const role = res?.data?.user?.role?.toLowerCase();
@@ -227,7 +225,7 @@ async function onSubmit() {
         } else {
             alert.value = {
                 show: true,
-                message: `No user found for our services. Please contact support.`,
+                message: `Unrecognised role "${role}". Please contact support.`,
             };
         }
     } catch (e) {

@@ -270,6 +270,10 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useVendorApi } from "@/composables/apis/useVendorApi";
 import { useRouter } from "vue-router";
 
+const props = defineProps<{
+  transactionType?: string;
+}>();
+
 const router = useRouter();
 const { getAllVendorTransactions, getMerchants } = useVendorApi();
 
@@ -363,6 +367,7 @@ const loadTransactions = async () => {
       fromDate:   normalizeDate(filters.value.fromDate),
       toDate:     normalizeDate(filters.value.toDate, true),
       merchantId: filters.value.merchantId,
+      transactionMethod:    props.transactionType,     
     });
     transactions.value = res.data  || [];
     total.value        = res.meta?.total || 0;

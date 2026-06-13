@@ -26,7 +26,7 @@
                                     <label class="field-label">MERCHANT NAME</label>
                                     <v-text-field v-model.trim="form.legal_name" placeholder="As per PAN"
                                         variant="outlined" density="comfortable" :rules="[req]"
-                                        prepend-inner-icon="mdi-badge-account-outline" class="mh-field" 
+                                        prepend-inner-icon="mdi-badge-account-outline" class="mh-field"
                                         hide-details="auto" />
                                 </v-col>
 
@@ -109,7 +109,7 @@
 
                             <v-row dense>
 
-                                
+
                                 <v-col cols="12" sm="6" md="6" lg="4">
                                     <label class="field-label">BUSINESS NAME</label>
                                     <v-text-field v-model.trim="form.business_name" placeholder="Business Name"
@@ -558,60 +558,60 @@ const confirmDetails = computed(() => validForm.value);
 
 // Form state
 const form = reactive({
-  legal_name: "",
-  business_name: "",
-  dba_name: "",
-  dob: "",
-  primary_email_id: "",
-  primary_mobile: "",
-  business_type: "",
-  nature_of_business: "",
-  annual_turn_over: "",
-  gender: "M",
+    legal_name: "",
+    business_name: "",
+    dba_name: "",
+    dob: "",
+    primary_email_id: "",
+    primary_mobile: "",
+    business_type: "",
+    nature_of_business: "",
+    annual_turn_over: "",
+    gender: "M",
 
-  lat: "10.3673",
-  long: "77.9803",
+    lat: "10.3673",
+    long: "77.9803",
 
-  website: "",
+    website: "",
 
-  beneficiary_email: "",
-  beneficiary_mobile: "",
+    beneficiary_email: "",
+    beneficiary_mobile: "",
 
-  official_address: "",
-  address1: "",
-  address2: "",
-  address3: "",
-  phone: "",
-  city: "",
-  state: "",
-  pincode: "",
+    official_address: "",
+    address1: "",
+    address2: "",
+    address3: "",
+    phone: "",
+    city: "",
+    state: "",
+    pincode: "",
 
-  residential_address: "",
-  res_address1: "",
-  res_address2: "",
-  res_address3: "",
-  res_mobile: "",
-  res_phone_number: "",
-  res_city: "",
-  res_state: "",
-  res_pincode: "",
+    residential_address: "",
+    res_address1: "",
+    res_address2: "",
+    res_address3: "",
+    res_mobile: "",
+    res_phone_number: "",
+    res_city: "",
+    res_state: "",
+    res_pincode: "",
 
-  vister_address: "",
-  v_address1: "",
-  v_address2: "",
-  v_address3: "",
-  v_mobile: "",
-  v_phone_number: "",
-  v_city: "",
-  v_state: "",
-  v_pincode: "",
+    vister_address: "",
+    v_address1: "",
+    v_address2: "",
+    v_address3: "",
+    v_mobile: "",
+    v_phone_number: "",
+    v_city: "",
+    v_state: "",
+    v_pincode: "",
 
-  mcc: "", // Furniture Stores MCC code
+    mcc: "", // Furniture Stores MCC code
 
-  std_code: "",
-  lead_source: "BUCKSBOX",
-  lg_code: "",
-  ckyc: true
+    std_code: "",
+    lead_source: "BUCKSBOX",
+    lg_code: "",
+    ckyc: true
 });
 
 const sameAsOfficialResidential = ref(false);

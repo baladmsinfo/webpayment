@@ -98,6 +98,9 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue"
+import { useAuthStore } from "@/stores/auth";
+
+const auth = useAuthStore();
 
 const props = defineProps({
   title:  { type: String,  default: "BUCKSBOX" },
@@ -130,8 +133,9 @@ function isActive(url) {
   return route.path === url || route.path.startsWith(url + '/')
 }
 
-function logout() {
+async function logout() {
   loading.value = true
+  await auth.logout()
   const authToken = useCookie("authToken")
   authToken.value = null
   navigateTo("/")

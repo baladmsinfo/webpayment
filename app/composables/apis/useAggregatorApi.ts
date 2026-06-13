@@ -120,6 +120,7 @@ export function useAggregatorApi() {
         fromDate,
         toDate,
         merchantId,
+        transactionMethod,
     }: any = {}) => {
         const query = new URLSearchParams({
             page: String(page),
@@ -128,7 +129,8 @@ export function useAggregatorApi() {
             ...(paymentMethod && { paymentMethod }),
             ...(fromDate && { fromDate }),
             ...(toDate && { toDate }),
-            ...(merchantId && { merchantId }), // ✅ ADD
+            ...(merchantId && { merchantId }),
+            ...(transactionMethod && { transactionMethod }),
         }).toString();
 
 

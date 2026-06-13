@@ -14,7 +14,19 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed, provide, onMounted, onBeforeUnmount } from "vue"
+import { useOnboadingApi } from "~/composables/apis/useOnboadingApi";
+
+const { getServices } = useOnboadingApi();
+
+const drawerOpen = ref(false)
+provide("drawerOpen", drawerOpen)
+
+const winW     = ref(typeof window !== "undefined" ? window.innerWidth : 1280)
+const isMobile = computed(() => winW.value < 960)
+function onResize() { winW.value = window.innerWidth }
+onMounted(() => window.addEventListener("resize", onResize))
+onBeforeUnmount(() => window.removeEventListener("resize", onResize))
 
 const menus = ref([
   {
@@ -41,6 +53,16 @@ const menus = ref([
     title: "Transactions",
     icon: "mdi-swap-horizontal",
     url: "/aggregator/transactions",
+    children: [],
+  },
+  {
+    title: "Set Ups",
+    icon: "mdi-tools",
+    url: "/aggregator/setups",
+    children: [
+      { title: "Services and Interfaces", icon: "mdi-connection", url: "/aggregator/setups/services" },
+      // { title: "Pending Vendors",   icon: "mdi-account-clock-outline", url: "/aggregator/vendor/pending"   },
+    ],
   },
   {
     title: "Settings",
@@ -48,6 +70,40 @@ const menus = ref([
     url: "/aggregator/settings",
   },
 ]);
+
+const serviceIconMap = {
+  DMT:  "mdi-bank-transfer",
+  AEPS: "mdi-fingerprint",
+  UPI:  "mdi-qrcode",
+  BBPS: "mdi-receipt-text-outline",
+  MATM: "mdi-atm",
+  POS:  "mdi-point-of-sale",
+}
+
+onMounted(async () => {
+  window.addEventListener("resize", onResize)
+  try {
+    const res = await getServices()
+    const services = res?.services ?? []
+
+    if(!services.length) {
+      menus.value = menus.value.filter(m => m.title !== "Transactions") 
+    }
+
+    const txMenu = menus.value.find(m => m.title === "Transactions")
+    if (services.length &&txMenu) {
+      txMenu.children = services.map((data) => ({
+        title: `${data.service} Transactions`,
+        icon:  serviceIconMap[data.service] ?? "mdi-clipboard-list-outline",
+        url:   `/aggregator/transactions/${data.service.toLowerCase()}`,
+      }))
+    }
+  } catch (e) {
+    console.error("Failed to fetch vendor linked services:", e)
+  }
+})
+
+onBeforeUnmount(() => window.removeEventListener("resize", onResize))
 </script>
 
 <style scoped>

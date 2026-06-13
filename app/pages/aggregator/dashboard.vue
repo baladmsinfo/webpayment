@@ -18,17 +18,13 @@
       </div>
     </div>
 
-    <!-- ── Top 3 Stat Cards ── -->
-    <div class="stats-grid-top">
-      <div
-        class="stat-card"
-        v-for="(stat, i) in overallStats.slice(0, 3)"
-        :key="'top-' + i"
-        :style="{ '--accent': statColors[i] }"
-      >
+    <!-- ── Row 1: Merchant Count Cards ── -->
+    <div class="row-2col">
+      <div class="stat-card" v-for="(stat, i) in merchantStats" :key="'m-' + i"
+        :style="{ '--accent': merchantColors[i] }">
         <template v-if="!loading">
           <div class="stat-icon-wrap">
-            <span class="mdi stat-icon" :class="statIcons[i]"></span>
+            <span class="mdi stat-icon" :class="merchantIcons[i]"></span>
           </div>
           <div class="stat-body">
             <p class="stat-label">{{ stat.title }}</p>
@@ -48,8 +44,8 @@
       </div>
     </div>
 
-    <!-- ── Middle Row: 2 Charts + 3 Stacked Stats ── -->
-    <div class="mid-grid">
+    <!-- ── Row 2: Two Charts ── -->
+    <div class="row-2col">
 
       <!-- Payment Methods Donut -->
       <div class="card chart-card">
@@ -123,40 +119,37 @@
         </template>
       </div>
 
-      <!-- 3 Stacked Collection Stats -->
-      <div class="stacked-stats">
-        <div
-          class="stat-card stat-card-sm"
-          v-for="(stat, i) in overallStats.slice(3, 6)"
-          :key="'btm-' + i"
-          :style="{ '--accent': statColors[i + 3] }"
-        >
-          <template v-if="!loading">
-            <div class="stat-icon-wrap stat-icon-sm">
-              <span class="mdi stat-icon" :class="statIcons[i + 3]"></span>
-            </div>
-            <div class="stat-body">
-              <p class="stat-label">{{ stat.title }}</p>
-              <p class="stat-value stat-value-sm">
-                <span class="currency-prefix">₹</span>{{ stat.value }}
-              </p>
-              <p class="stat-sub" v-if="stat.sub">{{ stat.sub }} txns</p>
-            </div>
-            <div class="stat-accent-bar"></div>
-          </template>
-          <template v-else>
-            <div class="skel skel-icon skel-icon-sm"></div>
-            <div class="stat-body">
-              <div class="skel skel-label"></div>
-              <div class="skel skel-value mt-2" style="width:50%"></div>
-            </div>
-          </template>
-        </div>
-      </div>
-
     </div>
 
-    <!-- ── Top Merchants ── -->
+    <!-- ── Row 3: Collection Stats (Today + Weekly + Monthly + Yearly) ── -->
+    <div class="row-4col">
+      <div class="stat-card" v-for="(stat, i) in collectionStats" :key="'col-' + i"
+        :style="{ '--accent': collectionColors[i] }">
+        <template v-if="!loading">
+          <div class="stat-icon-wrap">
+            <span class="mdi stat-icon" :class="collectionIcons[i]"></span>
+          </div>
+          <div class="stat-body">
+            <p class="stat-label">{{ stat.title }}</p>
+            <p class="stat-value stat-value-md">
+              <span class="currency-prefix">₹</span>{{ stat.value }}
+            </p>
+            <p class="stat-sub" v-if="stat.sub">{{ stat.sub }} txns</p>
+          </div>
+          <div class="stat-accent-bar"></div>
+        </template>
+        <template v-else>
+          <div class="skel skel-icon"></div>
+          <div class="stat-body">
+            <div class="skel skel-label"></div>
+            <div class="skel skel-value mt-2"></div>
+            <div class="skel skel-sub mt-1"></div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- ── Row 4: Top Merchants ── -->
     <div class="section-header">
       <h2 class="section-title">
         <span class="mdi mdi-trophy-variant-outline trophy-icon"></span>
@@ -165,11 +158,7 @@
     </div>
 
     <div class="merchants-grid">
-      <div
-        class="card merchant-card"
-        v-for="(list, period) in topMerchants"
-        :key="period"
-      >
+      <div class="card merchant-card" v-for="(list, period) in topMerchants" :key="period">
         <template v-if="!loading">
           <div class="card-header">
             <div class="card-title-wrap">
@@ -182,18 +171,11 @@
           </div>
 
           <div class="merchant-list" v-if="list.length > 0">
-            <div
-              class="merchant-row"
-              v-for="(m, idx) in list"
-              :key="m.id"
-            >
-              <!-- Rank -->
+            <div class="merchant-row" v-for="(m, idx) in list" :key="m.id">
               <div class="rank-badge" :class="'rank-' + (idx + 1)">
                 <span v-if="idx < 3" class="mdi" :class="rankIcons[idx]"></span>
                 <span v-else>{{ idx + 1 }}</span>
               </div>
-
-              <!-- Info -->
               <div class="merchant-avatar" :style="{ background: avatarColor(m.name) }">
                 {{ initials(m.name) }}
               </div>
@@ -201,8 +183,6 @@
                 <p class="merchant-name">{{ m.name }}</p>
                 <p class="merchant-txns">{{ m.txnCount }} transactions</p>
               </div>
-
-              <!-- Amount -->
               <div class="merchant-amount">
                 ₹{{ m.totalAmount.toLocaleString('en-IN') }}
               </div>
@@ -244,35 +224,38 @@ import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 import { useAuthStore } from "~/stores/auth";
 
 const { getAggregator, getTransactions, getTransactionStatusSummary, getPaymentMethodSummary } = useAggregatorApi();
-const authStore  = useAuthStore();
-const apexchart  = VueApexCharts;
-const loading    = ref(true);
+const authStore = useAuthStore();
+const apexchart = VueApexCharts;
+const loading = ref(true);
 
 definePageMeta({ layout: "aggregatorlayer", middleware: "auth" });
 
 /* ── Helpers ── */
-const today = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-const periodLabel = (p) => ({ daily:'Today', weekly:'This Week', monthly:'This Month', yearly:'This Year' }[p] || p);
-const initials = (n) => (n || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+const periodLabel = (p) => ({ daily: 'Today', weekly: 'This Week', monthly: 'This Month', yearly: 'This Year' }[p] || p);
+const initials = (n) => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-const AVATAR_COLORS = ['#1142d4','#7c3aed','#db2777','#059669','#d97706','#dc2626','#0891b2'];
-const avatarColor   = (n) => AVATAR_COLORS[(n || '?').charCodeAt(0) % AVATAR_COLORS.length];
-
+const AVATAR_COLORS = ['#1142d4', '#7c3aed', '#db2777', '#059669', '#d97706', '#dc2626', '#0891b2'];
+const avatarColor = (n) => AVATAR_COLORS[(n || '?').charCodeAt(0) % AVATAR_COLORS.length];
 const rankIcons = ['mdi-medal', 'mdi-medal-outline', 'mdi-podium'];
 
-/* ── Stat config ── */
-const statIcons  = ['mdi-store-check-outline','mdi-store-outline','mdi-cash-multiple','mdi-calendar-week','mdi-calendar-month-outline','mdi-calendar-star'];
-const statColors = ['#1142d4','#7c3aed','#059669','#d97706','#db2777','#0891b2'];
+/* ── Row 1: Merchant stats ── */
+const merchantIcons = ['mdi-store-check-outline', 'mdi-store-outline'];
+const merchantColors = ['#1142d4', '#7c3aed'];
+const merchantStats = computed(() => [
+  { title: 'Active Merchants', value: `${authStore.merchants.active}`, sub: 'merchants active' },
+  { title: 'Total Merchants', value: `${authStore.merchants.total}`, sub: 'total registered' },
+]);
 
-/* ── Computed stats ── */
-const overallStats = computed(() => [
-  { title: 'Active Merchants',   value: `${authStore.merchants.active}`,                             sub: 'merchants active' },
-  { title: 'Total Merchants',    value: `${authStore.merchants.total}`,                              sub: 'total registered' },
-  { title: 'Today Collection',   value: authStore.summary.today.totalAmount.toFixed(2),              sub: `${authStore.summary.today.count} txns` },
-  { title: 'Weekly Collection',  value: authStore.summary.week.totalAmount.toFixed(2),               sub: `${authStore.summary.week.count} txns` },
-  { title: 'Monthly Collection', value: authStore.summary.month.totalAmount.toFixed(2),              sub: `${authStore.summary.month.count} txns` },
-  { title: 'Yearly Collection',  value: authStore.summary.year.totalAmount.toFixed(2),               sub: `${authStore.summary.year.count} txns` },
+/* ── Row 3: Collection stats ── */
+const collectionIcons = ['mdi-cash-multiple', 'mdi-calendar-week', 'mdi-calendar-month-outline', 'mdi-calendar-star'];
+const collectionColors = ['#059669', '#d97706', '#db2777', '#0891b2'];
+const collectionStats = computed(() => [
+  { title: 'Today Transactions', value: authStore.summary.today.totalAmount.toFixed(2), sub: authStore.summary.today.count },
+  { title: 'Weekly Transactions', value: authStore.summary.week.totalAmount.toFixed(2), sub: authStore.summary.week.count },
+  { title: 'Monthly Transactions', value: authStore.summary.month.totalAmount.toFixed(2), sub: authStore.summary.month.count },
+  { title: 'Yearly Transactions', value: authStore.summary.year.totalAmount.toFixed(2), sub: authStore.summary.year.count },
 ]);
 
 const topMerchants = computed(() => authStore.topMerchants);
@@ -297,29 +280,29 @@ const CHART_BASE = {
 const donutSeries = computed(() => Object.values(authStore.paymentSummary).map(m => m.amount));
 const donutOptions = computed(() => {
   const methods = Object.keys(authStore.paymentSummary);
-  const values  = Object.values(authStore.paymentSummary).map(m => m.amount);
-  const total   = values.reduce((a, v) => a + v, 0);
+  const values = Object.values(authStore.paymentSummary).map(m => m.amount);
+  const total = values.reduce((a, v) => a + v, 0);
   return {
     ...CHART_BASE,
     labels: methods,
-    colors: ['#1142d4','#10b981','#f59e0b','#ef4444','#7c3aed','#0891b2'],
+    colors: ['#1142d4', '#10b981', '#f59e0b', '#ef4444', '#7c3aed', '#0891b2'],
     plotOptions: { ...CHART_BASE.plotOptions, pie: { donut: { ...CHART_BASE.plotOptions.pie.donut, labels: { ...CHART_BASE.plotOptions.pie.donut.labels, total: { ...CHART_BASE.plotOptions.pie.donut.labels.total, label: 'Total', formatter: () => `₹${total.toLocaleString('en-IN')}` } } } } },
     dataLabels: { enabled: true, formatter: (val, opts) => `₹${values[opts.seriesIndex].toLocaleString('en-IN')}` },
     tooltip: { y: { formatter: val => `₹${val.toLocaleString('en-IN')}` } },
   };
 });
 
-const statusDonutSeries  = computed(() => Object.values(authStore.transactionStatusSummary).map(t => t.count));
+const statusDonutSeries = computed(() => Object.values(authStore.transactionStatusSummary).map(t => t.count));
 const statusDonutOptions = computed(() => {
-  const data  = Object.values(authStore.transactionStatusSummary);
+  const data = Object.values(authStore.transactionStatusSummary);
   const labels = data.map(t => t.status);
-  const total  = data.reduce((s, t) => s + t.count, 0);
+  const total = data.reduce((s, t) => s + t.count, 0);
   return {
     ...CHART_BASE,
     labels,
-    colors: ['#10b981','#ef4444','#f59e0b','#1142d4'],
+    colors: ['#10b981', '#ef4444', '#f59e0b', '#1142d4'],
     plotOptions: { ...CHART_BASE.plotOptions, pie: { donut: { ...CHART_BASE.plotOptions.pie.donut, labels: { ...CHART_BASE.plotOptions.pie.donut.labels, total: { ...CHART_BASE.plotOptions.pie.donut.labels.total, label: 'Total Txns', formatter: () => total.toLocaleString('en-IN') } } } } },
-    tooltip: { y: { formatter: (val, opts) => { const t = data[opts.seriesIndex]; return `${t.count} Txns | ₹${t.amount} | Code: ${t.responceCode}`; } } },
+    tooltip: { y: { formatter: (val, opts) => { const t = data[opts.seriesIndex]; return `${t.count} Txns | ₹${t.amount} | Code: ${t.responseCode}`; } } },
   };
 });
 
@@ -340,237 +323,544 @@ onMounted(async () => {
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 .dash-root {
   font-family: 'DM Sans', sans-serif;
-  display: flex; flex-direction: column; gap: 16px;
-  padding-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px 40px;
 }
 
 /* ── Header ── */
 .dash-header {
-  display: flex; align-items: flex-start;
-  justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-.dash-title { font-size: 22px; font-weight: 800; color: #0f172a; }
-@media (min-width: 640px) { .dash-title { font-size: 26px; } }
-.dash-sub   { font-size: 12px; color: #64748b; margin-top: 3px; }
 
-.header-actions { display: flex; align-items: center; gap: 10px; }
-.refresh-btn {
-  width: 36px; height: 36px; border-radius: 9px;
-  background: #fff; border: 1px solid #e2e8f0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; color: #64748b; cursor: pointer;
-  transition: background .13s, color .13s;
-  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+.dash-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
 }
-.refresh-btn:hover { background: #f1f5f9; color: #1142d4; }
-.refresh-btn.spinning .mdi { animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (min-width: 640px) {
+  .dash-title {
+    font-size: 26px;
+  }
+}
+
+.dash-sub {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.refresh-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #64748b;
+  cursor: pointer;
+  transition: background .13s, color .13s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .04);
+}
+
+.refresh-btn:hover {
+  background: #f1f5f9;
+  color: #1142d4;
+}
+
+.refresh-btn.spinning .mdi {
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .live-badge {
-  display: flex; align-items: center; gap: 6px;
-  background: #fff; border: 1px solid #e2e8f0;
-  padding: 5px 12px; border-radius: 9999px;
-  font-size: 11px; font-weight: 700; color: #0f172a;
-  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f172a;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .04);
 }
+
 .live-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: #22c55e;
-  box-shadow: 0 0 0 2px rgba(34,197,94,.25);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, .25);
   animation: pulse-g 2s ease-in-out infinite;
   flex-shrink: 0;
 }
-@keyframes pulse-g { 0%,100%{box-shadow:0 0 0 2px rgba(34,197,94,.25)} 50%{box-shadow:0 0 0 5px rgba(34,197,94,.08)} }
 
-/* ── Top Stats Grid ── */
-.stats-grid-top {
+@keyframes pulse-g {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, .25)
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgba(34, 197, 94, .08)
+  }
+}
+
+/* ── Grid Layouts ── */
+.row-2col {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
 }
-@media (min-width: 640px)  { .stats-grid-top { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1024px) { .stats-grid-top { grid-template-columns: repeat(3, 1fr); } }
+
+@media (min-width: 768px) {
+  .row-2col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.row-4col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 1024px) {
+  .row-4col {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 
 /* ── Stat Card ── */
 .stat-card {
   background: #fff;
   border: 1px solid #e8edf3;
   border-radius: 14px;
-  padding: 18px;
+  padding: 24px;
   display: flex;
   align-items: flex-start;
+  height: 100%;
   gap: 14px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 6px rgba(0,0,0,.04);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .04);
   transition: box-shadow .2s, transform .2s;
 }
-.stat-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.08); transform: translateY(-1px); }
+
+.stat-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .08);
+  transform: translateY(-1px);
+}
 
 .stat-accent-bar {
-  position: absolute; top: 0; left: 0;
-  width: 100%; height: 3px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
   background: var(--accent, #1142d4);
   border-radius: 14px 14px 0 0;
 }
 
 .stat-icon-wrap {
-  width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
   background: color-mix(in srgb, var(--accent, #1142d4) 10%, transparent);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.stat-icon { font-size: 22px; color: var(--accent, #1142d4); }
-.stat-icon-sm { width: 36px; height: 36px; border-radius: 9px; }
-.stat-icon-sm .stat-icon { font-size: 18px; }
 
-.stat-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.stat-icon {
+  font-size: 22px;
+  color: var(--accent, #1142d4);
+}
+
+.stat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
 .stat-label {
-  font-size: 10px; font-weight: 700; color: #94a3b8;
-  text-transform: uppercase; letter-spacing: .08em;
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .08em;
 }
+
 .stat-value {
-  font-size: 22px; font-weight: 800; color: #0f172a;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
   font-family: 'DM Mono', monospace;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.stat-value-sm { font-size: 17px; }
-.currency-prefix { font-size: 12px; font-weight: 600; color: #94a3b8; margin-right: 1px; }
-.stat-sub { font-size: 11px; color: #94a3b8; font-weight: 500; }
 
-.stat-card-sm { padding: 14px 16px; border-radius: 11px; }
+.stat-value-md {
+  font-size: 18px;
+}
 
-/* ── Mid Grid ── */
-.mid-grid {
+.currency-prefix {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-right: 1px;
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* ── Card ── */
+.card {
+  background: #fff;
+  border: 1px solid #e8edf3;
+  border-radius: 14px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .04);
+  overflow: hidden;
+}
+
+.chart-card {
+  padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-icon-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.chart-wrap {
+  min-height: 200px;
+}
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 10px;
+  text-align: center;
+  min-height: 280px;
+}
+
+.empty-icon-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(17, 66, 212, .07);
+  color: #1142d4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.empty-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.empty-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  max-width: 220px;
+  line-height: 1.5;
+}
+
+/* ── Section Header ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.trophy-icon {
+  font-size: 18px;
+  color: #f59e0b;
+}
+
+/* ── Merchants Grid ── */
+.merchants-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
 }
-@media (min-width: 768px)  { .mid-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1200px) { .mid-grid { grid-template-columns: 1fr 1fr 1fr; } }
 
-.stacked-stats { display: flex; flex-direction: column; gap: 12px; }
-
-/* ── Card ── */
-.card {
-  background: #fff; border: 1px solid #e8edf3;
-  border-radius: 14px;
-  box-shadow: 0 1px 6px rgba(0,0,0,.04);
-  overflow: hidden;
+@media (min-width: 768px) {
+  .merchants-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
-.chart-card { padding: 20px; }
 
-.card-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 14px;
+@media (min-width: 1200px) {
+  .merchants-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
-.card-title-wrap { display: flex; align-items: center; gap: 10px; }
-.card-icon-dot {
-  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; font-size: 16px;
-}
-.card-title { font-size: 14px; font-weight: 700; color: #0f172a; }
 
-.chart-wrap { min-height: 200px; }
-
-/* ── Empty State ── */
-.empty-state {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 40px 20px; gap: 10px; text-align: center;
-  min-height: 280px;
+.merchant-card {
+  padding: 18px;
 }
-.empty-icon-wrap {
-  width: 60px; height: 60px; border-radius: 50%;
-  background: rgba(17,66,212,.07); color: #1142d4;
-  display: flex; align-items: center; justify-content: center; font-size: 28px;
-}
-.empty-title { font-size: 14px; font-weight: 700; color: #334155; }
-.empty-desc  { font-size: 12px; color: #94a3b8; max-width: 220px; line-height: 1.5; }
-
-/* ── Section Header ── */
-.section-header { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
-.section-title {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 16px; font-weight: 800; color: #0f172a;
-}
-.trophy-icon { font-size: 18px; color: #f59e0b; }
-
-/* ── Merchants Grid ── */
-.merchants-grid {
-  display: grid; grid-template-columns: 1fr; gap: 12px;
-}
-@media (min-width: 768px)  { .merchants-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1200px) { .merchants-grid { grid-template-columns: repeat(3, 1fr); } }
-
-.merchant-card { padding: 18px; }
 
 .period-chip {
-  font-size: 10px; font-weight: 700;
-  background: #f1f5f9; color: #64748b;
-  padding: 3px 10px; border-radius: 9999px;
-  text-transform: uppercase; letter-spacing: .05em;
+  font-size: 10px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
 }
 
-.merchant-list { display: flex; flex-direction: column; gap: 8px; }
+.merchant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
 .merchant-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: 10px;
-  background: #f8fafc; border: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
   transition: background .13s, border-color .13s;
   cursor: default;
 }
-.merchant-row:hover { background: #f1f5f9; border-color: #e2e8f0; }
+
+.merchant-row:hover {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
 
 .rank-badge {
-  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 800;
-  background: #f1f5f9; color: #94a3b8;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #94a3b8;
 }
-.rank-badge.rank-1 { background: rgba(245,158,11,.12); color: #d97706; font-size: 14px; }
-.rank-badge.rank-2 { background: rgba(148,163,184,.15); color: #64748b; font-size: 14px; }
-.rank-badge.rank-3 { background: rgba(217,119,6,.1); color: #b45309; font-size: 14px; }
+
+.rank-badge.rank-1 {
+  background: rgba(245, 158, 11, .12);
+  color: #d97706;
+  font-size: 14px;
+}
+
+.rank-badge.rank-2 {
+  background: rgba(148, 163, 184, .15);
+  color: #64748b;
+  font-size: 14px;
+}
+
+.rank-badge.rank-3 {
+  background: rgba(217, 119, 6, .1);
+  color: #b45309;
+  font-size: 14px;
+}
 
 .merchant-avatar {
-  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800; color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
 }
-.merchant-info { flex: 1; min-width: 0; }
+
+.merchant-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .merchant-name {
-  font-size: 13px; font-weight: 700; color: #1e293b;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.merchant-txns { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+
+.merchant-txns {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
 
 .merchant-amount {
   font-family: 'DM Mono', monospace;
-  font-size: 13px; font-weight: 600; color: #0f172a;
-  white-space: nowrap; flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .merchant-empty {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 32px; font-size: 13px; color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px;
+  font-size: 13px;
+  color: #94a3b8;
 }
-.merchant-empty .mdi { font-size: 20px; }
+
+.merchant-empty .mdi {
+  font-size: 20px;
+}
 
 /* ── Skeleton ── */
 .skel {
-  background: linear-gradient(90deg,#f1f5f9 25%,#e8edf3 50%,#f1f5f9 75%);
+  background: linear-gradient(90deg, #f1f5f9 25%, #e8edf3 50%, #f1f5f9 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 6px;
 }
-@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-.skel-icon  { width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; }
-.skel-icon-sm { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; }
-.skel-label { height: 11px; width: 60%; border-radius: 4px; }
-.skel-value { height: 24px; width: 40%; border-radius: 4px; }
-.skel-sub   { height: 10px; width: 70%; border-radius: 4px; }
-.mt-1 { margin-top: 4px; }
-.mt-2 { margin-top: 8px; }
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0
+  }
+
+  100% {
+    background-position: -200% 0
+  }
+}
+
+.skel-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.skel-icon-sm {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+
+.skel-label {
+  height: 11px;
+  width: 60%;
+  border-radius: 4px;
+}
+
+.skel-value {
+  height: 24px;
+  width: 40%;
+  border-radius: 4px;
+}
+
+.skel-sub {
+  height: 10px;
+  width: 70%;
+  border-radius: 4px;
+}
+
+.mt-1 {
+  margin-top: 4px;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
 </style>

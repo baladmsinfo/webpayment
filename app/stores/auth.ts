@@ -4,6 +4,7 @@ export const useAuthStore = defineStore("auth", {
     aggregator: null as Record<string, any> | null,
     vendor: null as Record<string, any> | null,
     user: null as Record<string, any> | null,
+    walletProfile: null as Record<string, any> | null,
     mobile_number: null as number | null,
     token: null as string | null,
 
@@ -44,6 +45,10 @@ export const useAuthStore = defineStore("auth", {
     },
     setMerchant(payload: any) {
       this.merchant = payload;
+    },
+    setWalletProfile(payload: any) {
+      this.walletProfile = payload;
+      console.log("Wallet Profile set in store:", this.walletProfile);
     },
     setAggregator(payload: any) {
       this.aggregator = payload;

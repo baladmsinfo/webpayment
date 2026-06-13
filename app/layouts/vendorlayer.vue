@@ -2,7 +2,6 @@
   <div class="admin-layout">
     <VendorNavbar :menus="menus" />
 
-    <!-- main shifts right only when drawer is open on desktop -->
     <main class="admin-main" :class="{ 'admin-main-shifted': drawerOpen && !isMobile }">
       <div class="admin-main-inner">
         <slot />
@@ -13,13 +12,14 @@
 
 <script setup>
 import { ref, computed, provide, onMounted, onBeforeUnmount } from "vue"
+import { useVendorLinkedServiceApi } from '~/composables/apis/useVendorLinkedServiceApi'
 
-/* ── Shared drawer state — provided to VendorNav via inject ── */
+const { getMyLinkedServices } = useVendorLinkedServiceApi()
+
 const drawerOpen = ref(false)
 provide("drawerOpen", drawerOpen)
 
-/* ── Mirror mobile breakpoint in layout too ── */
-const winW     = ref(typeof window !== "undefined" ? window.innerWidth : 1280)
+const winW = ref(typeof window !== "undefined" ? window.innerWidth : 1280)
 const isMobile = computed(() => winW.value < 960)
 function onResize() { winW.value = window.innerWidth }
 onMounted(() => window.addEventListener("resize", onResize))
@@ -36,7 +36,7 @@ const menus = ref([
     title: "Merchants",
     icon: "mdi-store-outline",
     url: "/vendor/merchants",
-    // open: false,
+    open: false,
     // children: [
     //   { title: "Onboarded Merchants", icon: "mdi-account-check-outline", url: "/vendor/merchants/onboarding" },
     //   { title: "Pending Merchants",   icon: "mdi-account-clock-outline",  url: "/vendor/merchants/pending"   },
@@ -47,6 +47,7 @@ const menus = ref([
     icon: "mdi-swap-horizontal",
     url: "/vendor/transactions",
     open: false,
+    children: [],
   },
   {
     title: "Settings",
@@ -55,11 +56,59 @@ const menus = ref([
     open: false,
   },
 ])
+
+const serviceIconMap = {
+  DMT: "mdi-bank-transfer",
+  AEPS: "mdi-fingerprint",
+  UPI: "mdi-qrcode",
+  BBPS: "mdi-receipt-text-outline",
+  MATM: "mdi-atm",
+  POS: "mdi-point-of-sale",
+}
+
+onMounted(async () => {
+  window.addEventListener("resize", onResize)
+  try {
+    const res = await getMyLinkedServices()
+    const services = res?.services ?? []
+
+    const txMenu = menus.value.find(m => m.title === "Transactions")
+
+    if (!services.length) {
+      menus.value = menus.value.filter(m => m.title !== "Transactions")
+    }
+
+    if (services.length && txMenu) {
+      txMenu.children = services.map((data) => ({
+        title: `${data.service} Transactions`,
+        icon: serviceIconMap[data.service] ?? "mdi-clipboard-list-outline",
+        url: `/vendor/transactions/${data.service.toLowerCase()}`,
+      }))
+    }
+
+    // if (txMenu) {
+    //   txMenu.children = services.map((data) => ({
+    //     title: `${data.service} Transactions`,
+    //     icon:  serviceIconMap[data.service] ?? "mdi-clipboard-list-outline",
+    //     url:   `/vendor/transactions/${data.service.toLowerCase()}`,
+    //   }))
+    // }
+  } catch (e) {
+    console.error("Failed to fetch vendor linked services:", e)
+  }
+})
+
+onBeforeUnmount(() => window.removeEventListener("resize", onResize))
 </script>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-*, *::before, *::after { box-sizing: border-box; }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 .admin-layout {
   font-family: 'DM Sans', sans-serif;
@@ -70,8 +119,10 @@ const menus = ref([
 .admin-main {
   padding-top: 56px;
   min-height: 100dvh;
-  margin-left: 0;                                          /* default: no shift */
-  transition: margin-left .27s cubic-bezier(.4,0,.2,1);   /* smooth like Vuetify */
+  margin-left: 0;
+  /* default: no shift */
+  transition: margin-left .27s cubic-bezier(.4, 0, .2, 1);
+  /* smooth like Vuetify */
 }
 
 /* Only shift when drawer is open AND we're on desktop — controlled by JS class */
@@ -83,6 +134,16 @@ const menus = ref([
   padding: 18px 16px;
   max-width: 1480px;
 }
-@media (min-width: 640px)  { .admin-main-inner { padding: 22px; } }
-@media (min-width: 1200px) { .admin-main-inner { padding: 28px 30px; } }
+
+@media (min-width: 640px) {
+  .admin-main-inner {
+    padding: 22px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .admin-main-inner {
+    padding: 28px 30px;
+  }
+}
 </style>

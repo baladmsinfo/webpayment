@@ -33,6 +33,7 @@ export function useOnboadingApi() {
     const res = await get(`/onboarding/upi/isg/compliance/status`, {
       params: { merchantId }
     })
+
     return res.data
   }
 
@@ -40,59 +41,75 @@ export function useOnboadingApi() {
     const res = await get(`/aggregator/compliance-vendor/status`, {
       params: { vendorId }
     })
+
     return res
   }
 
   const updateMerchant = async (payload: any) => {
     const { merchantId, ...body } = payload
+
     const res = await put(
       `/api/merchant/business-type`,
       body,
-      { params: { merchantId } }
+      { params: { merchantId } }   // ✅ query param
     )
+
     console.log("Update Merchant Response", res)
+
     if (res?.data.success) {
       return res.data
     }
+
     return null
   }
 
   const updateVendor = async (payload: any) => {
     const { vendorId, ...body } = payload
+
     const res = await put(
       `/aggregator/vendor/business-type`,
       payload,
     )
+
     console.log("Update Vendor Response", res)
+
     if (res.data?.statusCode == "00") {
       return res.data
     }
+
     return null
   }
 
   const fetchCompliance = async (type: any) => {
     const res = await get(`/aggregator/fetch-compliance`);
+
     if (res?.data?.statusCode === "00") {
       return res.data.data;
     }
+
     return null;
   };
 
   const onboading = async (payload: any, merchantId: any) => {
+    //console.log(payload);
     return await post("/Onboarding", payload, { params: { merchantId } });
   };
 
   const onboadingAEPS = async (payload: any, merchantId: any) => {
+    //console.log(payload);
     return await post("/onboarding/aeps/vendor-onboard", payload, {
       params: { merchantId }
     });
   };
 
   const initiateOnboarding = async (payload: any, merchantId: any) => {
+    //console.log(payload);
     return await post("/initiateOnboarding", payload, { params: { merchantId } });
   };
 
   const onboadingVendor = async (vendorId: any) => {
+    //console.log(payload);
+
     return await post("/onboarding/OnboardingVendor", { vendorId });
   };
 
@@ -104,33 +121,45 @@ export function useOnboadingApi() {
     }
   ) => {
     const formData = new FormData()
+
     formData.append("file", file)
+
     if (options?.filename) {
       formData.append("filename", options.filename)
     }
+
     if (options?.docid) {
       formData.append("docid", String(options.docid))
     }
+
     return await post("/aggregator/compliance/images", formData)
   }
 
   const complianceInit = async (payload: any, merchantId: any) => {
     const res = await post(`/api/merchant/init-compliance`, payload, { params: { merchantId } });
+
     return res;
   };
 
   const complianceInitVendor = async (payload: any, vendorId: any) => {
     const res = await post(`/aggregator/vendor/init-compliance`, payload, { params: { vendorId } });
+
     return res;
   };
 
   const createMerchant = async (payload: any) => {
     try {
+
       const res = await post(`/onboarding/Onboarding`, payload)
+
       console.log("Create Merchant Response-", res.data)
+
       return res.data
-    } catch (err: any) {
+
+    } catch (err) {
+
       console.log("Create Merchant API Error:", err)
+
       return err?.response?.data
     }
   }
@@ -138,70 +167,108 @@ export function useOnboadingApi() {
   const createKyc = async (payload: any) => {
     try {
       const builtPayload = {
-        service: payload.service,
-        interfaceName: payload.interfaceName,
+        service : payload.service,
+        interfaceName : payload.interfaceName,
       }
+
       const merchantId = payload.merchantId
+
       const res = await post(`/services/createServceKyc/${merchantId}`, builtPayload)
+
       console.log("Create Merchant Response-", res.data)
+
       return res.data
-    } catch (err: any) {
+
+    } catch (err) {
+
       console.log("Create Merchant API Error:", err)
+
       return err?.response?.data
     }
   }
 
   const VendorOnboardingAEPS = async (payload: any) => {
     try {
+
       const res = await post(`/aeps/onboarding`, payload)
+
       console.log("AEPS Vendor Onboarding Response:", res.data)
+
       return res.data
-    } catch (err: any) {
+
+    } catch (err) {
+
       console.log("AEPS Vendor Onboarding API Error:", err)
+
       return err?.response?.data
     }
   }
 
+
   const validateAEPSOTP = async (payload: any) => {
     try {
+
       const res = await post(`/aeps/validate_otp`, payload)
+
       console.log("AEPS Validate OTP Response:", res.data)
+
       return res.data
-    } catch (err: any) {
+
+    } catch (err) {
+
       console.log("AEPS Validate OTP API Error:", err)
+
       return err?.response?.data
     }
   }
 
   const verifyPANAEPS = async (payload: any) => {
     try {
+
       const res = await post(`/aeps/verify_pan`, payload)
+
       console.log("AEPS Verify Pan Response:", res.data)
+
       return res.data
-    } catch (err: any) {
+
+    } catch (err) {
+
       console.log("AEPS Verify Pan API Error:", err)
+
       return err?.response?.data
     }
   }
 
   const verifyAadhaarAEPS = async (payload: any) => {
     try {
+
       const res = await post(`/aeps/update_UID`, payload)
+
       console.log("AEPS Update UID Response:", res.data)
+
       return res.data
-    } catch (err: any) {
+
+    } catch (err) {
+
       console.log("AEPS Update UID API Error:", err)
+
       return err?.response?.data
     }
   }
 
   const UpdateBiodevice = async (payload: any) => {
     try {
+
       const res = await post(`/aeps/updatebiodetail`, payload)
+
       console.log("AEPS Update UID Response:", res.data)
+
       return res.data
-    } catch (err: any) {
+
+    } catch (err) {
+
       console.log("AEPS Update Updatebiodetails API Error:", err)
+
       return err?.response?.data
     }
   }
@@ -210,7 +277,7 @@ export function useOnboadingApi() {
     try {
       const res = await get(`/onboarding/merchants/onboarding/${id}`);
       console.log("Merchant Details:", res.data);
-      return res.data;
+      return res.data; 
     } catch (error) {
       console.error("Error fetching merchant by ID:", error);
       return null;
@@ -221,7 +288,7 @@ export function useOnboadingApi() {
     try {
       const res = await get(`/merchant/${id}`);
       console.log("Merchant Details:", res.data);
-      return res.data;
+      return res.data; 
     } catch (error) {
       console.error("Error fetching merchant by ID:", error);
       return null;
@@ -249,75 +316,6 @@ export function useOnboadingApi() {
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────
-  // WALLET SERVICE
-  // ─────────────────────────────────────────────────────────────────
-
-  /**
-   * Register a new wallet_service user + WalletProfile.
-   * POST /wallet-service/register
-   */
-  const createWalletService = async (payload: {
-    // Identity
-    name: string
-    email: string
-    mobile_no: string
-    password?: string
-    dob: string
-    gender: string
-
-    // Business
-    dba_name: string
-    mcc?: string
-    nature_of_business?: string
-    annual_turn_over?: string
-    website?: string
-
-    // Location
-    lat?: string
-    long?: string
-
-    // Official address
-    official_address: string
-    address1: string
-    address2: string
-    address3?: string
-    phone?: string
-    city: string
-    state: string
-    pincode: string
-
-    // Residential address
-    residential_address?: string
-    res_address1?: string
-    res_address2?: string
-    res_address3?: string
-    res_mobile?: string
-    res_phone_number?: string
-    res_city?: string
-    res_state?: string
-    res_pincode?: string
-
-    // Visitor address
-    vister_address?: string
-    v_address1?: string
-    v_address2?: string
-    v_address3?: string
-    v_mobile?: string
-    v_phone_number?: string
-    v_city?: string
-    v_state?: string
-    v_pincode?: string
-  }) => {
-    try {
-      const res = await post(`/wallet-service/register`, payload)
-      console.log("Create WalletService Response:", res.data)
-      return res.data
-    } catch (err: any) {
-      console.log("Create WalletService API Error:", err)
-      return err?.response?.data
-    }
-  }
 
   return {
     MCCSearch,
@@ -347,7 +345,6 @@ export function useOnboadingApi() {
     getPaymentMethods,
     complianceInitVendor,
     UpdateBiodevice,
-    // ── new ──
-    createWalletService,
+
   };
 }

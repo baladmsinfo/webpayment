@@ -44,7 +44,7 @@
         </div>
         <div>
           <p class="drawer-brand-name">{{ title }}</p>
-          <p class="drawer-brand-role">Aggregator Portal</p>
+          <p class="drawer-brand-role">Account Service Portal</p>
         </div>
         <button v-if="isMobile" class="drawer-close-btn" @click="drawer = false">
           <span class="mdi mdi-close"></span>
@@ -108,15 +108,6 @@
 
       <!-- User + Logout -->
       <div class="drawer-footer">
-        <div class="drawer-user">
-          <div class="user-avatar">
-            <span class="mdi mdi-account-outline"></span>
-          </div>
-          <div class="user-info">
-            <p class="user-name">Aggregator</p>
-            <p class="user-role">Admin Access</p>
-          </div>
-        </div>
         <button class="logout-btn" @click="logout" :disabled="loading">
           <span v-if="loading" class="logout-spinner"></span>
           <span v-else class="mdi mdi-logout"></span>
@@ -135,7 +126,6 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRoute } from "vue-router";
-
 import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();

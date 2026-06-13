@@ -780,57 +780,8 @@
       </section>
 
       <!-- ════ TAB: COMMISSION ════ -->
-      <section v-show="activeTab === 'commission'" class="tab-section">
+      <!-- <section v-show="activeTab === 'commission'" class="tab-section">
 
-        <!-- Vendor Info -->
-        <!-- <div class="card" v-if="merchantForm.vendor">
-          <div class="card__head">
-            <div class="card__head-dot card__head-dot--violet"></div>
-            <h3 class="card__title">Vendor: {{ merchantForm.vendor.name }}</h3>
-            <span class="ml-2 text-xs text-slate-400">Code: {{ merchantForm.vendor.code }}</span>
-          </div>
-          <div class="info-grid info-grid--3 mb-6">
-            <div class="info-item"><label>Email</label>
-              <p>{{ merchantForm.vendor.email }}</p>
-            </div>
-            <div class="info-item"><label>Mobile</label>
-              <p>{{ merchantForm.vendor.mobile_no }}</p>
-            </div>
-            <div class="info-item"><label>Status</label>
-              <p><span :class="['pill', merchantForm.vendor.status ? 'pill--emerald' : 'pill--red']">
-                  {{ merchantForm.vendor.status ? 'Active' : 'Inactive' }}</span></p>
-            </div>
-          </div>
-          <h4 class="text-xs font-bold uppercase text-slate-400 tracking-widest mb-3 mt-2">Vendor Commission</h4>
-          <div class="table-scroll-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Payment Method</th>
-                  <th>Provider</th>
-                  <th>Txn Type</th>
-                  <th>Min Amount</th>
-                  <th>Max Amount</th>
-                  <th>Rate</th>
-                  <th>Rate Type</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="c in merchantForm.vendor.commissions" :key="c.id">
-                  <td><span class="pill pill--sky">{{ c.paymentMethod }}</span></td>
-                  <td>{{ c.provider }}</td>
-                  <td>{{ c.txnType }}</td>
-                  <td>₹ {{ c.minAmount.toLocaleString('en-IN') }}</td>
-                  <td>₹ {{ c.maxAmount.toLocaleString('en-IN') }}</td>
-                  <td class="font-bold">{{ c.commissionRate }}{{ c.rateType === 'PERCENTAGE' ? '%' : ' ₹' }}</td>
-                  <td>{{ c.rateType }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div> -->
-
-        <!-- ── Merchant Commission Config ── -->
         <div class="card">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--indigo"></div>
@@ -922,7 +873,6 @@
           </div>
         </div>
 
-        <!-- ── Commission Modal ── -->
         <Teleport to="body">
           <Transition name="modal-fade">
             <div v-if="commissionModal.open" class="modal-overlay" @click.self="closeCommissionModal">
@@ -943,7 +893,6 @@
                 <div class="modal-box__body">
                   <div class="modal-grid">
 
-                    <!-- Payment Method -->
                     <div class="modal-field">
                       <label>Payment Method <span class="req">*</span></label>
                       <select v-model="commissionForm.paymentMethod">
@@ -952,7 +901,6 @@
                       </select>
                     </div>
 
-                    <!-- Provider -->
                     <div class="modal-field">
                       <label>Provider <span class="req">*</span></label>
                       <select v-model="commissionForm.provider">
@@ -961,7 +909,6 @@
                       </select>
                     </div>
 
-                    <!-- Txn Type -->
                     <div class="modal-field">
                       <label>Txn Type <span class="req">*</span></label>
                       <select v-model="commissionForm.txnType">
@@ -969,26 +916,22 @@
                       </select>
                     </div>
 
-                    <!-- Min Amount -->
                     <div class="modal-field">
                       <label>Min Amount (₹) <span class="req">*</span></label>
                       <input type="number" v-model.number="commissionForm.minAmount" min="0" placeholder="0" />
                     </div>
 
-                    <!-- Max Amount -->
                     <div class="modal-field">
                       <label>Max Amount (₹) <span class="req">*</span></label>
                       <input type="number" v-model.number="commissionForm.maxAmount" min="0" placeholder="99999999" />
                     </div>
 
-                    <!-- Merchant Rate -->
                     <div class="modal-field">
                       <label>Merchant Rate <span class="req">*</span></label>
                       <input type="number" v-model.number="commissionForm.merchantRate" min="0" step="0.01"
                         placeholder="0.00" />
                     </div>
 
-                    <!-- Merchant Rate Type -->
                     <div class="modal-field">
                       <label>Merchant Rate Type <span class="req">*</span></label>
                       <select v-model="commissionForm.merchantRateType">
@@ -997,14 +940,12 @@
                       </select>
                     </div>
 
-                    <!-- Vendor Rate -->
                     <div class="modal-field">
                       <label>Vendor Rate <span class="req">*</span></label>
                       <input type="number" v-model.number="commissionForm.vendorRate" min="0" step="0.01"
                         placeholder="0.00" />
                     </div>
 
-                    <!-- Vendor Rate Type -->
                     <div class="modal-field">
                       <label>Vendor Rate Type <span class="req">*</span></label>
                       <select v-model="commissionForm.vendorRateType">
@@ -1013,14 +954,12 @@
                       </select>
                     </div>
 
-                    <!-- Aggregator Rate -->
                     <div class="modal-field">
                       <label>Aggregator Rate <span class="req">*</span></label>
                       <input type="number" v-model.number="commissionForm.aggregatorRate" min="0" step="0.01"
                         placeholder="0.00" />
                     </div>
 
-                    <!-- Aggregator Rate Type -->
                     <div class="modal-field">
                       <label>Aggregator Rate Type <span class="req">*</span></label>
                       <select v-model="commissionForm.aggregatorRateType">
@@ -1029,14 +968,12 @@
                       </select>
                     </div>
 
-                    <!-- Bank Rate -->
                     <div class="modal-field">
                       <label>Bank Rate <span class="req">*</span></label>
                       <input type="number" v-model.number="commissionForm.bankRate" min="0" step="0.01"
                         placeholder="0.00" />
                     </div>
 
-                    <!-- Bank Rate Type -->
                     <div class="modal-field">
                       <label>Bank Rate Type <span class="req">*</span></label>
                       <select v-model="commissionForm.bankRateType">
@@ -1045,7 +982,6 @@
                       </select>
                     </div>
 
-                    <!-- Active -->
                     <div class="modal-field modal-field--full">
                       <label class="toggle-label">
                         <span>Active</span>
@@ -1076,9 +1012,9 @@
           </Transition>
         </Teleport>
 
-      </section>
+      </section> -->
 
-      <!-- ════ TAB: WALLET LIMITS ════ -->
+      <!-- // ════ TAB: WALLET LIMITS ════ // -->
       <section v-show="activeTab === 'wallet'" class="tab-section">
 
         <!-- Wallet Overview -->
@@ -1540,10 +1476,10 @@ const tabs = [
     key: "settlement", label: "Settlement & Banking",
     icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>`
   },
-  {
-    key: "commission", label: "Commission",
-    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
-  },
+  //  {
+  //  key: "commission", label: "Commission",
+  //  icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
+  // },
   {
     key: "wallet", label: "Wallet & Limits",
     icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>`

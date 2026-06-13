@@ -1,12 +1,12 @@
 <template>
   <div>
-    <VendorTransactions transactionType="DMT" />
+    <AggregatorSetupsServices />
   </div>
 </template>
 
 <script setup>
 definePageMeta({
-  layout: "vendorlayer",
+  layout: "aggregatorlayer",
   middleware: "auth",
 });
 </script>

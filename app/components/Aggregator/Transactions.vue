@@ -338,6 +338,10 @@ const filters = ref({
   merchantId: null as string | null,
 });
 
+const props = defineProps<{
+  transactionType?: string;
+}>();
+
 /* ── Helpers ── */
 const AVATAR_COLORS = ['#1142d4','#7c3aed','#db2777','#059669','#d97706','#dc2626','#0891b2'];
 const avatarColor = (n: string) => AVATAR_COLORS[((n||'?').charCodeAt(0)) % AVATAR_COLORS.length];
@@ -433,6 +437,7 @@ async function loadTransactions() {
       fromDate:   normalizeDate(filters.value.fromDate),
       toDate:     normalizeDate(filters.value.toDate, true),
       merchantId: filters.value.merchantId,
+      transactionMethod:    props.transactionType,
     });
     transactions.value = res.data  || [];
     total.value        = res.meta?.total || 0;
