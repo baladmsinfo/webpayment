@@ -45,7 +45,7 @@ const menus = ref([
   {
     title: "Transactions",
     icon: "mdi-swap-horizontal",
-    url: "/vendor/transactions",
+    url: "/vendor/payments",
     open: false,
     children: [],
   },
@@ -70,7 +70,9 @@ onMounted(async () => {
   window.addEventListener("resize", onResize)
   try {
     const res = await getMyLinkedServices()
-    const services = res?.services ?? []
+    console.log("Linked Services:", );
+    
+    const services = res?.services ?? res?.data?.services ?? []
 
     const txMenu = menus.value.find(m => m.title === "Transactions")
 

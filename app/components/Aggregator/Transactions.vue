@@ -159,7 +159,7 @@
               <th>Amount</th>
               <th>Status</th>
               <th class="th-hide-md">Date</th>
-              <th class="th-action">Action</th>
+              <!-- <th class="th-action">Action</th> -->
             </tr>
           </thead>
 
@@ -252,7 +252,7 @@
               </td>
 
               <!-- Action -->
-              <td>
+              <!-- <td>
                 <button
                   class="btn-view"
                   @click.stop="goToMerchant(item)"
@@ -261,7 +261,7 @@
                 >
                   <span class="mdi mdi-arrow-top-right"></span>
                 </button>
-              </td>
+              </td> -->
             </tr>
 
             <!-- Empty -->

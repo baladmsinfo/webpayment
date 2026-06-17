@@ -1,70 +1,125 @@
 <template>
-  <div>
-    <MerchantNavbar
-      title="BUCKSBOX"
-      :menus="menus"
-    >
-      <template #content>
-        <div class="layout-body">
-          <slot />
-        </div>
-      </template>
-    </MerchantNavbar>
+  <div class="admin-layout">
+    <MerchantNavbar :menus="menus" />
+
+    <main class="admin-main" :class="{ 'admin-main-shifted': drawerOpen && !isMobile }">
+      <div class="admin-main-inner">
+        <slot />
+      </div>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed, provide, watch, onMounted, onBeforeUnmount } from "vue"
+import { useUsersApi } from "~/composables/apis/useUsersApi"
 
+const { fetchMerchant } = useUsersApi()
+
+/* ── DRAWER STATE — shared with MerchantNavbar via provide ── */
+const drawerOpen = ref(false)
+provide("drawerOpen", drawerOpen)
+
+/* ── RESPONSIVE ── */
+const winW = ref(typeof window !== "undefined" ? window.innerWidth : 1280)
+const isMobile = computed(() => winW.value < 960)
+function onResize() {
+  winW.value = window.innerWidth
+  // Auto-close drawer when switching to mobile
+  if (winW.value < 960) drawerOpen.value = false
+}
+
+/* ── MENUS ── */
 const menus = ref([
   {
     title: "Dashboard",
-    icon: "mdi-view-dashboard",
-    enable: true,
-    role: "merchant",
+    icon: "mdi-view-dashboard-outline",
     url: "/merchant/dashboard",
+    open: false,
   },
   {
-    title: "Payments",
-    icon: "mdi-credit-card-outline",
-    enable: true,
-    color: "red",
+    title: "Transactions",
+    icon: "mdi-swap-horizontal",
     url: "/merchant/payments",
+    open: false,
+    children: [],
   },
-  // {
-  //   title: "Customers",
-  //   icon: "mdi-account-group",
-  //   enable: true,
-  //   role: "merchant",
-  //   url: "/merchant/customers",
-  // },
-  // {
-  //   title: "Reports",
-  //   icon: "mdi-chart-bar",
-  //   enable: false,
-  //   role: "merchant",
-  //   url: "/merchant/reports",
-  // },
   {
     title: "Settings",
-    icon: "mdi-cog",
-    enable: false,
-    role: "merchant",
+    icon: "mdi-cog-outline",
     url: "/merchant/settings",
+    open: false,
   },
-]);
+])
+
+const serviceIconMap = {
+  DMT:  "mdi-bank-transfer",
+  AEPS: "mdi-fingerprint",
+  UPI:  "mdi-qrcode",
+  BBPS: "mdi-receipt-text-outline",
+  MATM: "mdi-atm",
+  POS:  "mdi-point-of-sale",
+}
+
+onMounted(async () => {
+  window.addEventListener("resize", onResize)
+
+  // On desktop, open drawer by default (matches vendor behaviour)
+  if (!isMobile.value) drawerOpen.value = true
+
+  try {
+    const res = await fetchMerchant()
+    console.log("Fetched merchant data:", res)
+    const services = (res?.data?.services ?? []).filter(s => s.status === "VERIFIED")
+
+    const txMenu = menus.value.find(m => m.title === "Transactions")
+
+    if (!services.length) {
+      menus.value = menus.value.filter(m => m.title !== "Transactions")
+      return
+    }
+
+    if (txMenu) {
+      const uniqueServices = [...new Set(services.map(s => s.service))]
+      txMenu.children = uniqueServices.map((svc) => ({
+        title: `${svc} Transactions`,
+        icon:  serviceIconMap[svc] ?? "mdi-clipboard-list-outline",
+        url:   `/merchant/payments/${svc.toLowerCase()}`,
+      }))
+    }
+  } catch (e) {
+    console.error("Failed to fetch merchant services:", e)
+  }
+})
+
+onBeforeUnmount(() => window.removeEventListener("resize", onResize))
 </script>
 
 <style scoped>
-.layout-body {
-  padding: 20px 16px;
-  min-height: calc(100dvh - 56px);
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.admin-layout {
+  font-family: 'DM Sans', sans-serif;
   background: #f6f6f8;
+  min-height: 100dvh;
 }
-@media (min-width: 640px) {
-  .layout-body { padding: 24px 20px; }
+
+.admin-main {
+  padding-top: 56px;
+  min-height: 100dvh;
+  margin-left: 0;
+  transition: margin-left .27s cubic-bezier(.4, 0, .2, 1);
 }
-@media (min-width: 1024px) {
-  .layout-body { padding: 28px 28px; }
+
+.admin-main-shifted { margin-left: 260px; }
+
+.admin-main-inner {
+  padding: 18px 16px;
+  max-width: 1480px;
 }
+
+@media (min-width: 640px)  { .admin-main-inner { padding: 22px; } }
+@media (min-width: 1200px) { .admin-main-inner { padding: 28px 30px; } }
 </style>

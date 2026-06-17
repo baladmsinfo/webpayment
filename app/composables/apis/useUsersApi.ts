@@ -228,6 +228,37 @@ export function useUsersApi() {
     return merchant;
   };
 
+  const getAllMerchantTransactions = async ({
+    page = 1,
+    limit = 20,
+    status,
+    paymentMethod,
+    fromDate,
+    toDate,
+    transactionMethod,
+  }: any = {}) => {
+    const query = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      ...(status            && { status }),
+      ...(paymentMethod     && { paymentMethod }),
+      ...(fromDate          && { fromDate }),
+      ...(toDate            && { toDate }),
+      ...(transactionMethod && { transactionMethod }),
+    }).toString();
+
+    const res = await get(`/merchant/transaction/all?${query}`);
+
+    if (res.data.statusCode === "00") {
+      return {
+        data: res.data.data,
+        meta: res.data.meta,
+      };
+    }
+
+    return { data: [], meta: {} };
+  };
+
   const getWalletMe = async () => {
     let wallet_user = await get("/wallet-service/me");
     auth.setWalletProfile(wallet_user.data);
@@ -280,5 +311,5 @@ export function useUsersApi() {
     }
   };
 
-  return { SendOtp, getWalletMe, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  return { SendOtp, getWalletMe, getAllMerchantTransactions, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }
