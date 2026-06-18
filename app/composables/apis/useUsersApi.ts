@@ -273,6 +273,22 @@ export function useUsersApi() {
     }
   };
 
+  const getRole = async () => {
+    try {
+      const res = await get("/role");
+      console.log("Role fetch response:", res.data);
+
+      if (res.data?.statusCode === "00") {
+        return res.data.data; // { role: "merchant" | "vendor" | "aggregator" | ... }
+      }
+
+      return null;
+    } catch (e) {
+      console.error("Role fetch failed:", e);
+      return null;
+    }
+  };
+
   const getTransactionsByMerchantId = async (merchantId: any, page = 1, limit = 10) => {
     try {
       const res = await get(`/admin/merchants/${merchantId}/transactions?page=${page}&limit=${limit}`);
@@ -311,5 +327,5 @@ export function useUsersApi() {
     }
   };
 
-  return { SendOtp, getWalletMe, getAllMerchantTransactions, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  return { SendOtp, getRole, getWalletMe, getAllMerchantTransactions, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }
