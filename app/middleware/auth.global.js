@@ -4,12 +4,18 @@ import { useUsersApi } from "@/composables/apis/useUsersApi";
 
 const publicPaths = ["/", "/register"];
 
-const allowedRoles = [ "merchant", "vendor", "aggregator" ]
+const allowedRoles = ["merchant", "vendor", "aggregator"];
 
 const roleDashboard = {
   merchant: "/merchant/dashboard",
   aggregator: "/aggregator/dashboard",
   vendor: "/vendor/dashboard",
+};
+
+const rolePrefix = {
+  merchant: "/merchant",
+  aggregator: "/aggregator",
+  vendor: "/vendor",
 };
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
@@ -31,17 +37,26 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     role = roleData?.role || null;
   }
 
-  if (!role || !allowedRoles.includes(role) ) {
-    token.value = null; // dead/invalid token — clear it
-    if (!publicPaths.includes(to.path)) {
+  if (!role || !allowedRoles.includes(role)) {
+    token.value = null;
+    if (to.path !== "/") {
       return navigateTo("/");
     }
     return;
   }
 
   const targetDashboard = roleDashboard[role];
+  const myPrefix = rolePrefix[role];
 
   if (publicPaths.includes(to.path) && targetDashboard) {
+    return navigateTo(targetDashboard);
+  }
+
+  if (
+    !publicPaths.includes(to.path) &&
+    myPrefix &&
+    !to.path.startsWith(myPrefix)
+  ) {
     return navigateTo(targetDashboard);
   }
 });
