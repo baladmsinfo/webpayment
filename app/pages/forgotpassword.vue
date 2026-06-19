@@ -72,17 +72,16 @@
         </div>
 
         <!-- Success State -->
-        <transition name="t-slide">
-          <div v-if="submitted && successMessage" class="success-box">
-            <div class="success-icon-wrap">
-              <span class="mdi mdi-check-circle-outline"></span>
-            </div>
-            <div>
-              <p class="success-title">Check your inbox!</p>
-              <p class="success-desc">{{ successMessage }}</p>
-            </div>
+        <div v-if="submitted && successMessage" class="success-box">
+          <div class="success-icon-wrap">
+            <span class="mdi mdi-check-circle-outline"></span>
           </div>
-        </transition>
+          <div>
+            <p class="success-title">Check your inbox!</p>
+            <p class="success-desc">We sent a reset link to</p>
+            <p class="success-email">{{ maskedEmailDisplay }}</p>
+          </div>
+        </div>
 
         <!-- Error Alert -->
         <transition name="t-alert">
@@ -182,6 +181,9 @@ const errorMessage    = ref('');
 const submitted       = ref(false);
 const resendCountdown = ref(0);
 
+const maskedEmailDisplay = ref('');
+
+
 /* ── Validation ── */
 function validateField() {
   if (!identifier.value.trim()) {
@@ -210,12 +212,14 @@ async function onSubmit() {
   try {
     const res = await forgotPassword(identifier.value);
 
-    if (res.statusCode === "00") {
-      successMessage.value = res.message || "Password reset instructions have been sent!";
+    if (res.statusCode === "00" || res.data?.statusCode === "00") {
+      maskedEmailDisplay.value = res.to || res.data?.to || '';
+      const maskedEmail = res.to || res.data?.to;
+      successMessage.value = maskedEmail
+        ? `Reset link sent to ${maskedEmail}`
+        : res.message || res.data?.message || "Password reset instructions have been sent!";
       submitted.value = true;
       startCountdown();
-    } else {
-      errorMessage.value = res.message || "Something went wrong. Please try again.";
     }
   } catch (e) {
     errorMessage.value = "Server error. Please try again later.";
@@ -361,6 +365,13 @@ async function onSubmit() {
 }
 .success-title { font-size: 13px; font-weight: 700; color: #15803d; margin-bottom: 3px; }
 .success-desc  { font-size: 12px; color: #16a34a; line-height: 1.5; }
+.success-email {
+  font-size: 13px;
+  font-weight: 700;
+  color: #15803d;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+}
 
 /* Alert */
 .alert-box {

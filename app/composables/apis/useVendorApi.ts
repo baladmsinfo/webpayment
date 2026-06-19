@@ -155,6 +155,6 @@ export function useVendorApi() {
     };
 
     return {
-        getVendor, getTransactions, getPendingMerchants, getMerchants, getAllVendorTransactions, getTransactionStatusSummary, getPaymentMethodSummary,
+        getVendor, getTransactions, resetPassword, getPendingMerchants, getMerchants, getAllVendorTransactions, getTransactionStatusSummary, getPaymentMethodSummary,
     };
 }

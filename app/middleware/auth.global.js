@@ -2,7 +2,7 @@
 import { useAuthStore } from "@/stores/auth";
 import { useUsersApi } from "@/composables/apis/useUsersApi";
 
-const publicPaths = ["/", "/forgotpassword"];
+const publicPaths = ["/", "/forgotpassword", "/setpassword"];
 
 const allowedRoles = ["merchant", "vendor", "aggregator"];
 
