@@ -2,7 +2,7 @@
 import { useAuthStore } from "@/stores/auth";
 import { useUsersApi } from "@/composables/apis/useUsersApi";
 
-const publicPaths = ["/", "/register"];
+const publicPaths = ["/"];
 
 const allowedRoles = [ "merchant", "vendor", "aggregator" ]
 
@@ -43,5 +43,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   if (publicPaths.includes(to.path) && targetDashboard) {
     return navigateTo(targetDashboard);
+  }
+
+  if (targetDashboard) {
+    return navigateTo(targetDashboard)
   }
 });
