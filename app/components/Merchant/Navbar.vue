@@ -23,7 +23,7 @@
           <div class="brand-dot">
             <span class="mdi mdi-shield-crown-outline"></span>
           </div>
-          <span class="brand-label">{{ title }}</span>
+          <span class="brand-label">Bucksbox</span>
         </div>
       </div>
 
@@ -35,7 +35,7 @@
     <!-- ── Sidebar Drawer ── -->
     <aside class="drawer" :class="{ 'drawer-open': drawer, 'drawer-mobile': isMobile }">
 
-      <div class="drawer-brand">
+      <!-- <div class="drawer-brand">
         <div class="drawer-brand-icon">
           <span class="mdi mdi-shield-crown-outline"></span>
         </div>
@@ -46,13 +46,14 @@
         <button v-if="isMobile" class="drawer-close-btn" @click="drawer = false">
           <span class="mdi mdi-close"></span>
         </button>
-      </div>
+      </div> -->
 
       <!-- Nav Items -->
       <nav class="drawer-nav">
+        <p class="drawer-section-label">Main Menu</p>
+        
         <div v-for="item in menus" :key="item.title" class="nav-group">
 
-          <!-- Parent row — link if no children, toggle button if it has children -->
           <NuxtLink
             v-if="!item.children?.length"
             :to="item.url"
@@ -108,7 +109,7 @@
             <span class="mdi mdi-account-outline"></span>
           </div>
           <div class="user-info">
-            <p class="user-name">Merchant</p>
+            <p class="user-name">{{ title }}</p>
             <p class="user-role">Merchant Access</p>
           </div>
         </div>
@@ -243,6 +244,12 @@ async function logout() {
 }
 .drawer-open { transform: translateX(0); }
 .drawer-mobile { z-index: 300; }
+
+.drawer-section-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: #94a3b8; padding: 0 8px 10px; margin-top: 12px;
+}
+
 
 @media (min-width: 960px) {
   .drawer { transform: translateX(0); box-shadow: none; }

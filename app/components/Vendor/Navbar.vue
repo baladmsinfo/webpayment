@@ -11,10 +11,11 @@
       </button>
 
       <div class="nav-brand">
-        <div class="nav-brand-icon">
+        <!-- <div class="nav-brand-icon">
           <span class="mdi mdi-shield-crown-outline"></span>
-        </div>
-        <span class="nav-brand-title">{{ title }}</span>
+        </div> -->
+        <!-- <span class="nav-brand-title">{{ title }}</span> -->
+        <span class="nav-brand-title">Bucksbox</span>
       </div>
 
       <div class="nav-appbar-right">
@@ -30,7 +31,7 @@
     <!-- ── Navigation Drawer ── -->
     <nav class="nav-drawer" :class="{ 'nav-drawer-open': drawerOpen }">
 
-      <div class="drawer-top">
+      <!-- <div class="drawer-top">
         <div class="drawer-brand-wrap">
           <div class="drawer-brand-avatar">
             <span class="mdi mdi-shield-crown-outline"></span>
@@ -39,7 +40,7 @@
             <p class="drawer-brand-name">{{ title }}</p>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <div class="drawer-scroll">
         <p class="drawer-section-label">Main Menu</p>
@@ -101,8 +102,8 @@
             <span class="mdi mdi-account-outline"></span>
           </div>
           <div class="user-info">
-            <p class="user-name">Vendor</p>
-            <p class="user-role">Admin Access</p>
+            <p class="user-name">{{ title }}</p>
+            <p class="user-role">Vendor Access</p>
           </div>
         </div>
         <button class="drawer-logout-btn" :disabled="loading" @click="logout">
@@ -251,6 +252,7 @@ async function logout() {
 .drawer-scroll {
   flex: 1; overflow-y: auto; padding: 14px 10px 6px;
   scrollbar-width: thin; scrollbar-color: #e2e8f0 transparent;
+  margin-top: 72px;
 }
 .drawer-scroll::-webkit-scrollbar { width: 3px; }
 .drawer-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }

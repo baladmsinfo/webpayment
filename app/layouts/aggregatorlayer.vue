@@ -1,7 +1,7 @@
 <template>
   <div>
     <AggregatorNavbar
-      title="BUCKSBOX"
+      :title="Title"
       :menus="menus"
     >
       <template #content>
@@ -16,6 +16,13 @@
 <script setup>
 import { ref, computed, provide, onMounted, onBeforeUnmount } from "vue"
 import { useOnboadingApi } from "~/composables/apis/useOnboadingApi";
+import { useAuthStore } from "@/stores/auth";
+import { useAggregatorApi } from "@/composables/apis/useAggregatorApi";
+
+const { getAggregator } = useAggregatorApi();
+const auth = useAuthStore();
+
+const Title = ref();
 
 const { getServices } = useOnboadingApi();
 
@@ -82,6 +89,17 @@ const serviceIconMap = {
 
 onMounted(async () => {
   window.addEventListener("resize", onResize)
+
+  if(!auth.aggregator) {
+    try {
+      await getAggregator();
+    } catch (error) {
+      console.log("Error:", error);
+    }
+  }  
+  
+  Title.value = auth.aggregator?.name || "Bucksbox";
+
   try {
     const res = await getServices()
     const services = res?.services ?? []

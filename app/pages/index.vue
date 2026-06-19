@@ -6,9 +6,9 @@
             <div class="left-inner">
 
                 <div class="left-brand">
-                    <div class="brand-icon">
+                    <!-- <div class="brand-icon">
                         <span class="mdi mdi-shield-crown-outline"></span>
-                    </div>
+                    </div> -->
                     <span class="brand-name">BUCKSBOX</span>
                 </div>
 

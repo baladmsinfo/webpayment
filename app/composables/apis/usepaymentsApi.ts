@@ -117,7 +117,7 @@ export function usePaymentsApi() {
     try {
       console.log("Fetching transaction status data...");
 
-      const res = await get("/payments/transactions/status-summary");
+      const res = await get("/merchant/payments/transactions/status-summary");
       return res.data;
 
     } catch (e) {

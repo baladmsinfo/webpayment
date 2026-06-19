@@ -1,6 +1,6 @@
 <template>
   <div class="admin-layout">
-    <VendorNavbar :menus="menus" />
+    <VendorNavbar :menus="menus" :title="Title" />
 
     <main class="admin-main" :class="{ 'admin-main-shifted': drawerOpen && !isMobile }">
       <div class="admin-main-inner">
@@ -13,6 +13,13 @@
 <script setup>
 import { ref, computed, provide, onMounted, onBeforeUnmount } from "vue"
 import { useVendorLinkedServiceApi } from '~/composables/apis/useVendorLinkedServiceApi'
+import { useAuthStore } from "@/stores/auth";
+import { useVendorApi } from "@/composables/apis/useVendorApi";
+
+const { getVendor } = useVendorApi();
+const auth = useAuthStore();
+
+const Title = ref();
 
 const { getMyLinkedServices } = useVendorLinkedServiceApi()
 
@@ -68,9 +75,18 @@ const serviceIconMap = {
 
 onMounted(async () => {
   window.addEventListener("resize", onResize)
+  if(!auth.vendor) {
+    try {
+      await getVendor();
+    } catch (error) {
+      console.log("Error:", error);
+    }
+  }
+  
+  Title.value = auth.vendor?.name || "Bucksbox";
+
   try {
     const res = await getMyLinkedServices()
-    console.log("Linked Services:", );
     
     const services = res?.services ?? res?.data?.services ?? []
 

@@ -1,6 +1,6 @@
 <template>
   <div class="admin-layout">
-    <MerchantNavbar :menus="menus" />
+    <MerchantNavbar :menus="menus" :title="Title" />
 
     <main class="admin-main" :class="{ 'admin-main-shifted': drawerOpen && !isMobile }">
       <div class="admin-main-inner">
@@ -13,6 +13,12 @@
 <script setup>
 import { ref, computed, provide, watch, onMounted, onBeforeUnmount } from "vue"
 import { useUsersApi } from "~/composables/apis/useUsersApi"
+import { useAuthStore } from "@/stores/auth";
+
+const { getProfile } = useUsersApi();
+const auth = useAuthStore();
+
+const Title = ref();
 
 const { fetchMerchant } = useUsersApi()
 
@@ -64,8 +70,19 @@ const serviceIconMap = {
 onMounted(async () => {
   window.addEventListener("resize", onResize)
 
-  // On desktop, open drawer by default (matches vendor behaviour)
   if (!isMobile.value) drawerOpen.value = true
+
+  if(!auth.merchant) {
+    try {
+      await getProfile();
+    } catch (error) {
+      console.log("Error:", error);
+    }
+  }
+  
+  console.log("Merchant from auth:", auth.merchant?.legal_name || auth.merchant?.data?.legal_name);
+  
+  Title.value = auth.merchant?.legal_name || auth.merchant?.data?.legal_name || "Bucksbox";
 
   try {
     const res = await fetchMerchant()
