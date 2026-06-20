@@ -1134,7 +1134,6 @@ async function runCapture() {
     const xml = await res.text();
     bioLog("PidData received", "info");
     XMLData.value = xml;
-    console.log("xml", xml);
 
     const errCode = xml.match(/errCode="([^"]+)"/)?.[1];
     const errInfo = xml.match(/errInfo="([^"]+)"/)?.[1];
@@ -1516,7 +1515,6 @@ onMounted(async () => {
   // Step flow: 1=Verify → 2=OTP → 3=PAN → 4=Aadhaar → 5=Biometric
   const isVerified = (s) => s === "VERIFIED";
 
-  //console.log("Kyc Status on Load", kycStatus);
 
   if (
     !isVerified(kycStatus.pan_status) &&

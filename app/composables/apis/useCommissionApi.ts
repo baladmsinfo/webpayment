@@ -38,7 +38,6 @@ export function useCommissionApi() {
   }) => {
     try {
       const res = await post(`/merchant-commision/${merchantId}/commission`, payload)
-      console.log('createCommissionConfig:', res.data)
       return res.data
     } catch (err) {
       console.error('createCommissionConfig error:', err)
@@ -71,7 +70,6 @@ export function useCommissionApi() {
   ) => {
     try {
       const res = await put(`/merchant-commision/${merchantId}/commission/${configId}`, payload)
-      console.log('updateCommissionConfig:', res.data)
       return res.data
     } catch (err) {
       console.error('updateCommissionConfig error:', err)

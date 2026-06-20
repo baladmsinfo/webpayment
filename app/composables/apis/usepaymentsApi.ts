@@ -30,7 +30,6 @@ export function usePaymentsApi() {
       if (payload.status && payload.status !== "ALL") params.append("status", payload.status);
 
       const res = await get(`/merchant/txnHistory?${params.toString()}`);
-      console.log("Transaction response:", res.data.data.payment);
 
       store.transactions = res.data.data.payment || [];
       store.totalTransactions = res.data.meta.total || 0;
@@ -63,7 +62,6 @@ export function usePaymentsApi() {
       if (payload.paymentMethod) params.append("paymentMethod", payload.paymentMethod);
 
       const res = await get(`/payments/transactions?${params.toString()}`);
-      console.log("Reports response:", res.data);
 
       store.setReports(res.data.data || []);
       store.setTotalReports(res.data.total || 0);
@@ -81,7 +79,6 @@ export function usePaymentsApi() {
       const res = await get(
         "/merchant/getMerchantCollections"
       );
-      console.log("res", res.data.data);
 
       store.setCollection(res.data.data)
     } catch (err: any) {
@@ -115,7 +112,6 @@ export function usePaymentsApi() {
 
   const getTransactionStatus = async () => {
     try {
-      console.log("Fetching transaction status data...");
 
       const res = await get("/merchant/payments/transactions/status-summary");
       return res.data;
@@ -144,10 +140,8 @@ export function usePaymentsApi() {
       store.setLoading(true);
       const res = await post("/payments/DynamicQR", payload);
       store.setQR(res.data);
-      console.log(res)
       return res;
     } catch (err: any) {
-      console.log("err", err)
       store.setError(err?.message || "Dynamic QR failed");
     } finally {
       store.setLoading(false);

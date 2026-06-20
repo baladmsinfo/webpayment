@@ -48,7 +48,6 @@ export const useAuthStore = defineStore("auth", {
     },
     setWalletProfile(payload: any) {
       this.walletProfile = payload;
-      console.log("Wallet Profile set in store:", this.walletProfile);
     },
     setAggregator(payload: any) {
       this.aggregator = payload;

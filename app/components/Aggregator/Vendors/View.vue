@@ -1363,7 +1363,6 @@ const saveCfg = async () => {
       getVendor(props.vendorId)
     }
   } catch (err) {
-    console.log("Error on saving Commissions", err)
     const ErrMessage = err.response.data.message
     showSnack(ErrMessage || 'Failed to save config', 'error')
     closeCfgModal();

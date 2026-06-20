@@ -79,7 +79,6 @@ export function useFileUpload() {
     if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
 
     const result = await res.json()
-    console.log("✅ Upload response:", result)
 
     if (filename === "63_Pan_Card_front") {
       panUrl.value = result.data[0].url

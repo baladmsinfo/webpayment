@@ -80,13 +80,10 @@ onMounted(async () => {
     }
   }
   
-  console.log("Merchant from auth:", auth.merchant?.legal_name || auth.merchant?.data?.legal_name);
-  
   Title.value = auth.merchant?.legal_name || auth.merchant?.data?.legal_name || "Bucksbox";
 
   try {
     const res = await fetchMerchant()
-    console.log("Fetched merchant data:", res)
     const services = (res?.data?.services ?? []).filter(s => s.status === "VERIFIED")
 
     const txMenu = menus.value.find(m => m.title === "Transactions")

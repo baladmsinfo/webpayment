@@ -1738,7 +1738,6 @@ const getServicesFunc = async () => {
     const res = await getMyLinkedServices();
     // res.services is already grouped: [{ id, service, interfaces: [...] }]
     servicesOptions.value = res?.services ?? [];
-    console.log("Vendor linked services:", servicesOptions.value);
   } catch (e) {
     console.error("Failed to fetch vendor linked services:", e);
   }

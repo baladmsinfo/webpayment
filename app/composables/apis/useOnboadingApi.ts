@@ -22,7 +22,6 @@ export function useOnboadingApi() {
 
   const businessType = async () => {
     const res = await get("/admin/onboarding/businessType");
-    console.log(res.data);
     if (res.data.statusCode == "00") {
       Onboading.setBusinessTypes(res.data.data);
       return res.data.data;
@@ -50,7 +49,6 @@ export function useOnboadingApi() {
       body,
       { params: { merchantId } }
     )
-    console.log("Update Merchant Response", res)
     if (res?.data.success) {
       return res.data
     }
@@ -63,7 +61,6 @@ export function useOnboadingApi() {
       `/aggregator/vendor/business-type`,
       payload,
     )
-    console.log("Update Vendor Response", res)
     if (res.data?.statusCode == "00") {
       return res.data
     }
@@ -127,10 +124,8 @@ export function useOnboadingApi() {
   const createMerchant = async (payload: any) => {
     try {
       const res = await post(`/onboarding/Onboarding`, payload)
-      console.log("Create Merchant Response-", res.data)
       return res.data
     } catch (err: any) {
-      console.log("Create Merchant API Error:", err)
       return err?.response?.data
     }
   }
@@ -143,10 +138,8 @@ export function useOnboadingApi() {
       }
       const merchantId = payload.merchantId
       const res = await post(`/services/createServceKyc/${merchantId}`, builtPayload)
-      console.log("Create Merchant Response-", res.data)
       return res.data
     } catch (err: any) {
-      console.log("Create Merchant API Error:", err)
       return err?.response?.data
     }
   }
@@ -154,10 +147,8 @@ export function useOnboadingApi() {
   const VendorOnboardingAEPS = async (payload: any) => {
     try {
       const res = await post(`/aeps/onboarding`, payload)
-      console.log("AEPS Vendor Onboarding Response:", res.data)
       return res.data
     } catch (err: any) {
-      console.log("AEPS Vendor Onboarding API Error:", err)
       return err?.response?.data
     }
   }
@@ -165,10 +156,8 @@ export function useOnboadingApi() {
   const validateAEPSOTP = async (payload: any) => {
     try {
       const res = await post(`/aeps/validate_otp`, payload)
-      console.log("AEPS Validate OTP Response:", res.data)
       return res.data
     } catch (err: any) {
-      console.log("AEPS Validate OTP API Error:", err)
       return err?.response?.data
     }
   }
@@ -176,10 +165,8 @@ export function useOnboadingApi() {
   const verifyPANAEPS = async (payload: any) => {
     try {
       const res = await post(`/aeps/verify_pan`, payload)
-      console.log("AEPS Verify Pan Response:", res.data)
       return res.data
     } catch (err: any) {
-      console.log("AEPS Verify Pan API Error:", err)
       return err?.response?.data
     }
   }
@@ -187,10 +174,8 @@ export function useOnboadingApi() {
   const verifyAadhaarAEPS = async (payload: any) => {
     try {
       const res = await post(`/aeps/update_UID`, payload)
-      console.log("AEPS Update UID Response:", res.data)
       return res.data
     } catch (err: any) {
-      console.log("AEPS Update UID API Error:", err)
       return err?.response?.data
     }
   }
@@ -198,10 +183,8 @@ export function useOnboadingApi() {
   const UpdateBiodevice = async (payload: any) => {
     try {
       const res = await post(`/aeps/updatebiodetail`, payload)
-      console.log("AEPS Update UID Response:", res.data)
       return res.data
     } catch (err: any) {
-      console.log("AEPS Update Updatebiodetails API Error:", err)
       return err?.response?.data
     }
   }
@@ -209,7 +192,6 @@ export function useOnboadingApi() {
   const getMerchantForOnboarding = async (id: string) => {
     try {
       const res = await get(`/onboarding/merchants/onboarding/${id}`);
-      console.log("Merchant Details:", res.data);
       return res.data;
     } catch (error) {
       console.error("Error fetching merchant by ID:", error);
@@ -220,7 +202,6 @@ export function useOnboadingApi() {
   const getMerchantById = async (id: string) => {
     try {
       const res = await get(`/merchant/${id}`);
-      console.log("Merchant Details:", res.data);
       return res.data;
     } catch (error) {
       console.error("Error fetching merchant by ID:", error);
@@ -231,7 +212,6 @@ export function useOnboadingApi() {
   const getServices = async () => {
     try {
       const res = await get(`/services/List`);
-      console.log("Services Details:", res.data);
       return res.data;
     } catch (error) {
       console.error("Error fetching services by merchant ID:", error);
@@ -244,7 +224,6 @@ export function useOnboadingApi() {
       const res = await get(`/vendor/payments/methods`);
       return res.data?.data || [];
     } catch (error) {
-      console.error("Error fetching payment methods:", error);
       return [];
     }
   };
@@ -311,10 +290,8 @@ export function useOnboadingApi() {
   }) => {
     try {
       const res = await post(`/wallet-service/register`, payload)
-      console.log("Create WalletService Response:", res.data)
       return res.data
     } catch (err: any) {
-      console.log("Create WalletService API Error:", err)
       return err?.response?.data
     }
   }

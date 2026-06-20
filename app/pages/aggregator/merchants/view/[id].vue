@@ -12,7 +12,7 @@ import AggregatorMerchantsView from "~/components/Aggregator/Merchants/View.vue"
 const route = useRoute();
 const merchantId = computed(() => route.params.id);
 
-onMounted(() => {
-  console.log("Merchant ID from route:", merchantId.value);
-});
+// onMounted(() => {
+//   console.log("Merchant ID from route:", merchantId.value);
+// });
 </script>

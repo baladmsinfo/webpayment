@@ -363,7 +363,6 @@ async function handleReset() {
       alertType.value    = "error";
     }
   } catch (e) {
-    console.log("Err on reset password", e);
     alertMessage.value = e || "Something went wrong. Please try again.";
     alertType.value    = "error";
   } finally {

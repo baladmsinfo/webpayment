@@ -86,7 +86,6 @@ const menus = ref([
 
 onMounted(async () => {
   await getWalletMe();
-  console.log("Wallet Profile (me)", auth.walletProfile.data?.kyc)
 
   docVerified.value = auth.walletProfile.data?.kyc;
   Title.value = auth.walletProfile.data?.data?.dba_name || "Bucksbox";
