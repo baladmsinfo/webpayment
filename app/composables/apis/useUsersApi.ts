@@ -135,6 +135,9 @@ export function useUsersApi() {
   }, role: any) => {
     const res = await post("/login", payload);
 
+    console.log("Res after login:", res);
+    
+
     const userRole = res?.data?.user?.role;
 
     if (res.data.statusCode === "00" && res.data.token) {
@@ -167,6 +170,16 @@ export function useUsersApi() {
     }
 
     return res;
+  };
+
+  const changeDefaultPassword = async (payload: { newPassword: string }) => {
+    try {
+      const res = await post("/change-default-password", payload);
+      return res;
+    } catch (e) {
+      console.error("Change default password failed:", e);
+      throw e;
+    }
   };
 
   // const addMerchant = async (payload) => {
@@ -310,5 +323,5 @@ export function useUsersApi() {
     }
   };
 
-  return { SendOtp, getRole, getWalletMe, getAllMerchantTransactions, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  return { SendOtp, getRole, changeDefaultPassword, getWalletMe, getAllMerchantTransactions, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }

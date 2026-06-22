@@ -113,7 +113,7 @@ export function usePaymentsApi() {
   const getTransactionStatus = async () => {
     try {
 
-      const res = await get("/merchant/payments/transactions/status-summary");
+      const res = await get("/merchant/payment/transactions/status-summary");
       return res.data;
 
     } catch (e) {

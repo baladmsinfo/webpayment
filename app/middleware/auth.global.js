@@ -4,6 +4,8 @@ import { useUsersApi } from "@/composables/apis/useUsersApi";
 
 const publicPaths = ["/", "/forgotpassword", "/setpassword"];
 
+const protectedNeutralPaths = ["/change-default-pass"];
+
 const allowedRoles = ["merchant", "vendor", "aggregator"];
 
 const roleDashboard = {
@@ -47,6 +49,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   const targetDashboard = roleDashboard[role];
   const myPrefix = rolePrefix[role];
+
+  if (protectedNeutralPaths.includes(to.path)) {
+    return;
+  }
 
   if (publicPaths.includes(to.path) && targetDashboard) {
     return navigateTo(targetDashboard);

@@ -203,41 +203,46 @@ const canSubmit = computed(() =>
 
 function focusPassword() { passwordRef.value?.focus(); }
 
-/* ── Submit — login with all roles, route by returned role ── */
 async function onSubmit() {
-    const mOk = validateMobile();
-    const pOk = validatePassword();
-    if (!mOk || !pOk) return;
-
-    loading.value = true;
-    alert.value.show = false;
-
-    try {
-
-        const res = await login(
-            { emailOrMobile: mobilenumber.value, password: password.value },
-            ['admin', 'vendor', 'aggregator', 'merchant']
-        );
-
-        const role = res?.data?.user?.role?.toLowerCase();
-        const route = ROLE_ROUTES[role];
-
-        if (route) {
-            router.push(route);
-        } else {
-            alert.value = {
-                show: true,
-                message: `No user found for our services. Please contact support.`,
-            };
-        }
-    } catch (e) {
-        alert.value = {
-            show: true,
-            message: e?.data?.message || 'Invalid credentials. Please try again.',
-        };
-    } finally {
-        loading.value = false;
+  const mOk = validateMobile();
+  const pOk = validatePassword();
+  if (!mOk || !pOk) return;
+ 
+  loading.value = true;
+  alert.value.show = false;
+ 
+  try {
+    const res = await login(
+      { emailOrMobile: mobilenumber.value, password: password.value },
+      ['admin', 'vendor', 'aggregator', 'merchant']
+    );
+ 
+    const role    = res?.data?.user?.role?.toLowerCase();
+    const isFirst = res?.data?.user?.isfirst;
+ 
+    if (isFirst) {
+      router.push('/change-default-pass');
+      return; 
     }
+ 
+    const route = ROLE_ROUTES[role];
+ 
+    if (route) {
+      router.push(route);
+    } else {
+      alert.value = {
+        show: true,
+        message: 'No user found for our services. Please contact support.',
+      };
+    }
+  } catch (e) {
+    alert.value = {
+      show: true,
+      message: e?.data?.message || 'Invalid credentials. Please try again.',
+    };
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 
