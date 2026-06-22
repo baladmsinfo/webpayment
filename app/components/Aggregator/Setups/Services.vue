@@ -621,7 +621,7 @@ async function toggleService(svc) {
         if (res?.statusCode === "00") {
             const idx = serviceList.value.findIndex(s => s.id === svc.id);
             if (idx !== -1) serviceList.value[idx].status = !svc.status;
-            showToast(`Service ${!svc.status ? "activated" : "deactivated"}`);
+            showToast(`Service ${!svc.status ? "deactivated" : "activated"}`, !svc.status ? "error" : "success");
         } else {
             showToast(res?.message || "Failed to update", "error");
         }
@@ -714,7 +714,7 @@ async function toggleInterface(iface) {
                 const iIdx = (svc.interfaces || []).findIndex(i => i.id === iface.id);
                 if (iIdx !== -1) svc.interfaces[iIdx].status = !iface.status;
             });
-            showToast(`Interface ${!iface.status ? "activated" : "deactivated"}`);
+            showToast(`Interface ${!iface.status ? "deactivated" : "activated"}`, !iface.status ? "error" : "success");
         } else {
             showToast(res?.message || "Failed to update", "error");
         }

@@ -1420,7 +1420,9 @@ async function handleStep4Account() {
   accountErrors.accountHolderName = ""; accountErrors.accountNumber = ""; accountErrors.ifsc = "";
 
   if (!accountData.accountHolderName.trim()) accountErrors.accountHolderName = "Account holder name is required";
-  if (!accountData.accountNumber.trim()) accountErrors.accountNumber = "Account number is required";
+  if (!/^\d{11,}$/.test(accountData.accountNumber?.trim())) {
+    accountErrors.accountNumber = "Valid account number is required";
+  }
   if (!accountData.ifsc.trim() || accountData.ifsc.trim().length < 11) accountErrors.ifsc = "Valid 11-character IFSC is required";
 
   if (accountErrors.accountHolderName || accountErrors.accountNumber || accountErrors.ifsc) {
