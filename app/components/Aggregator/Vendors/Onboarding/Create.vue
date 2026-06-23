@@ -897,6 +897,7 @@ const canSaveDoc = computed(() => {
     if (!s) return false;
     if (!s.accountHolderName?.trim()) return false;
     if (!s.accountNumber?.trim()) return false;
+    if (!/^\d{11,}$/.test(s.accountNumber?.trim())) return false;
     if (!s.bankName?.trim()) return false;
     if (!s.ifsc?.trim() || s.ifsc.trim().length < 11) return false;
     if (!s.account_type) return false;
