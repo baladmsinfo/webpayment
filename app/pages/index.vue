@@ -13,7 +13,7 @@
                 </div>
 
                 <div class="illustration-wrap">
-                    <img src="https://img.freepik.com/free-vector/scan-pay-concept-illustration_114360-7415.jpg"
+                    <img src="https://bucksbox-images.blr1.cdn.digitaloceanspaces.com/bucksbox.png"
                         alt="Platform Illustration" class="illustration-img" />
                 </div>
 
@@ -356,7 +356,7 @@ async function onSubmit() {
 
 .illustration-img {
     width: 100%;
-    max-width: 370px;
+    max-width: 800px;
     height: auto;
     object-fit: contain;
     filter: drop-shadow(0 24px 48px rgba(0, 0, 0, .25));
