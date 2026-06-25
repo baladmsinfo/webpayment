@@ -45,7 +45,7 @@
           </svg>
         </div>
         <div class="stat-card__body">
-          <p class="stat-card__label">Wallet Balance</p>
+          <p class="stat-card__label">Available Balance</p>
           <p class="stat-card__value">₹ {{ Number(merchantForm.wallet?.balance || 0).toLocaleString('en-IN',
             { minimumFractionDigits: 2 }) }}</p>
           <p class="stat-card__sub">Available for settlement</p>
@@ -62,10 +62,16 @@
             <path d="M13 11v2" />
           </svg>
         </div>
-        <div class="stat-card__body">
+        <div v-if="!merchantForm.settlementaccount" class="stat-card__body">
           <p class="stat-card__label">Settlement Status</p>
           <p class="stat-card__value stat-card__value--amber">Hold</p>
           <p class="stat-card__sub stat-card__sub--amber">Requires onboarding verification</p>
+        </div>
+
+        <div v-else class="stat-card__body">
+          <p class="stat-card__label">Settlement Status</p>
+          <p class="stat-card__value stat-card__value--emerald">Active</p>
+          <p class="stat-card__sub stat-card__sub--emerald">Eligible for settlements</p>
         </div>
       </div>
       <div class="stat-card">
@@ -1014,14 +1020,14 @@
 
       </section> -->
 
-      <!-- // ════ TAB: WALLET LIMITS ════ // -->
+      <!-- // ════ TAB: Balance LIMITS ════ // -->
       <section v-show="activeTab === 'wallet'" class="tab-section">
 
         <!-- Wallet Overview -->
         <div class="card" v-if="merchantForm.wallet">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--emerald"></div>
-            <h3 class="card__title">Wallet Overview</h3>
+            <h3 class="card__title">Balance Overview</h3>
             <span :class="['ml-auto pill', merchantForm.wallet.status ? 'pill--emerald' : 'pill--red']">{{
               merchantForm.wallet.status ? 'Active' : 'Inactive' }}</span>
           </div>
@@ -1030,9 +1036,9 @@
               <p class="text-2xl font-bold text-slate-900">₹ {{
                 Number(merchantForm.wallet.balance).toLocaleString('en-IN', { minimumFractionDigits: 2 }) }}</p>
             </div>
-            <div class="info-item"><label>Wallet ID</label>
+            <!-- <div class="info-item"><label>Wallet ID</label>
               <p class="font-mono text-xs">{{ merchantForm.wallet.id }}</p>
-            </div>
+            </div> -->
             <div class="info-item"><label>Created</label>
               <p>{{ formatDate(merchantForm.wallet.createdAt) }}</p>
             </div>
@@ -1481,7 +1487,7 @@ const tabs = [
   //  icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
   // },
   {
-    key: "wallet", label: "Wallet & Limits",
+    key: "wallet", label: "Balance & Limits",
     icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>`
   },
   {
@@ -1732,7 +1738,6 @@ const getServicesFunc = async () => {
     const res = await getMyLinkedServices();
     // res.services is already grouped: [{ id, service, interfaces: [...] }]
     servicesOptions.value = res?.services ?? [];
-    console.log("Vendor linked services:", servicesOptions.value);
   } catch (e) {
     console.error("Failed to fetch vendor linked services:", e);
   }

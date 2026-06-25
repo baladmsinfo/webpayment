@@ -10,7 +10,7 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 const vendorId = computed(() => route.params.id);
 
-onMounted(() => {
-  console.log("Vendor ID from route:", vendorId.value);
-});
+// onMounted(() => {
+//   console.log("Vendor ID from route:", vendorId.value);
+// });
 </script>

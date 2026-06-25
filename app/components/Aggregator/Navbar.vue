@@ -22,10 +22,10 @@
 
         <!-- Brand -->
         <div class="app-bar-brand">
-          <div class="brand-dot">
+          <!-- <div class="brand-dot">
             <span class="mdi mdi-shield-crown-outline"></span>
-          </div>
-          <span class="brand-label">{{ title }}</span>
+          </div> -->
+          <span class="brand-label">Bucksbox</span>
         </div>
       </div>
 
@@ -38,7 +38,7 @@
     <aside class="drawer" :class="{ 'drawer-open': drawer, 'drawer-mobile': isMobile }">
 
       <!-- Drawer Brand -->
-      <div class="drawer-brand">
+      <!-- <div class="drawer-brand">
         <div class="drawer-brand-icon">
           <span class="mdi mdi-shield-crown-outline"></span>
         </div>
@@ -49,10 +49,12 @@
         <button v-if="isMobile" class="drawer-close-btn" @click="drawer = false">
           <span class="mdi mdi-close"></span>
         </button>
-      </div>
+      </div> -->
 
       <!-- Nav Items -->
       <nav class="drawer-nav">
+        <p class="drawer-section-label">Main Menu</p>
+
         <template v-for="item in menus" :key="item.title">
 
           <!-- Simple item -->
@@ -113,8 +115,8 @@
             <span class="mdi mdi-account-outline"></span>
           </div>
           <div class="user-info">
-            <p class="user-name">Aggregator</p>
-            <p class="user-role">Admin Access</p>
+            <p class="user-name">{{ title }}</p>
+            <p class="user-role">Aggregator Access</p>
           </div>
         </div>
         <button class="logout-btn" @click="logout" :disabled="loading">
@@ -135,8 +137,11 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRoute } from "vue-router";
+import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 
 import { useAuthStore } from "@/stores/auth";
+
+const { getAggregator } = useAggregatorApi();
 
 const auth = useAuthStore();
 
@@ -221,6 +226,7 @@ async function logout() {
   background: rgba(15,23,42,.35);
   backdrop-filter: blur(2px);
 }
+
 .fade-overlay-enter-active, .fade-overlay-leave-active { transition: opacity .22s ease; }
 .fade-overlay-enter-from, .fade-overlay-leave-to { opacity: 0; }
 
@@ -364,6 +370,11 @@ async function logout() {
   width: 14px; height: 14px;
   border: 2px solid rgba(225,29,72,.3); border-top-color: #e11d48;
   border-radius: 50%; animation: spin .7s linear infinite;
+}
+
+.drawer-section-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: #94a3b8; padding: 0 8px 10px; margin-top: 12px;
 }
 
 /* ── Page content offset ── */

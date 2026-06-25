@@ -205,7 +205,7 @@
             <tbody v-else>
               <tr v-for="item in terminals" :key="item.tid" class="data-row">
                 <td><span class="mono-val">{{ item.tid }}</span></td>
-                <td><span class="mono-val">{{ item.vpa }}</span></td>
+                <td><span class="mono-val">{{ item.vpa?.vpa }}</span></td>
                 <td class="th-hide-sm">
                   <span class="chip chip-blue">{{ item.interface || '—' }}</span>
                 </td>
@@ -559,7 +559,6 @@ async function handleReset() {
   showAlert.value = false
   try {
     const res = await resetPassword({ oldPassword: oldPassword.value, newPassword: newPassword.value })
-    console.log("Password reset response:", res)
     if (res.data.statusCode === "00") {
       alertMessage.value = "Password reset successful!"
       alertType.value    = "success"
@@ -589,10 +588,10 @@ async function fetchMerchantVue() {
 }
 async function fetchTerminalsVue() {
   loadingTerminals.value = true
-  try { const res = await fetchTerminals(); terminals.value = res.data.terminals || [] } catch (e) { console.error(e) } finally { loadingTerminals.value = false }
+  try { const res = await fetchTerminals(); terminals.value = res.data.terminals || []} catch (e) { console.error(e) } finally { loadingTerminals.value = false }
 }
 async function fetchAccountVue() {
-  try { const res = await fetchAccount(); console.log(res); account.value = res.data } catch (e) { console.error(e) }
+  try { const res = await fetchAccount(); account.value = res.data } catch (e) { console.error(e) }
 }
 
 definePageMeta({ layout: "mlayer", middleware: "auth" })

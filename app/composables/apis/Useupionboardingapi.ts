@@ -7,7 +7,6 @@ export function useUpiOnboardingApi() {
   const upiInitiateMOS = async (payload: any) => {
     try {
       const res = await post(`/onboarding/upi/mos/initiate`, payload);
-      console.log("[UPI] Initiate MOS response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[UPI] Initiate MOS error:", err);
@@ -23,7 +22,6 @@ export function useUpiOnboardingApi() {
   }) => {
     try {
       const res = await post(`/upi/ckyc/submit`, payload);
-      console.log("[UPI] Submit CKYC response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[UPI] Submit CKYC error:", err);
@@ -38,7 +36,6 @@ export function useUpiOnboardingApi() {
   }) => {
     try {
       const res = await post(`/upi/ckyc/verify_otp`, payload);
-      console.log("[UPI] Verify CKYC OTP response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[UPI] Verify CKYC OTP error:", err);
@@ -85,7 +82,6 @@ export function useUpiOnboardingApi() {
   }) => {
     try {
       const res = await post(`/Onboarding`, { ...payload }, { params: { type: "UPI" } });
-      console.log("[UPI] Submit Onboarding response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[UPI] Submit Onboarding error:", err);
@@ -97,7 +93,6 @@ export function useUpiOnboardingApi() {
   const upiGetMerchantForOnboarding = async (id: string) => {
     try {
       const res = await get(`/onboarding/merchants/onboarding/${id}`);
-      console.log("[UPI] Get Merchant response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[UPI] Get Merchant error:", err);
@@ -116,7 +111,6 @@ export function useUpiOnboardingApi() {
       const res = await post(`/upi/compliance/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      console.log("[UPI] Upload Doc response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[UPI] Upload Doc error:", err);
@@ -133,7 +127,6 @@ export function useUpiOnboardingApi() {
       const res = await post(`/upi/compliance/init`, payload, {
         params: { merchantId },
       });
-      console.log("[UPI] Compliance Init response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[UPI] Compliance Init error:", err);

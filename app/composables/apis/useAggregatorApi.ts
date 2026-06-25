@@ -13,30 +13,26 @@ export function useAggregatorApi() {
 
     const getAggregator = async () => {
         const res = await get("/aggregator/me");
-        console.log("Aggregator:", res.data.data);
         auth.setAggregator(res.data.data)
         return res
     };
 
     const getTransactions = async () => {
         const res = await get("/aggregator/gettransactions");
-        console.log("Aggregator Transactions", res.data.data);
         auth.setAggregatorTransactions(res.data.data);
     };
 
     const getPaymentMethodSummary = async () => {
         const res = await get("/aggregator/payment-method-summary");
-        console.log("Payment Method Summary", res.data);
 
         if (res.data.statusCode === "00") {
-            auth.setPaymentSummary(res.data.data); // <-- save to store
+            auth.setPaymentSummary(res.data.data); 
         }
         return res.data;
     };
 
     const getTransactionStatusSummary = async () => {
         const res = await get("/aggregator/transaction/summary/today");
-        console.log("Transaction Status Summary", res.data);
 
         if (res.data.statusCode === "00") {
             auth.setTransactionStatusSummary(res.data.data);
@@ -46,7 +42,6 @@ export function useAggregatorApi() {
 
     const getMerchants = async ({ page = 1, limit = 10 }) => {
         const res = await get(`/aggregator/merchants?page=${page}&limit=${limit}`);
-        console.log("Aggregator Merchants:", res.data.data);
 
         merchant.setMerchants({
             list: res.data.data,
@@ -62,14 +57,12 @@ export function useAggregatorApi() {
 
     const getPendingMerchants = async ({ page = 1, limit = 10 }) => {
         const res = await get(`/aggregator/merchants/pending?page=${page}&limit=${limit}`);
-        console.log("Kyc pending:", res.data);
 
         return res.data;
     };
 
     const getVendors = async ({ page = 1, limit = 10 }) => {
         const res = await get(`/aggregator/vendors?page=${page}&limit=${limit}`);
-        console.log("Aggregator Merchants:", res.data.data);
 
         vendor.setVendors({
             list: res.data.data,
@@ -85,7 +78,6 @@ export function useAggregatorApi() {
 
     const getPendingVendors = async ({ page = 1, limit = 10 }) => {
         const res = await get(`/aggregator/vendors/pending?page=${page}&limit=${limit}`);
-        console.log("Kyc pending:", res.data);
 
         return res.data;
     };
@@ -93,10 +85,8 @@ export function useAggregatorApi() {
     const getMerchantById = async (id: string) => {
         try {
             const res = await get(`/merchant/${id}`);
-            console.log("Merchant Details:", res.data);
             return res.data; // return the single merchant object
         } catch (error) {
-            console.log("Error fetching merchant by ID:", error);
             return null;
         }
     };
@@ -104,10 +94,8 @@ export function useAggregatorApi() {
     const getVendorById = async (id: string) => {
         try {
             const res = await get(`/vendor/${id}`);
-            console.log("Vendor Details:", res.data);
             return res.data;
         } catch (error) {
-            console.log("Error fetching vendor by ID:", error);
             return null;
         }
     };
@@ -150,10 +138,8 @@ export function useAggregatorApi() {
     const resetPassword = async (payload: { oldPassword: string; newPassword: string }) => {
         try {
             const res = await post("/aggregator/reset-password", payload);
-            console.log("Password reset response:", res);
             return res;
         } catch (e) {
-            console.error("Password reset failed:", e);
             throw e;
         }
     };
@@ -161,10 +147,8 @@ export function useAggregatorApi() {
     const getuserOnboarding = async (merchantId: string) => {
         try {
             const res = await get(`/aggregator/merchants/${merchantId}/getuser-onboarding`);
-            console.log("Get User Onboarding Response:", res.data);
             return res.data;
         } catch (error) {
-            console.error("Error completing onboarding:", error);
             throw error;
         }
     };

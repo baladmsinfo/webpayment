@@ -32,7 +32,6 @@ export function useVendorCommissionApi() {
   }) => {
     try {
       const res = await post(`/vendor-commission/${vendorId}/commission`, payload)
-      console.log('createVendorCommission:', res.data)
       return res.data
     } catch (err) {
       console.error('createVendorCommission error:', err)
@@ -59,7 +58,6 @@ export function useVendorCommissionApi() {
   ) => {
     try {
       const res = await put(`/vendor-commission/${vendorId}/commission/${slabId}`, payload)
-      console.log('updateVendorCommission:', res.data)
       return res.data
     } catch (err) {
       console.error('updateVendorCommission error:', err)

@@ -12,7 +12,6 @@
     <!-- ── Top App Bar ── -->
     <header class="app-bar">
       <div class="app-bar-left">
-        <!-- Hamburger / Back -->
         <button v-if="!goback" class="icon-btn" @click="drawer = !drawer" aria-label="Toggle menu">
           <span class="mdi" :class="drawer && !isMobile ? 'mdi-menu-open' : 'mdi-menu'"></span>
         </button>
@@ -20,12 +19,11 @@
           <span class="mdi mdi-arrow-left"></span>
         </button>
 
-        <!-- Brand -->
         <div class="app-bar-brand">
           <div class="brand-dot">
             <span class="mdi mdi-shield-crown-outline"></span>
           </div>
-          <span class="brand-label">{{ title }}</span>
+          <span class="brand-label">Bucksbox</span>
         </div>
       </div>
 
@@ -37,8 +35,7 @@
     <!-- ── Sidebar Drawer ── -->
     <aside class="drawer" :class="{ 'drawer-open': drawer, 'drawer-mobile': isMobile }">
 
-      <!-- Drawer Brand -->
-      <div class="drawer-brand">
+      <!-- <div class="drawer-brand">
         <div class="drawer-brand-icon">
           <span class="mdi mdi-shield-crown-outline"></span>
         </div>
@@ -49,35 +46,70 @@
         <button v-if="isMobile" class="drawer-close-btn" @click="drawer = false">
           <span class="mdi mdi-close"></span>
         </button>
-      </div>
+      </div> -->
 
       <!-- Nav Items -->
       <nav class="drawer-nav">
-        <NuxtLink
-          v-for="item in menus"
-          :key="item.title"
-          :to="item.url"
-          class="nav-item"
-          :class="{ 'nav-item-active': isActive(item.url) }"
-          @click="isMobile && (drawer = false)"
-        >
-          <span class="mdi nav-icon" :class="item.icon"></span>
-          <span class="nav-label">{{ item.title }}</span>
-          <span v-if="isActive(item.url)" class="nav-active-dot"></span>
-        </NuxtLink>
+        <p class="drawer-section-label">Main Menu</p>
+        
+        <div v-for="item in menus" :key="item.title" class="nav-group">
+
+          <NuxtLink
+            v-if="!item.children?.length"
+            :to="item.url"
+            class="nav-item"
+            :class="{ 'nav-item-active': isActive(item.url) }"
+            @click="isMobile && (drawer = false)"
+          >
+            <span class="mdi nav-icon" :class="item.icon"></span>
+            <span class="nav-label">{{ item.title }}</span>
+            <span v-if="isActive(item.url)" class="nav-active-dot"></span>
+          </NuxtLink>
+
+          <button
+            v-else
+            class="nav-item"
+            :class="{ 'nav-item-active': isParentActive(item) }"
+            @click="item.open = !item.open"
+          >
+            <span class="mdi nav-icon" :class="item.icon"></span>
+            <span class="nav-label">{{ item.title }}</span>
+            <span
+              class="mdi mdi-chevron-down nav-chevron"
+              :class="{ 'nav-chevron-open': item.open }"
+            ></span>
+          </button>
+
+          <!-- Children dropdown -->
+          <transition name="expand">
+            <div v-if="item.children?.length && item.open" class="nav-children">
+              <NuxtLink
+                v-for="child in item.children"
+                :key="child.url"
+                :to="child.url"
+                class="nav-child-item"
+                :class="{ 'nav-child-active': isActive(child.url) }"
+                @click="isMobile && (drawer = false)"
+              >
+                <span class="mdi nav-child-icon" :class="child.icon"></span>
+                <span class="nav-label">{{ child.title }}</span>
+                <span v-if="isActive(child.url)" class="nav-active-dot"></span>
+              </NuxtLink>
+            </div>
+          </transition>
+
+        </div>
       </nav>
 
-      <!-- Spacer -->
       <div class="drawer-spacer"></div>
 
-      <!-- User + Logout -->
       <div class="drawer-footer">
         <div class="drawer-user">
           <div class="user-avatar">
             <span class="mdi mdi-account-outline"></span>
           </div>
           <div class="user-info">
-            <p class="user-name">Merchant</p>
+            <p class="user-name">{{ title }}</p>
             <p class="user-role">Merchant Access</p>
           </div>
         </div>
@@ -125,12 +157,24 @@ function onResize() {
 onMounted(() => {
   window.addEventListener('resize', onResize)
   onResize()
+
+  /* Auto-expand a parent menu if the current route matches one of its children */
+  props.menus.forEach(item => {
+    if (item.children?.some(child => isActive(child.url))) {
+      item.open = true
+    }
+  })
 })
 onBeforeUnmount(() => window.removeEventListener('resize', onResize))
 
 function isActive(url) {
   if (!url) return false
   return route.path === url || route.path.startsWith(url + '/')
+}
+
+function isParentActive(item) {
+  if (isActive(item.url)) return true
+  return item.children?.some(child => isActive(child.url)) ?? false
 }
 
 async function logout() {
@@ -201,6 +245,12 @@ async function logout() {
 .drawer-open { transform: translateX(0); }
 .drawer-mobile { z-index: 300; }
 
+.drawer-section-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: #94a3b8; padding: 0 8px 10px; margin-top: 12px;
+}
+
+
 @media (min-width: 960px) {
   .drawer { transform: translateX(0); box-shadow: none; }
   .drawer:not(.drawer-open) { transform: translateX(-100%); }
@@ -231,6 +281,7 @@ async function logout() {
 
 /* ── Nav ── */
 .drawer-nav { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 4px; flex-shrink: 0; }
+.nav-group { display: flex; flex-direction: column; }
 
 .nav-item {
   display: flex; align-items: center; gap: 10px;
@@ -252,6 +303,44 @@ async function logout() {
 .nav-active-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: #1142d4; flex-shrink: 0;
+}
+
+/* ── Chevron ── */
+.nav-chevron {
+  font-size: 16px; flex-shrink: 0; color: #94a3b8;
+  transition: transform .2s ease;
+}
+.nav-chevron-open { transform: rotate(180deg); }
+
+/* ── Children dropdown ── */
+.nav-children {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 2px 0 4px;
+  overflow: hidden;
+}
+.nav-child-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 12px 8px 38px; border-radius: 8px;
+  font-size: 12.5px; font-weight: 600; color: #64748b;
+  text-decoration: none; cursor: pointer;
+  transition: background .13s, color .13s;
+  position: relative;
+}
+.nav-child-item:hover { background: #f8fafc; color: #1e293b; }
+.nav-child-active {
+  background: rgba(17,66,212,.07) !important;
+  color: #1142d4 !important;
+}
+.nav-child-icon { font-size: 15px; flex-shrink: 0; }
+
+.expand-enter-active, .expand-leave-active {
+  transition: max-height .22s ease, opacity .22s ease;
+}
+.expand-enter-from, .expand-leave-to {
+  max-height: 0; opacity: 0;
+}
+.expand-enter-to, .expand-leave-from {
+  max-height: 600px; opacity: 1;
 }
 
 /* ── Footer ── */

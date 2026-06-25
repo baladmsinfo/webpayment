@@ -4,7 +4,7 @@ import axios from "axios";
 export default defineNuxtPlugin(() => {
   const runtimeConfig = useRuntimeConfig();
 
-  console.log(runtimeConfig.public.API_ENDPOINT)
+  // console.log(runtimeConfig.public.API_ENDPOINT)
 
   const axiosInstance = axios.create({
     baseURL: runtimeConfig.public.API_ENDPOINT || "http://localhost:3010",

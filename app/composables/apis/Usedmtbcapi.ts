@@ -12,7 +12,6 @@ export function useDmtBcApi() {
   const dmtAgentInitialize = async (payload: { merchantId: string }) => {
     try {
       const res = await post(`/onboarding/dmt/bc/agent/initialize`, payload);
-      console.log("[DMT-BC] Initialize response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[DMT-BC] Initialize error:", err);
@@ -37,7 +36,6 @@ export function useDmtBcApi() {
   }) => {
     try {
       const res = await post(`/onboarding/dmt/bc/agent/registor`, payload);
-      console.log("[DMT-BC] Register response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[DMT-BC] Register error:", err);

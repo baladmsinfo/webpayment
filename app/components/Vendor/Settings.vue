@@ -362,8 +362,8 @@ async function handleReset() {
       alertMessage.value = res.data.message || "Password reset failed.";
       alertType.value    = "error";
     }
-  } catch {
-    alertMessage.value = "Something went wrong. Please try again.";
+  } catch (e) {
+    alertMessage.value = e || "Something went wrong. Please try again.";
     alertType.value    = "error";
   } finally {
     resetting.value = false;

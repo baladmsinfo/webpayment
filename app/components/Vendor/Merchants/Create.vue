@@ -713,14 +713,10 @@ const vpinSearch = async (query) => {
 async function submitMerchant() {
     submitting.value = true;
 
-    console.log("Mcc selected:", mcc.value);
-
     if (mcc.value) {
         form.mcc = mcc.value.id
         form.nature_of_business = mcc.value.descr
     }
-
-    console.log("Mcc and Nature of Business:", form.mcc, form.nature_of_business);
 
     try {
         const payload = {
@@ -790,8 +786,6 @@ async function submitMerchant() {
 
             ckyc: form.ckyc || false
         }
-
-        console.log("Create Merchant Payload:", payload);
 
         const res = await createMerchant(payload);
         if (res.statusCode == "00" || res.data?.statusCode == "00") {

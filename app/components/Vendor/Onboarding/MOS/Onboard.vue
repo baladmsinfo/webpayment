@@ -1023,8 +1023,6 @@ async function handleStep2CKYC() {
       mobile: ckycData.mobile.trim(),
     });
 
-    console.log("[MOS] CKYC Submit response:", result);
-
     if (result?.data?.data?.found) {
       ckycFound.value     = true;
       ckycRequestId.value = result.data.data.otp_response?.vendorRefId || null;
@@ -1065,8 +1063,6 @@ async function handleStep3CkycOTP() {
       request_id: ckycRequestId.value,
       otp,
     });
-
-    console.log("[MOS] CKYC OTP Verify response:", res);
 
     if (res?.data?.statusCode === "00" || res?.statusCode === "00") {
       const rawCompliance = res?.data?.data?.categories || res?.data?.categories;

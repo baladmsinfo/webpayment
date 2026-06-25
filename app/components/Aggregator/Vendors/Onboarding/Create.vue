@@ -897,6 +897,7 @@ const canSaveDoc = computed(() => {
     if (!s) return false;
     if (!s.accountHolderName?.trim()) return false;
     if (!s.accountNumber?.trim()) return false;
+    if (!/^\d{11,}$/.test(s.accountNumber?.trim())) return false;
     if (!s.bankName?.trim()) return false;
     if (!s.ifsc?.trim() || s.ifsc.trim().length < 11) return false;
     if (!s.account_type) return false;
@@ -1002,6 +1003,39 @@ function handleFileChange(e) {
 function prevStep() { if (step.value > 1) step.value--; }
 
 async function saveDocUpload() {
+    if (!canSaveDoc.value) {
+    showSnack("Please complete all required fields before saving", "error");
+    return;
+  }
+
+  if (activeDocType.value === 'AADHAAR') {
+    const num = docUploads[activeDocType.value]?.docNumber?.trim();
+    if (!/^\d{12}$/.test(num)) {
+      showSnack("Aadhaar number must be exactly 12 digits", "error"); return;
+    }
+  }
+
+  if (activeDocType.value === 'DRIVING_LICENSE') {
+    const num = docUploads[activeDocType.value]?.docNumber?.trim();
+    if (!/^[A-Z]{2}\d{2}\s?\d{4}\d{7}$/.test(num.toUpperCase())) {
+      showSnack("Enter a valid Driving License number (e.g. TN0120240012345)", "error"); return;
+    }
+  }
+
+  if (activeDocType.value === 'VOTER_ID') {
+    const num = docUploads[activeDocType.value]?.docNumber?.trim();
+    if (!/^[A-Z]{3}\d{7}$/.test(num.toUpperCase())) {
+      showSnack("Enter a valid Voter ID (e.g. ABC1234567)", "error"); return;
+    }
+  }
+
+  if (activeDocType.value === 'PASSPORT') {
+    const num = docUploads[activeDocType.value]?.docNumber?.trim();
+    if (!/^[A-Z]\d{7}$/.test(num.toUpperCase())) {
+      showSnack("Enter a valid Passport number (e.g. A1234567)", "error"); return;
+    }
+  }
+
   const doc = docUploads[activeDocType.value];
   const rule = DOC_RULES[activeDocType.value] || DOC_RULES.DEFAULT;
   if (!rule.requiresNumber) doc.docNumber = `${activeDocType.value}_${Date.now()}`;
@@ -1030,9 +1064,24 @@ const next = async () => {
   loading.value = true;
   try {
   if (step.value === 1) {
+
       if (!form.name || !form.primary_email_id || !form.primary_mobile) {
         showSnack("Please fill all required fields", "error"); return;
       }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const mobileRegex = /^[6-9]\d{9}$/;
+
+      if (!form.name.trim()) {
+        showSnack("Vendor name is required", "error"); return;
+      }
+      if (!form.primary_email_id.trim() || !emailRegex.test(form.primary_email_id.trim())) {
+        showSnack("Enter a valid email address", "error"); return;
+      }
+      if (!form.primary_mobile.trim() || !mobileRegex.test(form.primary_mobile.trim())) {
+        showSnack("Enter a valid 10-digit Indian mobile number", "error"); return;
+      }
+      
       const payload = { name: form.name, email: form.primary_email_id, mobile_no: form.primary_mobile, role: "vendor" };
       if (!props.vendorId) {
         const userVendor = await fetchVendor(payload);
@@ -1058,8 +1107,26 @@ const next = async () => {
     }
 
     if (step.value === 2) {
+      const pincodeRegex = /^\d{6}$/;
+
       if (!form.official_address || !form.address1 || !form.address2 || !form.city || !form.state || !form.pincode) {
         showSnack("Please fill all required fields", "error"); return;
+      }
+
+      if (!form.official_address.trim()) {
+        showSnack("Door no / office address is required", "error"); return;
+      }
+      if (!form.address1.trim()) {
+        showSnack("Street line 1 is required", "error"); return;
+      }
+      if (!form.city.trim()) {
+        showSnack("City is required — please search and select a pincode", "error"); return;
+      }
+      if (!form.state.trim()) {
+        showSnack("State is required — please search and select a pincode", "error"); return;
+      }
+      if (!form.pincode.trim() || !pincodeRegex.test(form.pincode.trim())) {
+        showSnack("Please search and select a valid pincode", "error"); return;
       }
     }
 
@@ -1071,6 +1138,36 @@ const next = async () => {
 
       if (!form.vister_address || !form.v_address1 || !form.v_address2 || !form.v_city || !form.v_state || !form.v_pincode) {
         showSnack("Please fill all required visitor address fields", "error"); return;
+      }
+
+      const pincodeRegex = /^\d{6}$/;
+
+      // Residential
+      if (!form.residential_address.trim()) {
+        showSnack("Residential door no / address is required", "error"); return;
+      }
+      if (!form.res_address1.trim()) {
+        showSnack("Residential street line 1 is required", "error"); return;
+      }
+      if (!form.res_city.trim() || !form.res_state.trim() || !form.res_pincode.trim()) {
+        showSnack("Please select a valid residential pincode", "error"); return;
+      }
+      if (!pincodeRegex.test(form.res_pincode.trim())) {
+        showSnack("Residential pincode must be 6 digits", "error"); return;
+      }
+
+      // Visitor
+      if (!form.vister_address.trim()) {
+        showSnack("Visitor / shop door no / address is required", "error"); return;
+      }
+      if (!form.v_address1.trim()) {
+        showSnack("Visitor street line 1 is required", "error"); return;
+      }
+      if (!form.v_city.trim() || !form.v_state.trim() || !form.v_pincode.trim()) {
+        showSnack("Please select a valid visitor / shop pincode", "error"); return;
+      }
+      if (!pincodeRegex.test(form.v_pincode.trim())) {
+        showSnack("Visitor pincode must be 6 digits", "error"); return;
       }
 
       const payload = {

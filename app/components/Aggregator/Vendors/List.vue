@@ -404,7 +404,6 @@ const onPageChange  = (p: number) => { page.value = p; load(); };
 const onLimitChange = (l: number) => { limit.value = l; page.value = 1; load(); };
 
 const goToVendor = (item: any) => {
-  console.log("vendor", item.mstatus);
 
   if ( item.mstatus === "PENDING" ) {
     router.push(`/aggregator/vendor/onboarding/${item.id}`)

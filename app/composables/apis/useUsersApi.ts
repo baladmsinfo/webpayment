@@ -8,13 +8,11 @@ export function useUsersApi() {
   const auth = useAuthStore();
 
   const SendOtp = async (payload: { phone: string }) => {
-    console.log(payload);
     return await post("/send-otp", payload);
   };
 
   const verifyOtp = async (payload: { phone: number; otp: string }) => {
     const is_verified = await post("/verify-otp", payload);
-    console.log(is_verified);
     if (is_verified.statusCode == "00") {
       if (is_verified.data.token != null) {
         auth.setUser(is_verified.data, is_verified.data.token);
@@ -28,7 +26,6 @@ export function useUsersApi() {
   const fetchMerchant = async () => {
     try {
       const res = await get("/merchant/me");
-      console.log("Merchant fetch response:", res.data);
       return res.data;
     } catch (e) {
       console.error("Merchant fetch failed:", e);
@@ -39,7 +36,6 @@ export function useUsersApi() {
   const resetPassword = async (payload: { oldPassword: string; newPassword: string }) => {
     try {
       const res = await post("/merchant/reset-password", payload);
-      console.log("Password reset response:", res);
       return res;
     } catch (e) {
       console.error("Password reset failed:", e);
@@ -50,7 +46,6 @@ export function useUsersApi() {
   const fetchTerminals = async () => {
     try {
       const res = await get("/terminals");
-      console.log("Terminals fetch response:", res.data);
 
       return res.data;
     } catch (e) {
@@ -62,7 +57,6 @@ export function useUsersApi() {
   const fetchAccount = async () => {
     try {
       const res = await get("/merchant/account-kyc");
-      console.log("Terminals fetch response:", res.data);
 
       return res.data;
     } catch (e) {
@@ -95,7 +89,6 @@ export function useUsersApi() {
   const forgotPassword = async (payload: any) => {
     try {
       const res = await post("/forgotpassword", { emailOrMobileNo: payload });
-      console.log("Forgot password response:", res);
       return res;
     } catch (e) {
       console.error("Forgot password failed:", e);
@@ -118,11 +111,9 @@ export function useUsersApi() {
     password: string;
   }) => {
     const res = await post("/login", payload);
-    console.log(res);
 
     if (res.data.statusCode === "00" && res.data.token) {
       // store user in Pinia or wherever you manage state
-      console.log("Login successful, setting user in store");
 
       auth.setUser(res.data.user, res.data.token);
 
@@ -143,12 +134,13 @@ export function useUsersApi() {
     password: string;
   }, role: any) => {
     const res = await post("/login", payload);
-    console.log(res);
+
+    console.log("Res after login:", res);
+    
 
     const userRole = res?.data?.user?.role;
 
     if (res.data.statusCode === "00" && res.data.token) {
-      console.log("Login successful, setting user in store");
 
       if (role.includes(userRole)) {
         auth.setUser(res.data.user, res.data.token);
@@ -180,15 +172,23 @@ export function useUsersApi() {
     return res;
   };
 
+  const changeDefaultPassword = async (payload: { newPassword: string }) => {
+    try {
+      const res = await post("/change-default-password", payload);
+      return res;
+    } catch (e) {
+      console.error("Change default password failed:", e);
+      throw e;
+    }
+  };
+
   // const addMerchant = async (payload) => {
   //   try {
   //     const res = await post("/add-merchant", payload)
 
-  //     console.log("User Merchant Register Response-", res.data)
 
   //     return res.data
   //   } catch (err) {
-  //     console.log("Add Merchant API Error:", err.response.data)
 
   //     return err.response.data
   //   }
@@ -198,11 +198,9 @@ export function useUsersApi() {
     try {
       const res = await post("/add-vendor", payload)
 
-      console.log("User vendor Register Response-", res.data)
 
       return res.data
     } catch (err) {
-      console.log("Add vendor API Error:", err)
 
       return err.response.data
     }
@@ -214,7 +212,6 @@ export function useUsersApi() {
         params: payload,
       })
 
-      console.log("Vendor Fetch Response -", res.data)
       return res.data
     } catch (err) {
       console.error("Fetch vendor API Error:", err?.response?.data || err)
@@ -228,6 +225,37 @@ export function useUsersApi() {
     return merchant;
   };
 
+  const getAllMerchantTransactions = async ({
+    page = 1,
+    limit = 20,
+    status,
+    paymentMethod,
+    fromDate,
+    toDate,
+    transactionMethod,
+  }: any = {}) => {
+    const query = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      ...(status            && { status }),
+      ...(paymentMethod     && { paymentMethod }),
+      ...(fromDate          && { fromDate }),
+      ...(toDate            && { toDate }),
+      ...(transactionMethod && { transactionMethod }),
+    }).toString();
+
+    const res = await get(`/merchant/transaction/all?${query}`);
+
+    if (res.data.statusCode === "00") {
+      return {
+        data: res.data.data,
+        meta: res.data.meta,
+      };
+    }
+
+    return { data: [], meta: {} };
+  };
+
   const getWalletMe = async () => {
     let wallet_user = await get("/wallet-service/me");
     auth.setWalletProfile(wallet_user.data);
@@ -239,6 +267,21 @@ export function useUsersApi() {
 
     if (aggregator.data.data.statusCode !== "00") {
       return aggregator.data.data;
+    }
+  };
+
+  const getRole = async () => {
+    try {
+      const res = await get("/role");
+
+      if (res.data?.statusCode === "00") {
+        return res.data.data; // { role: "merchant" | "vendor" | "aggregator" | ... }
+      }
+
+      return null;
+    } catch (e) {
+      console.error("Role fetch failed:", e);
+      return null;
     }
   };
 
@@ -280,5 +323,5 @@ export function useUsersApi() {
     }
   };
 
-  return { SendOtp, getWalletMe, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  return { SendOtp, getRole, changeDefaultPassword, getWalletMe, getAllMerchantTransactions, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }

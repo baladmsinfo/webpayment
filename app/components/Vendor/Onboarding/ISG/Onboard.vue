@@ -7,7 +7,7 @@
         <div class="brand-icon">
           <span class="mdi mdi-credit-card-outline"></span>
         </div>
-        <h2 class="brand-title">ISG Onboarding</h2>
+        <h2 class="brand-title">UPI Onboarding (Node 1)</h2>
       </div>
       <div class="header-right">
         <div class="step-badge">
@@ -25,10 +25,10 @@
         <div class="stepper-card">
           <div class="stepper-header">
             <div>
-              <h3 class="stepper-title">ISG Onboarding Progress</h3>
+              <h3 class="stepper-title">UPI Onboarding Progress</h3>
               <p class="stepper-subtitle">Step {{ step }} of {{ totalSteps }}: {{ currentStepLabel }}</p>
             </div>
-            <div class="active-badge">ISG / UPI</div>
+            <div class="active-badge">UPI (Node 1)</div>
           </div>
           <div class="stepper-track">
             <div class="track-bg"></div>
@@ -69,7 +69,7 @@
                   <div class="verify-header-text">
                     <h2 class="verify-name">{{ merchantProfile.dba_name || merchantProfile.legal_name || '—' }}</h2>
                     <p class="verify-biz">{{ merchantProfile.business_name || '—' }}</p>
-                    <span class="verify-badge">ISG / UPI</span>
+                    <span class="verify-badge">UPI</span>
                   </div>
                 </div>
 
@@ -196,7 +196,7 @@
                   <input type="checkbox" v-model="detailsConfirmed" class="confirm-checkbox" />
                   <span class="confirm-text">I have reviewed all the above details and confirm they are correct.
                     Clicking <strong>Confirm &amp; Send OTP</strong> will send a one-time password to the registered
-                    mobile number to proceed with ISG verification.</span>
+                    mobile number to proceed with UPI verification.</span>
                 </label>
               </template>
 
@@ -268,7 +268,7 @@
                 </div>
               </div>
               <h1 class="card-heading">Verify PAN</h1>
-              <p class="card-desc">Enter PAN details to verify the merchant's identity with ISG. This must match
+              <p class="card-desc">Enter PAN details to verify the merchant's identity with UPI. This must match
                 government records exactly.</p>
 
               <div v-if="panVerified" class="verified-banner" style="max-width:420px; margin-top:16px;">
@@ -338,7 +338,7 @@
                 </div>
               </div>
               <h1 class="card-heading">Verify Bank Account</h1>
-              <p class="card-desc">Enter the merchant's settlement bank account details for ISG verification.</p>
+              <p class="card-desc">Enter the merchant's settlement bank account details for UPI verification.</p>
 
               <div v-if="accountVerified" class="verified-banner" style="max-width:420px; margin-top:16px;">
                 <span class="mdi mdi-check-circle"></span>
@@ -762,9 +762,9 @@
           <template v-else-if="step === 6">
             <div class="card-body step1-body">
               <div style="margin-bottom:20px;">
-                <h2 class="verify-name">Review & Submit ISG Onboarding</h2>
+                <h2 class="verify-name">Review & Submit Onboarding</h2>
                 <p class="verify-biz" style="margin-top:4px;">All verifications complete. Review your verified details
-                  and submit to ISG.</p>
+                  and submit to UPI Services.</p>
               </div>
 
               <div class="verification-status-grid">
@@ -832,7 +832,7 @@
               <div v-if="panVerified && accountVerified && isComplianceComplete" class="success-alert"
                 style="margin-top:16px;">
                 <span class="mdi mdi-check-circle-outline success-alert__icon"></span>
-                <p>All verifications completed. You can now submit the ISG onboarding.</p>
+                <p>All verifications completed. You can now submit the onboarding.</p>
               </div>
             </div>
           </template>
@@ -849,8 +849,8 @@
                   </div>
                 </div>
               </div>
-              <h1 class="card-heading" style="color:#16a34a;">ISG Onboarding Submitted!</h1>
-              <p class="card-desc">Your ISG onboarding has been successfully submitted. Terminal activation will be
+              <h1 class="card-heading" style="color:#16a34a;">Onboarding Submitted!</h1>
+              <p class="card-desc">Your onboarding has been successfully submitted. Terminal activation will be
                 completed shortly.</p>
 
               <div v-if="submitResult" class="result-chips">
@@ -883,7 +883,7 @@
                 <div class="chip chip--green"><span class="mdi mdi-check"></span> PAN Verified</div>
                 <div class="chip chip--green"><span class="mdi mdi-check"></span> Account Verified</div>
                 <div class="chip chip--green"><span class="mdi mdi-check"></span> Documents Uploaded</div>
-                <div class="chip chip--green"><span class="mdi mdi-check"></span> Submitted to ISG</div>
+                <div class="chip chip--green"><span class="mdi mdi-check"></span> Submitted</div>
               </div>
 
               <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:28px;">
@@ -947,7 +947,7 @@
                 :disabled="!panVerified || !accountVerified || !isComplianceComplete || submitting"
                 @click="handleStep6Submit">
                 <span v-if="submitting" class="spinner-btn"></span>
-                <template v-else>Submit to ISG <span class="mdi mdi-check"></span></template>
+                <template v-else>Submit <span class="mdi mdi-check"></span></template>
               </button>
 
             </div>
@@ -976,7 +976,7 @@
             <div class="info-icon-wrap"><span class="mdi mdi-bank-outline info-icon"></span></div>
             <div>
               <p class="info-title">Bank Account Verification</p>
-              <p class="info-desc">Settlement account IFSC and account holder name will be verified via ISG.</p>
+              <p class="info-desc">Settlement account IFSC and account holder name will be verified.</p>
             </div>
           </div>
         </div>
@@ -1420,7 +1420,9 @@ async function handleStep4Account() {
   accountErrors.accountHolderName = ""; accountErrors.accountNumber = ""; accountErrors.ifsc = "";
 
   if (!accountData.accountHolderName.trim()) accountErrors.accountHolderName = "Account holder name is required";
-  if (!accountData.accountNumber.trim()) accountErrors.accountNumber = "Account number is required";
+  if (!/^\d{11,}$/.test(accountData.accountNumber?.trim())) {
+    accountErrors.accountNumber = "Valid account number is required";
+  }
   if (!accountData.ifsc.trim() || accountData.ifsc.trim().length < 11) accountErrors.ifsc = "Valid 11-character IFSC is required";
 
   if (accountErrors.accountHolderName || accountErrors.accountNumber || accountErrors.ifsc) {

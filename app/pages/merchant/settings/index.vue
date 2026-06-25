@@ -205,7 +205,7 @@
             <tbody v-else>
               <tr v-for="item in terminals" :key="item.tid" class="data-row">
                 <td><span class="mono-val">{{ item.tid }}</span></td>
-                <td><span class="mono-val">{{ item.vpa }}</span></td>
+                <td><span class="mono-val">{{ item.vpa?.vpa }}</span></td>
                 <td class="th-hide-sm">
                   <span class="chip chip-blue">{{ item.interface || '—' }}</span>
                 </td>
@@ -256,11 +256,15 @@
             </div>
             <div class="info-row">
               <div class="info-row-left"><div class="info-row-icon"><span class="mdi mdi-briefcase-outline"></span></div><span class="info-row-label">Business Type</span></div>
-              <span class="info-row-value info-row-value-plain">{{ account?.business?.type || '—' }}</span>
+              <span class="info-row-value info-row-value-plain">{{ account?.business?.type?.type || '—' }}</span>
             </div>
             <div class="info-row" style="border-bottom:none">
               <div class="info-row-left"><div class="info-row-icon"><span class="mdi mdi-tag-outline"></span></div><span class="info-row-label">MCC</span></div>
-              <span class="info-row-value info-row-value-plain">{{ account?.business?.mcc || '—' }}</span>
+              <span class="info-row-value info-row-value-plain">{{ account?.business?.mcc?.id || '—' }}</span>
+            </div>
+            <div class="info-row" style="border-bottom:none">
+              <div class="info-row-left"><div class="info-row-icon"><span class="mdi mdi-tag-outline"></span></div><span class="info-row-label">Nature of Business</span></div>
+              <span class="info-row-value info-row-value-plain">{{ account?.business?.mcc?.descr || '—' }}</span>
             </div>
           </div>
         </div>
@@ -559,7 +563,7 @@ async function handleReset() {
   showAlert.value = false
   try {
     const res = await resetPassword({ oldPassword: oldPassword.value, newPassword: newPassword.value })
-    console.log("Password reset response:", res)
+    // console.log("Password reset response:", res)
     if (res.data.statusCode === "00") {
       alertMessage.value = "Password reset successful!"
       alertType.value    = "success"
@@ -592,7 +596,7 @@ async function fetchTerminalsVue() {
   try { const res = await fetchTerminals(); terminals.value = res.data.terminals || [] } catch (e) { console.error(e) } finally { loadingTerminals.value = false }
 }
 async function fetchAccountVue() {
-  try { const res = await fetchAccount(); console.log(res); account.value = res.data } catch (e) { console.error(e) }
+  try { const res = await fetchAccount(); account.value = res.data } catch (e) { console.error(e) }
 }
 
 definePageMeta({ layout: "mlayer", middleware: "auth" })

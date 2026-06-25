@@ -18,7 +18,6 @@ export function useWalletServiceOnboardingApi() {
   }) => {
     try {
       const res = await post(`/onboarding/wallet-service/verify/pan`, payload);
-      console.log("[WS] Verify PAN response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[WS] Verify PAN error:", err);
@@ -42,7 +41,6 @@ export function useWalletServiceOnboardingApi() {
   }) => {
     try {
       const res = await post(`/onboarding/wallet-service/verify/account`, payload);
-      console.log("[WS] Verify Account response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[WS] Verify Account error:", err);
@@ -99,7 +97,6 @@ export function useWalletServiceOnboardingApi() {
   const wsGetProfile = async (walletProfileId: string) => {
     try {
       const res = await get(`/onboarding/wallet-service/profile/${walletProfileId}`);
-      console.log("[WS] Get Profile response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[WS] Get Profile error:", err);
@@ -116,7 +113,6 @@ export function useWalletServiceOnboardingApi() {
   const wsApprove = async (walletProfileId: string) => {
     try {
       const res = await post(`/onboarding/wallet-service/approve`, { walletProfileId });
-      console.log("[WS] Approve response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[WS] Approve error:", err);

@@ -1134,8 +1134,6 @@ async function runCapture() {
     const xml = await res.text();
     bioLog("PidData received", "info");
     XMLData.value = xml;
-    console.log("xml", xml);
-
     const errCode = xml.match(/errCode="([^"]+)"/)?.[1];
     const errInfo = xml.match(/errInfo="([^"]+)"/)?.[1];
     if (errCode && errCode !== "0")
@@ -1284,7 +1282,6 @@ function goBack() {
   if (step.value > 1) step.value--;
 }
 
-// ── Step 1 Continue ─────────────────────────────────────────
 async function handleStep1Continue() {
   if (!detailsConfirmed.value) {
     showSnack("Please confirm you have reviewed the details", "error");
@@ -1330,7 +1327,6 @@ function retryInitiate() {
   handleStep1Continue();
 }
 
-// ── Other Steps Continue ─────────────────────────────────────
 const next = async () => {
   if (step.value === 2) {
     const otp = otpDigits.value.join("");
@@ -1452,7 +1448,7 @@ const next = async () => {
     try {
       loading.value = true;
       let BIOData = {
-        aadhaarno: "703373891454",
+        aadhaarno: aadhaarNumber.value.replace(/\s/g, ""),
         PidData: XMLData.value,
         merchantId: props.merchantId,
       };
@@ -1518,7 +1514,6 @@ onMounted(async () => {
   // Step flow: 1=Verify → 2=OTP → 3=PAN → 4=Aadhaar → 5=Biometric
   const isVerified = (s) => s === "VERIFIED";
 
-  //console.log("Kyc Status on Load", kycStatus);
 
   if (
     !isVerified(kycStatus.pan_status) &&

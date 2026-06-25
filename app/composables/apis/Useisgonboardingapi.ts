@@ -8,10 +8,8 @@ export function useIsgOnboardingApi() {
   const isgSendOtp = async (payload: { phone: string }) => {
     try {
       const res = await post(`/onboarding/upi/isg/send-otp`, payload);
-      console.log("[ISG] Send OTP response:", res);
       return res;
     } catch (err: any) {
-      console.error("[ISG] Send OTP error:", err);
       return err?.response?.data ?? { statusCode: "01", message: "Network error" };
     }
   };
@@ -19,10 +17,8 @@ export function useIsgOnboardingApi() {
   const isgVerifyOtp = async (payload: { phone: string; otp: string }) => {
     try {
       const res = await post(`/onboarding/upi/isg/verify-otp`, payload);
-      console.log("[ISG] Verify OTP response:", res);
       return res;
     } catch (err: any) {
-      console.error("[ISG] Verify OTP error:", err);
       return err?.response?.data ?? { statusCode: "01", message: "Network error" };
     }
   };
@@ -31,10 +27,8 @@ export function useIsgOnboardingApi() {
   const isgGetMerchantForOnboarding = async (id: string) => {
     try {
       const res = await get(`/onboarding/merchants/onboarding/${id}`);
-      console.log("[ISG] Get Merchant response:", res.data);
       return res.data;
     } catch (err: any) {
-      console.error("[ISG] Get Merchant error:", err);
       return err?.response?.data ?? { statusCode: "01", message: "Network error" };
     }
   };
@@ -48,7 +42,6 @@ export function useIsgOnboardingApi() {
   }) => {
     try {
       const res = await post(`/onboarding/upi/isg/verify/pan`, payload);
-      console.log("[ISG] Verify PAN response:", res.data);
       return res.data;
     } catch (err: any) {
       console.error("[ISG] Verify PAN error:", err);
@@ -86,10 +79,8 @@ export function useIsgOnboardingApi() {
   }) => {
     try {
       const res = await post(`/onboarding/upi/isg/verify/account`, payload);
-      console.log("[ISG] Verify Account response:", res.data);
       return res.data;
     } catch (err: any) {
-      console.error("[ISG] Verify Account error:", err);
       return err?.response?.data ?? { statusCode: "01", message: "Network error" };
     }
   };
@@ -99,10 +90,8 @@ export function useIsgOnboardingApi() {
       const res = await post(`/onboarding/upi/isg/submit/onboading`, {
       merchantId: payload.merchantId
       });
-      console.log("[ISG] Submit Onboarding response:", res.data);
       return res.data;
     } catch (err: any) {
-      console.error("[ISG] Submit Onboarding error:", err);
       return err?.response?.data ?? { statusCode: "01", message: "Network error" };
     }
   };
@@ -115,10 +104,8 @@ export function useIsgOnboardingApi() {
   }) => {
     try {
       const res = await post(`/onboarding/upi/isg/verify/gst`, payload);
-      console.log("[ISG] Verify GST response:", res.data);
       return res.data;
     } catch (err: any) {
-      console.error("[ISG] Verify GST error:", err);
       return err?.response?.data ?? { statusCode: "01", message: "Network error" };
     }
   };

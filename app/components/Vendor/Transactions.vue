@@ -138,7 +138,7 @@
               <th>Amount</th>
               <th>Status</th>
               <th class="th-hide-md">Date</th>
-              <th class="th-action"></th>
+              <!-- <th class="th-action"></th> -->
             </tr>
           </thead>
           <tbody>
@@ -195,11 +195,11 @@
               </td>
 
               <!-- Action -->
-              <td class="td-action" @click.stop>
+              <!-- <td class="td-action" @click.stop>
                 <button class="btn-view" @click="goToMerchant(item)" title="View Merchant">
                   <span class="mdi mdi-arrow-right"></span>
                 </button>
-              </td>
+              </td> -->
             </tr>
 
             <!-- Empty -->

@@ -11,20 +11,17 @@ export function useVendorApi() {
 
     const getVendor = async () => {
         const res = await get("/vendor/me");
-        console.log("vendor:", res.data.data);
         auth.setVendor(res.data.data)
         return res
     };
 
     const getTransactions = async () => {
         const res = await get("/vendor/gettransactions");
-        console.log("Vendor Transactions", res.data.data);
         auth.setVendorTransactions(res.data.data);
     };
 
     const getPaymentMethodSummary = async () => {
         const res = await get("/vendor/payment-method-summary");
-        console.log("Payment Method Summary", res.data);
 
         if (res.data.statusCode === "00") {
             auth.setPaymentSummaryVendor(res.data.data);
@@ -34,7 +31,6 @@ export function useVendorApi() {
 
     const getTransactionStatusSummary = async () => {
         const res = await get("/vendor/transaction/summary/today");
-        console.log("Transaction Status Summary", res.data);
 
         if (res.data.statusCode === "00") {
             auth.setTransactionStatusSummaryVendor(res.data.data);
@@ -44,7 +40,6 @@ export function useVendorApi() {
 
     const getMerchants = async ({ page = 1, limit = 10 }) => {
         const res = await get(`/vendor/merchants?page=${page}&limit=${limit}`);
-        console.log("Vendor Merchants:", res.data.data);
 
         merchant.setMerchants({
             list: res.data.data,
@@ -60,7 +55,6 @@ export function useVendorApi() {
 
     const getPendingMerchants = async ({ page = 1, limit = 10 }) => {
         const res = await get(`/vendor/merchants/pending?page=${page}&limit=${limit}`);
-        console.log("Kyc pending:", res.data);
 
         return res.data;
     };
@@ -69,7 +63,6 @@ export function useVendorApi() {
     const getMerchantById = async (id: string) => {
         try {
             const res = await get(`/aggregator/merchants/${id}`);
-            console.log("Merchant Details:", res.data);
             return res.data; // return the single merchant object
         } catch (error) {
             console.error("Error fetching merchant by ID:", error);
@@ -115,7 +108,6 @@ export function useVendorApi() {
     const resetPassword = async (payload: { oldPassword: string; newPassword: string }) => {
         try {
             const res = await post("/vendor/reset-password", payload);
-            console.log("Password reset response:", res);
             return res;
         } catch (e) {
             console.error("Password reset failed:", e);
@@ -126,7 +118,6 @@ export function useVendorApi() {
     const getuserOnboarding = async (merchantId: string) => {
         try {
             const res = await get(`/aggregator/merchants/${merchantId}/getuser-onboarding`);
-            console.log("Get User Onboarding Response:", res.data);
             return res.data;
         } catch (error) {
             console.error("Error completing onboarding:", error);
@@ -155,6 +146,6 @@ export function useVendorApi() {
     };
 
     return {
-        getVendor, getTransactions, getPendingMerchants, getMerchants, getAllVendorTransactions, getTransactionStatusSummary, getPaymentMethodSummary,
+        getVendor, getTransactions, resetPassword, getPendingMerchants, getMerchants, getAllVendorTransactions, getTransactionStatusSummary, getPaymentMethodSummary,
     };
 }
