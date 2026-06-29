@@ -275,7 +275,7 @@ export function useUsersApi() {
       const res = await get("/role");
 
       if (res.data?.statusCode === "00") {
-        return res.data.data; // { role: "merchant" | "vendor" | "aggregator" | ... }
+        return res.data.data;
       }
 
       return null;
@@ -288,12 +288,13 @@ export function useUsersApi() {
   const getTransactionsByMerchantId = async (merchantId: any, page = 1, limit = 10) => {
     try {
       const res = await get(`/admin/merchants/${merchantId}/transactions?page=${page}&limit=${limit}`);
-      // Convert BigInt fields to string if necessary
+      
       const data = res.data.data.map((t: any) => ({
         ...t,
         id: t.id.toString(),
         amount: t.amount.toString(),
       }));
+      
       return {
         data,
         pagination: res.data.pagination

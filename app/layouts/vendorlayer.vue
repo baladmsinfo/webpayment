@@ -61,6 +61,18 @@ const menus = ref([
     icon: "mdi-cog-outline",
     url: "/vendor/settings",
     open: false,
+    children: [
+      {
+        title: "Profile",
+        icon: "mdi-account-circle",
+        url: "/vendor/settings",
+      },
+      {
+        title: "Account Details",
+        icon: "mdi-card-account-details-outline",
+        url: "/vendor/account",
+      },
+    ]
   },
 ])
 

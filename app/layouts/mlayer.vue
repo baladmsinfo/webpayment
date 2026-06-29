@@ -55,6 +55,18 @@ const menus = ref([
     icon: "mdi-cog-outline",
     url: "/merchant/settings",
     open: false,
+    children: [
+      {
+        title: "Profile",
+        icon: "mdi-account-circle",
+        url: "/merchant/settings",
+      },
+      {
+        title: "Account Details",
+        icon: "mdi-card-account-details-outline",
+        url: "/merchant/account",
+      },
+    ]
   },
 ])
 
@@ -121,7 +133,6 @@ onBeforeUnmount(() => window.removeEventListener("resize", onResize))
 }
 
 .admin-main {
-  padding-top: 56px;
   min-height: 100dvh;
   margin-left: 0;
   transition: margin-left .27s cubic-bezier(.4, 0, .2, 1);
