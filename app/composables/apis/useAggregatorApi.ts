@@ -135,6 +135,11 @@ export function useAggregatorApi() {
     };
 
 
+    const getTransactionById = async (id: string) => {
+        const res = await get(`/aggregator/transaction/${id}`);
+        return res.data;
+    };
+
     const resetPassword = async (payload: { oldPassword: string; newPassword: string }) => {
         try {
             const res = await post("/aggregator/reset-password", payload);
@@ -173,6 +178,16 @@ export function useAggregatorApi() {
         return await post("/aggregator/merchant/onboarding", payload);
     };
 
+    const getDashboardAnalytics = async () => {
+        try {
+            const res = await get("/aggregator/dashboard/analytics");
+            return res.data?.data ?? null;
+        } catch (e) {
+            console.error("getDashboardAnalytics error:", e);
+            return null;
+        }
+    };
+
     return {
         getAggregator,
         resetPassword,
@@ -190,6 +205,8 @@ export function useAggregatorApi() {
         getVendors,
         getPendingVendors,
         getMerchantById,
-        getVendorById
+        getVendorById,
+        getTransactionById,
+        getDashboardAnalytics,
     };
 }

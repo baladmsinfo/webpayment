@@ -159,7 +159,7 @@
               <th>Amount</th>
               <th>Status</th>
               <th class="th-hide-md">Date</th>
-              <!-- <th class="th-action">Action</th> -->
+              <th class="th-action">Action</th>
             </tr>
           </thead>
 
@@ -252,21 +252,20 @@
               </td>
 
               <!-- Action -->
-              <!-- <td>
+              <td>
                 <button
                   class="btn-view"
-                  @click.stop="goToMerchant(item)"
-                  :disabled="!item.merchant?.id"
-                  title="View Merchant"
+                  @click.stop="goToTransaction(item)"
+                  title="View Transaction"
                 >
-                  <span class="mdi mdi-arrow-top-right"></span>
+                  <span class="mdi mdi-eye-outline"></span>
                 </button>
-              </td> -->
+              </td>
             </tr>
 
             <!-- Empty -->
             <tr v-if="filteredTxns.length === 0">
-              <td colspan="8" class="empty-td">
+              <td colspan="9" class="empty-td">
                 <div class="empty-state">
                   <div class="empty-icon">
                     <span class="mdi mdi-swap-horizontal"></span>
@@ -462,9 +461,8 @@ function clearFilters() {
 function onPageChange(p: number)  { page.value = p; loadTransactions(); }
 function onLimitChange(l: number) { limit.value = l; page.value = 1; loadTransactions(); }
 
-const goToMerchant = (item: any) => {
-  if (!item.merchant?.id) return;
-  router.push(`/aggregator/merchants/view/${item.merchant.id}`);
+const goToTransaction = (item: any) => {
+  router.push(`/aggregator/transactions/view/${item.id}`);
 };
 
 watch([page, limit], () => loadTransactions());

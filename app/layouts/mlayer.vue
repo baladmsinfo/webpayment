@@ -44,6 +44,12 @@ const menus = ref([
     open: false,
   },
   {
+    title: "Wallet",
+    icon: "mdi-wallet-outline",
+    url: "/merchant/wallet",
+    open: false,
+  },
+  {
     title: "Transactions",
     icon: "mdi-swap-horizontal",
     url: "/merchant/payments",

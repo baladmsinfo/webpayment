@@ -42,6 +42,11 @@ const menus = ref([
     url: "/aggregator/dashboard",
   },
   {
+    title: "Wallet",
+    icon: "mdi-wallet-outline",
+    url: "/aggregator/wallet",
+  },
+  {
     title: "Merchants",
     icon: "mdi-storefront-outline",
     url: "/aggregator/merchants",
@@ -70,6 +75,21 @@ const menus = ref([
       { title: "Services and Interfaces", icon: "mdi-connection", url: "/aggregator/setups/services" },
       // { title: "Pending Vendors",   icon: "mdi-account-clock-outline", url: "/aggregator/vendor/pending"   },
     ],
+  },
+  {
+    title: "Settlement",
+    icon: "mdi-bank-transfer-out",
+    url: "/aggregator/settlement",
+  },
+  {
+    title: "Reconciliation",
+    icon: "mdi-check-all",
+    url: "/aggregator/reconciliation",
+  },
+  {
+    title: "Accounting",
+    icon: "mdi-scale-balance",
+    url: "/aggregator/accounting",
   },
   {
     title: "Settings",

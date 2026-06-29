@@ -305,6 +305,11 @@ export function useUsersApi() {
     }
   };
 
+  const getMerchantTransactionById = async (id: string) => {
+    const res = await get(`/merchant/transaction/${id}`);
+    return res.data;
+  };
+
   const getAllTransactionsUnderVendor = async (vendorId: any, page = 1, limit = 10) => {
     try {
       const res = await get(`/admin/vendor/${vendorId}/transactions?page=${page}&limit=${limit}`);
@@ -324,5 +329,5 @@ export function useUsersApi() {
     }
   };
 
-  return { SendOtp, getRole, changeDefaultPassword, getWalletMe, getAllMerchantTransactions, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  return { SendOtp, getRole, changeDefaultPassword, getWalletMe, getAllMerchantTransactions, getMerchantTransactionById, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }

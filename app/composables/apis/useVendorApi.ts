@@ -105,6 +105,21 @@ export function useVendorApi() {
         return { data: [], meta: {} };
     };
 
+    const getVendorTransactionById = async (id: string) => {
+        const res = await get(`/vendor/transaction/${id}`);
+        return res.data;
+    };
+
+    const getVendorDashboardStats = async () => {
+        try {
+            const res = await get('/vendor/dashboard/stats');
+            return res.data?.data ?? null;
+        } catch (e) {
+            console.error('Error fetching vendor dashboard stats:', e);
+            return null;
+        }
+    };
+
     const resetPassword = async (payload: { oldPassword: string; newPassword: string }) => {
         try {
             const res = await post("/vendor/reset-password", payload);
@@ -146,6 +161,6 @@ export function useVendorApi() {
     };
 
     return {
-        getVendor, getTransactions, resetPassword, getPendingMerchants, getMerchants, getAllVendorTransactions, getTransactionStatusSummary, getPaymentMethodSummary,
+        getVendor, getTransactions, resetPassword, getPendingMerchants, getMerchants, getAllVendorTransactions, getTransactionStatusSummary, getPaymentMethodSummary, getVendorTransactionById, getVendorDashboardStats,
     };
 }
