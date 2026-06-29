@@ -72,6 +72,21 @@ const menus = ref([
     ],
   },
   {
+    title: "Settlement",
+    icon: "mdi-bank-transfer-out",
+    url: "/aggregator/settlement",
+  },
+  {
+    title: "Reconciliation",
+    icon: "mdi-check-all",
+    url: "/aggregator/reconciliation",
+  },
+  {
+    title: "Accounting",
+    icon: "mdi-scale-balance",
+    url: "/aggregator/accounting",
+  },
+  {
     title: "Settings",
     icon: "mdi-cog-outline",
     url: "/aggregator/settings",

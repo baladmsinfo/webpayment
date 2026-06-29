@@ -31,6 +31,10 @@
         <span class="mdi mdi-lock-reset tab-icon"></span>
         Reset Password
       </button>
+      <button class="tab-btn" :class="{ 'tab-btn-active': tab === 'webhooks' }" @click="tab = 'webhooks'">
+        <span class="mdi mdi-webhook tab-icon"></span>
+        Webhooks
+      </button>
     </div>
 
     <!-- ══════════════ MERCHANT TAB ══════════════ -->
@@ -482,6 +486,11 @@
         </div>
 
       </div>
+    </div>
+
+    <!-- ══════════════ WEBHOOKS TAB ══════════════ -->
+    <div v-if="tab === 'webhooks'" class="tab-pane">
+      <WebhookSettings />
     </div>
 
   </div>

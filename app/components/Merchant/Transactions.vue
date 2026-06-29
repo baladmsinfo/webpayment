@@ -92,6 +92,7 @@
               <th>Amount</th>
               <th>Status</th>
               <th class="th-hide-md">Date</th>
+              <th class="th-action">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -128,10 +129,15 @@
                   <p class="date-sub">{{ formatTime(item.createdAt) }}</p>
                 </div>
               </td>
+              <td>
+                <button class="btn-view" @click.stop="goToTransaction(item)" title="View Transaction">
+                  <span class="mdi mdi-eye-outline"></span>
+                </button>
+              </td>
             </tr>
 
             <tr v-if="displayedTransactions.length === 0">
-              <td colspan="6" class="empty-row">
+              <td colspan="7" class="empty-row">
                 <div class="empty-state">
                   <div class="empty-icon-wrap">
                     <span class="mdi mdi-swap-horizontal-bold"></span>
@@ -192,12 +198,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useUsersApi } from "~/composables/apis/useUsersApi";
 
 const props = defineProps<{
   transactionType?: string;
 }>();
 
+const router = useRouter();
 const { getAllMerchantTransactions } = useUsersApi();
 
 const loading      = ref(false);
@@ -236,6 +244,7 @@ const pageNumbers = computed(() => {
 });
 const onPageChange  = (p: number) => { page.value = p; };
 const onLimitChange = () => { page.value = 1; };
+const goToTransaction = (item: any) => { router.push(`/merchant/payments/view/${item.id}`); };
 
 const normalizeDate = (date: string | null, end = false) => {
   if (!date) return undefined;
@@ -418,4 +427,8 @@ onMounted(() => { loadTransactions(); });
 .page-btn:hover:not(:disabled) { background: rgba(17,66,212,.07); color: #1142d4; border-color: rgba(17,66,212,.2); }
 .page-btn:disabled { opacity: .4; cursor: not-allowed; }
 .page-btn-active { background: #1142d4 !important; color: #fff !important; border-color: #1142d4 !important; box-shadow: 0 2px 8px rgba(17,66,212,.25); }
+
+.th-action { width: 60px; text-align: center; }
+.btn-view { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: background .13s, color .13s, border-color .13s; margin: auto; }
+.btn-view:hover { background: rgba(17,66,212,.08); color: #1142d4; border-color: rgba(17,66,212,.25); }
 </style>

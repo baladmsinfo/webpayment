@@ -138,7 +138,7 @@
               <th>Amount</th>
               <th>Status</th>
               <th class="th-hide-md">Date</th>
-              <!-- <th class="th-action"></th> -->
+              <th class="th-action">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -195,11 +195,11 @@
               </td>
 
               <!-- Action -->
-              <!-- <td class="td-action" @click.stop>
-                <button class="btn-view" @click="goToMerchant(item)" title="View Merchant">
-                  <span class="mdi mdi-arrow-right"></span>
+              <td class="td-action" @click.stop>
+                <button class="btn-view" @click="goToTransaction(item)" title="View Transaction">
+                  <span class="mdi mdi-eye-outline"></span>
                 </button>
-              </td> -->
+              </td>
             </tr>
 
             <!-- Empty -->
@@ -413,9 +413,8 @@ const txnIcon = (s: string) => {
   return 'mdi-clock-outline';
 };
 
-const goToMerchant = (item: any) => {
-  if (!item.merchant?.id) return;
-  router.push(`/aggregator/merchants/view/${item.merchant.id}`);
+const goToTransaction = (item: any) => {
+  router.push(`/vendor/transactions/view/${item.id}`);
 };
 
 onMounted(() => { loadTransactions(); loadMerchants(); });

@@ -112,13 +112,21 @@ export function usePaymentsApi() {
 
   const getTransactionStatus = async () => {
     try {
-
       const res = await get("/merchant/payment/transactions/status-summary");
       return res.data;
-
     } catch (e) {
       console.error("Error fetching transaction status data:", e);
       return { labels: [], values: [], colors: [] };
+    }
+  };
+
+  const getMerchantDashboardStats = async () => {
+    try {
+      const res = await get("/merchant/dashboard/stats");
+      return res.data?.data ?? null;
+    } catch (e) {
+      console.error("Error fetching merchant dashboard stats:", e);
+      return null;
     }
   };
 
@@ -197,5 +205,6 @@ export function usePaymentsApi() {
     getReports,
     getMerchantCollections,
     getPaymentsByGranularity,
+    getMerchantDashboardStats,
   };
 }

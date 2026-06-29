@@ -1,18 +1,14 @@
 <template>
-  <v-container fluid>
-    <AggregatorMerchantsView :merchant-id="merchantId" />
-  </v-container>
+  <AggregatorMerchantsView :merchant-id="merchantId" />
 </template>
 
 <script setup>
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
 import AggregatorMerchantsView from "~/components/Aggregator/Merchants/View.vue";
 
+definePageMeta({ layout: 'aggregatorlayer', middleware: 'auth' });
+
 const route = useRoute();
 const merchantId = computed(() => route.params.id);
-
-// onMounted(() => {
-//   console.log("Merchant ID from route:", merchantId.value);
-// });
 </script>
