@@ -186,7 +186,6 @@
               <tr>
                 <th>TID</th>
                 <th>VPA</th>
-                <th class="th-hide-sm">Channel</th>
                 <th class="th-hide-sm">Type</th>
                 <th class="th-hide-md">Interface Type</th>
                 <th>Status</th>
@@ -197,7 +196,6 @@
                 <td><div class="skel skel-line-md"></div></td>
                 <td><div class="skel skel-line-lg"></div></td>
                 <td class="th-hide-sm"><div class="skel skel-chip"></div></td>
-                <td class="th-hide-sm"><div class="skel skel-chip"></div></td>
                 <td class="th-hide-md"><div class="skel skel-line-md"></div></td>
                 <td><div class="skel skel-chip"></div></td>
               </tr>
@@ -206,9 +204,6 @@
               <tr v-for="item in terminals" :key="item.tid" class="data-row">
                 <td><span class="mono-val">{{ item.tid }}</span></td>
                 <td><span class="mono-val">{{ item.vpa?.vpa }}</span></td>
-                <td class="th-hide-sm">
-                  <span class="chip chip-blue">{{ item.interface || '—' }}</span>
-                </td>
                 <td class="th-hide-sm">
                   <span class="chip chip-purple">{{ item.type?.toUpperCase() }}</span>
                 </td>
@@ -280,15 +275,11 @@
           <div class="info-rows">
             <div class="info-row">
               <div class="info-row-left"><div class="info-row-icon"><span class="mdi mdi-numeric"></span></div><span class="info-row-label">PAN</span></div>
-              <span class="mono-val">{{ account?.pan?.pan || '—' }}</span>
+              <span class="mono-val">{{ account?.pan[0]?.pan || '—' }}</span>
             </div>
             <div class="info-row">
               <div class="info-row-left"><div class="info-row-icon"><span class="mdi mdi-account-outline"></span></div><span class="info-row-label">PAN Name</span></div>
-              <span class="info-row-value info-row-value-plain">{{ account?.pan?.pan_name || '—' }}</span>
-            </div>
-            <div class="info-row" style="border-bottom:none">
-              <div class="info-row-left"><div class="info-row-icon"><span class="mdi mdi-domain"></span></div><span class="info-row-label">Entity PAN</span></div>
-              <span class="mono-val">{{ account?.pan?.entity_pan || '—' }}</span>
+              <span class="info-row-value info-row-value-plain">{{ account?.pan[0]?.pan_name || '—' }}</span>
             </div>
           </div>
         </div>

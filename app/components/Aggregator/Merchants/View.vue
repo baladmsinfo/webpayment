@@ -89,6 +89,92 @@
       <!-- ════ TAB: MERCHANT INFO ════ -->
       <section v-show="activeTab === 'info'" class="tab-section">
 
+        <!-- ── STATUS MANAGEMENT PANEL ── -->
+        <div class="card status-mgmt-card">
+          <div class="card__head">
+            <div class="card__head-dot card__head-dot--rose"></div>
+            <h3 class="card__title">Status Management</h3>
+            <span class="status-mgmt-badge">Operator Controls</span>
+          </div>
+
+          <div class="status-mgmt-body">
+
+            <!-- Active Status -->
+            <div class="smc-row">
+              <div class="smc-row__info">
+                <p class="smc-row__label">Active Status</p>
+                <p class="smc-row__desc">Controls whether this merchant can process transactions</p>
+                <div class="smc-row__current">
+                  Current:
+                  <span :class="['pill', merchant.status ? 'pill--emerald' : 'pill--red']">
+                    {{ merchant.status ? 'Active' : 'Inactive' }}
+                  </span>
+                </div>
+              </div>
+              <div class="smc-row__actions">
+                <button
+                  :class="['smc-btn', merchant.status ? 'smc-btn--danger' : 'smc-btn--success']"
+                  @click="openConfirm('status', !merchant.status)">
+                  <svg v-if="merchant.status" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  {{ merchant.status ? 'Deactivate' : 'Activate' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="smc-divider"></div>
+
+            <!-- Lifecycle Status -->
+            <div class="smc-row">
+              <div class="smc-row__info">
+                <p class="smc-row__label">Lifecycle Status</p>
+                <p class="smc-row__desc">Represents the merchant's onboarding and compliance stage</p>
+                <div class="smc-row__current">
+                  Current:
+                  <span :class="['pill', mstatusBadgeClass(merchant.mstatus)]">{{ merchant.mstatus }}</span>
+                </div>
+              </div>
+              <div class="smc-row__actions smc-row__actions--wrap">
+                <button
+                  v-for="ms in mstatusOptions"
+                  :key="ms.value"
+                  :class="['smc-chip', merchant.mstatus === ms.value ? 'smc-chip--active' : 'smc-chip--idle', `smc-chip--${ms.color}`]"
+                  :disabled="merchant.mstatus === ms.value"
+                  @click="openConfirm('mstatus', ms.value)">
+                  {{ ms.label }}
+                </button>
+              </div>
+            </div>
+
+            <div class="smc-divider"></div>
+
+            <!-- Risk Flag -->
+            <div class="smc-row">
+              <div class="smc-row__info">
+                <p class="smc-row__label">Risk Flag</p>
+                <!-- <p class="smc-row__desc">0 = No risk. Higher values escalate merchant review priority</p> -->
+                <div class="smc-row__current">
+                  Current:
+                  <span :class="['pill', merchant.riskflag > 0 ? 'pill--red' : 'pill--emerald']">
+                    {{ merchant.riskflag === 0 ? 'Clear (0)' : `Flagged (${merchant.riskflag})` }}
+                  </span>
+                </div>
+              </div>
+              <div class="smc-row__actions smc-row__actions--wrap">
+                <button
+                  v-for="rf in [0,1,2,3,4,5]"
+                  :key="rf"
+                  :class="['smc-risk-btn', merchant.riskflag === rf ? 'smc-risk-btn--active' : '', rf === 0 ? 'smc-risk-btn--clear' : rf <= 2 ? 'smc-risk-btn--low' : rf <= 4 ? 'smc-risk-btn--medium' : 'smc-risk-btn--high']"
+                  :disabled="merchant.riskflag === rf"
+                  @click="openConfirm('riskflag', rf)">
+                  {{ rf }}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         <!-- Identity -->
         <div class="card">
           <div class="card__head">
@@ -247,10 +333,6 @@
                 <p class="addr-main">{{ merchant.address.residential_address || '—' }}</p>
                 <p>{{ [merchant.address.res_address1, merchant.address.res_address2, merchant.address.res_address3].filter(v => v && v !== 'N/A').join(', ') || '—' }}</p>
                 <p class="addr-city">{{ merchant.address.res_city }}, {{ merchant.address.res_state }} – {{ merchant.address.res_pincode }}</p>
-                <div class="addr-contact">
-                  <span v-if="merchant.address.res_mobile && merchant.address.res_mobile !== '0000000000'">📱 {{ merchant.address.res_mobile }}</span>
-                  <span v-if="merchant.address.res_phone_number && merchant.address.res_phone_number !== '0000000000'">📞 {{ merchant.address.res_phone_number }}</span>
-                </div>
               </div>
             </div>
             <div class="addr-card">
@@ -262,10 +344,6 @@
                 <p class="addr-main">{{ merchant.address.vister_address || '—' }}</p>
                 <p>{{ [merchant.address.v_address1, merchant.address.v_address2, merchant.address.v_address3].filter(v => v && v !== 'N/A').join(', ') || '—' }}</p>
                 <p class="addr-city">{{ merchant.address.v_city }}, {{ merchant.address.v_state }} – {{ merchant.address.v_pincode }}</p>
-                <div class="addr-contact">
-                  <span v-if="merchant.address.v_mobile && merchant.address.v_mobile !== '0000000000'">📱 {{ merchant.address.v_mobile }}</span>
-                  <span v-if="merchant.address.v_phone_number && merchant.address.v_phone_number !== '0000000000'">📞 {{ merchant.address.v_phone_number }}</span>
-                </div>
               </div>
             </div>
           </div>
@@ -278,8 +356,6 @@
 
       <!-- ════ TAB: KYC SERVICES ════ -->
       <section v-show="activeTab === 'kyc'" class="tab-section">
-
-        <!-- Global KYC Overview -->
         <div class="card" v-if="merchant.merchantKyc">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--indigo"></div>
@@ -293,11 +369,8 @@
             <div class="info-item"><label>AML Flag</label><p><span :class="['flag', merchant.merchantKyc.amlFlag ? 'flag--warn' : 'flag--off']">{{ merchant.merchantKyc.amlFlag ? 'Flagged' : 'Clear' }}</span></p></div>
             <div class="info-item"><label>Sanction Match</label><p><span :class="['flag', merchant.merchantKyc.sanctionMatch ? 'flag--warn' : 'flag--off']">{{ merchant.merchantKyc.sanctionMatch ? 'Match' : 'None' }}</span></p></div>
             <div class="info-item"><label>Verified At</label><p>{{ fmtDate(merchant.merchantKyc.globalVerifiedAt) }}</p></div>
-            <div class="info-item" v-if="merchant.merchantKyc.remarks"><label>Remarks</label><p>{{ merchant.merchantKyc.remarks }}</p></div>
           </div>
         </div>
-
-        <!-- Service KYC Cards -->
         <template v-if="merchant.merchantservicekyc?.length">
           <div class="card" v-for="svc in merchant.merchantservicekyc" :key="svc.id">
             <div class="card__head">
@@ -310,44 +383,13 @@
                 <span :class="['pill', kycStatusPill(svc.status)]">{{ svc.status || 'PENDING' }}</span>
               </div>
             </div>
-
-            <!-- Risk & flags row -->
             <div class="svc-flags-row">
-              <div class="svc-flag-item">
-                <span class="svc-flag-label">Risk Level</span>
-                <span :class="['pill pill--sm', riskPill(svc.riskLevel)]">{{ svc.riskLevel || '—' }}</span>
-              </div>
-              <div class="svc-flag-item">
-                <span class="svc-flag-label">Risk Score</span>
-                <span class="svc-flag-val font-mono">{{ svc.riskScore ?? '—' }}</span>
-              </div>
-              <div class="svc-flag-item">
-                <span class="svc-flag-label">OTP Verified</span>
-                <span :class="['flag', svc.otpStatus ? 'flag--on' : 'flag--off']">{{ svc.otpStatus ? 'Done' : 'No' }}</span>
-              </div>
-              <div class="svc-flag-item">
-                <span class="svc-flag-label">Biometric</span>
-                <span :class="['flag', svc.biometricRequired ? 'flag--warn' : 'flag--off']">{{ svc.biometricRequired ? 'Required' : 'Not Req.' }}</span>
-              </div>
-              <div class="svc-flag-item">
-                <span class="svc-flag-label">Physical Verify</span>
-                <span :class="['flag', svc.physicalVerificationRequired ? 'flag--warn' : 'flag--off']">{{ svc.physicalVerificationRequired ? 'Required' : 'Not Req.' }}</span>
-              </div>
-              <div class="svc-flag-item">
-                <span class="svc-flag-label">AML Flag</span>
-                <span :class="['flag', svc.amlFlag ? 'flag--warn' : 'flag--off']">{{ svc.amlFlag ? 'Flagged' : 'Clear' }}</span>
-              </div>
-              <div class="svc-flag-item">
-                <span class="svc-flag-label">Sanction Match</span>
-                <span :class="['flag', svc.sanctionMatch ? 'flag--warn' : 'flag--off']">{{ svc.sanctionMatch ? 'Match' : 'None' }}</span>
-              </div>
-              <div class="svc-flag-item" v-if="svc.verifiedAt">
-                <span class="svc-flag-label">Verified At</span>
-                <span class="svc-flag-val">{{ fmtDate(svc.verifiedAt) }}</span>
-              </div>
+              <div class="svc-flag-item"><span class="svc-flag-label">Risk Level</span><span :class="['pill pill--sm', riskPill(svc.riskLevel)]">{{ svc.riskLevel || '—' }}</span></div>
+              <div class="svc-flag-item"><span class="svc-flag-label">Risk Score</span><span class="svc-flag-val font-mono">{{ svc.riskScore ?? '—' }}</span></div>
+              <div class="svc-flag-item"><span class="svc-flag-label">OTP Verified</span><span :class="['flag', svc.otpStatus ? 'flag--on' : 'flag--off']">{{ svc.otpStatus ? 'Done' : 'No' }}</span></div>
+              <div class="svc-flag-item"><span class="svc-flag-label">Biometric</span><span :class="['flag', svc.biometricRequired ? 'flag--warn' : 'flag--off']">{{ svc.biometricRequired ? 'Required' : 'Not Req.' }}</span></div>
+              <div class="svc-flag-item"><span class="svc-flag-label">AML Flag</span><span :class="['flag', svc.amlFlag ? 'flag--warn' : 'flag--off']">{{ svc.amlFlag ? 'Flagged' : 'Clear' }}</span></div>
             </div>
-
-            <!-- Doc verification grid -->
             <div class="svc-doc-grid">
               <div class="svc-doc-item" v-for="doc in buildDocItems(svc)" :key="doc.key">
                 <div class="svc-doc-item__top">
@@ -360,17 +402,14 @@
                 </div>
               </div>
             </div>
-
           </div>
         </template>
-
         <div class="card" v-else>
           <div class="empty-state">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
             <p>No KYC services registered for this merchant</p>
           </div>
         </div>
-
       </section>
 
       <!-- ════ TAB: COMMISSIONS ════ -->
@@ -402,8 +441,6 @@
           </div>
           <div class="empty-state" v-else><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><p>No commission slabs configured</p></div>
         </div>
-
-        <!-- Payment Methods -->
         <div class="card" v-if="merchant.paymethods?.length">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--sky"></div>
@@ -426,7 +463,6 @@
 
       <!-- ════ TAB: TERMINALS & OUTLETS ════ -->
       <section v-show="activeTab === 'terminals'" class="tab-section">
-
         <div class="card" v-if="merchant.terminals?.length">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--indigo"></div>
@@ -437,10 +473,7 @@
             <div class="terminal-card" v-for="t in merchant.terminals" :key="t.id">
               <div class="terminal-card__top">
                 <div class="tc-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg></div>
-                <div class="tc-info">
-                  <p class="tc-tid">{{ t.tid || 'No TID' }}</p>
-                  <p class="tc-type">{{ t.type }} · {{ t.interfaceType }}</p>
-                </div>
+                <div class="tc-info"><p class="tc-tid">{{ t.tid || 'No TID' }}</p><p class="tc-type">{{ t.type }} · {{ t.interfaceType }}</p></div>
                 <span :class="['pill pill--sm ml-auto', t.status ? 'pill--emerald' : 'pill--red']">{{ t.status ? 'Active' : 'Inactive' }}</span>
               </div>
               <div class="info-grid info-grid--3">
@@ -454,8 +487,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Outlets -->
         <div class="card" v-if="merchant.outlets?.length">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--emerald"></div>
@@ -466,10 +497,7 @@
             <div class="outlet-card" v-for="o in merchant.outlets" :key="o.id">
               <div class="outlet-card__top">
                 <div class="outlet-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4"/><path d="M2 13v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/></svg></div>
-                <div class="outlet-info">
-                  <p class="outlet-name">{{ o.name }}</p>
-                  <p class="outlet-code font-mono text-xs">{{ o.code }} · {{ o.outletId }}</p>
-                </div>
+                <div class="outlet-info"><p class="outlet-name">{{ o.name }}</p><p class="outlet-code font-mono text-xs">{{ o.code }} · {{ o.outletId }}</p></div>
                 <span :class="['pill pill--sm ml-auto', o.status ? 'pill--emerald' : 'pill--red']">{{ o.status ? 'Active' : 'Inactive' }}</span>
               </div>
               <div class="info-grid info-grid--3">
@@ -480,17 +508,13 @@
               <div v-if="o.users?.length" class="outlet-users">
                 <div class="outlet-user" v-for="u in o.users" :key="u.id">
                   <div class="ou-avatar" :style="{ background: avatarBg(u.name) }">{{ (u.name||'U').charAt(0).toUpperCase() }}</div>
-                  <div class="ou-info">
-                    <p class="ou-name">{{ u.name }}</p>
-                    <p class="ou-email text-xs">{{ u.email }}</p>
-                  </div>
+                  <div class="ou-info"><p class="ou-name">{{ u.name }}</p><p class="ou-email text-xs">{{ u.email }}</p></div>
                   <span :class="['pill pill--sm ml-auto', u.status ? 'pill--emerald' : 'pill--red']">{{ u.role }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
         <div class="empty-state" v-if="!merchant.terminals?.length && !merchant.outlets?.length">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
           <p>No terminals or outlets assigned</p>
@@ -582,6 +606,7 @@
           </div>
         </div>
       </Transition>
+
       <Transition name="dialog">
         <div v-if="imgPreview" class="dialog-overlay" @click.self="imgPreview = false">
           <div class="dialog dialog--img">
@@ -590,6 +615,105 @@
           </div>
         </div>
       </Transition>
+
+      <!-- ░░ CONFIRM DIALOG ░░ -->
+      <Transition name="dialog">
+        <div v-if="confirmDialog.open" class="dialog-overlay" @click.self="closeConfirm">
+          <div class="dialog dialog--confirm">
+
+            <!-- Header -->
+            <div class="dialog__hdr">
+              <div class="confirm-icon-wrap" :class="`confirm-icon-wrap--${confirmDialog.severity}`">
+                <!-- warning icon -->
+                <svg v-if="confirmDialog.severity === 'warn'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <!-- danger icon -->
+                <svg v-else-if="confirmDialog.severity === 'danger'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <!-- info icon -->
+                <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </div>
+              <div>
+                <p class="dialog__title">{{ confirmDialog.title }}</p>
+                <p class="dialog__sub">{{ confirmDialog.subtitle }}</p>
+              </div>
+              <button class="icon-close-btn ml-auto" @click="closeConfirm">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="dialog__body">
+
+              <!-- Change summary -->
+              <div class="confirm-change-summary">
+                <div class="ccs-row">
+                  <span class="ccs-label">Merchant</span>
+                  <span class="ccs-val font-mono">{{ merchant.mid }}</span>
+                </div>
+                <div class="ccs-row">
+                  <span class="ccs-label">Field</span>
+                  <span class="ccs-val">{{ confirmDialog.fieldLabel }}</span>
+                </div>
+                <div class="ccs-row">
+                  <span class="ccs-label">Current value</span>
+                  <span class="ccs-val" v-html="confirmDialog.fromHtml"></span>
+                </div>
+                <div class="ccs-arrow">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                </div>
+                <div class="ccs-row ccs-row--new">
+                  <span class="ccs-label">New value</span>
+                  <span class="ccs-val" v-html="confirmDialog.toHtml"></span>
+                </div>
+              </div>
+
+              <!-- Reason input -->
+              <div class="confirm-reason">
+                <label class="confirm-reason__label">
+                  Reason <span class="confirm-reason__opt">(optional)</span>
+                </label>
+                <textarea
+                  v-model="confirmDialog.reason"
+                  class="confirm-reason__input"
+                  rows="2"
+                  placeholder="e.g. Verified by compliance team on 25 Jun 2026…"
+                  maxlength="300"
+                ></textarea>
+                <p class="confirm-reason__count">{{ confirmDialog.reason.length }}/300</p>
+              </div>
+
+              <!-- Warning note for risky actions -->
+              <div class="confirm-warn-note" v-if="confirmDialog.severity === 'danger'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                This action will immediately affect the merchant's ability to transact. It is logged and auditable.
+              </div>
+
+              <!-- Footer actions -->
+              <div class="confirm-actions">
+                <button class="btn-secondary" @click="closeConfirm" :disabled="confirmDialog.loading">
+                  Cancel
+                </button>
+                <button
+                  :class="['btn-confirm', `btn-confirm--${confirmDialog.severity}`]"
+                  @click="executeUpdate"
+                  :disabled="confirmDialog.loading">
+                  <span v-if="confirmDialog.loading" class="btn-spinner"></span>
+                  <span v-else>{{ confirmDialog.actionLabel }}</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+
+      <!-- ░░ TOAST ░░ -->
+      <Transition name="toast">
+        <div v-if="toast.show" :class="['toast', `toast--${toast.type}`]">
+          <svg v-if="toast.type === 'success'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          {{ toast.message }}
+        </div>
+      </Transition>
+
     </Teleport>
 
   </div>
@@ -602,11 +726,13 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 import { useUsersApi } from "~/composables/apis/useUsersApi";
+import { useMerchantUpdateApi } from "~/composables/apis/useMerchantUpdateApi";
 
 const props = defineProps({ merchantId: String });
 const router = useRouter();
 const { getMerchantById } = useAggregatorApi();
 const { getTransactionsByMerchantId } = useUsersApi();
+const { updateMerchantStatus, updateMerchantMstatus, updateMerchantRiskflag } = useMerchantUpdateApi();
 
 const merchant = reactive({});
 const transactions = ref({ data: [], pagination: {} });
@@ -615,6 +741,145 @@ const docDialog = ref(false);
 const selectedDoc = ref(null);
 const imgPreview = ref(false);
 const previewUrl = ref(null);
+
+// ── Toast ──────────────────────────────────────────────────────────
+const toast = reactive({ show: false, type: 'success', message: '' });
+let toastTimer = null;
+
+const showToast = (message, type = 'success') => {
+  clearTimeout(toastTimer);
+  toast.message = message;
+  toast.type = type;
+  toast.show = true;
+  toastTimer = setTimeout(() => { toast.show = false; }, 3500);
+};
+
+// ── Confirm dialog state ───────────────────────────────────────────
+const confirmDialog = reactive({
+  open: false,
+  type: null,      // 'status' | 'mstatus' | 'riskflag'
+  newValue: null,
+  reason: '',
+  loading: false,
+  severity: 'info', // 'info' | 'warn' | 'danger'
+  title: '',
+  subtitle: '',
+  fieldLabel: '',
+  fromHtml: '',
+  toHtml: '',
+  actionLabel: '',
+});
+
+const mstatusOptions = [
+  { value: 'PENDING',         label: 'Pending',        color: 'amber' },
+  // { value: 'KYC_PENDING',     label: 'KYC Pending',    color: 'amber' },
+  // { value: 'KYC_VERIFIED',    label: 'KYC Verified',   color: 'sky'   },
+  // { value: 'SERVICE_ENABLED', label: 'Svc Enabled',    color: 'sky'   },
+  { value: 'APPROVED',        label: 'Approved',       color: 'emerald' },
+  // { value: 'ACTIVE',          label: 'Active',         color: 'emerald' },
+  { value: 'SUSPENDED',       label: 'Suspended',      color: 'amber' },
+  { value: 'BLOCKED',         label: 'Blocked',        color: 'red'   },
+  // { value: 'REGISTERED',      label: 'Registered',     color: 'slate' },
+];
+
+// Pill HTML builders (safe – no user input)
+const pillHtml = (text, cls) => `<span class="pill pill--sm pill--${cls}">${text}</span>`;
+
+const mstatusToColor = (s) => {
+  if (!s) return 'amber';
+  if (['APPROVED','VERIFIED','ACTIVE'].includes(s)) return 'emerald';
+  if (['REJECTED','FAILED','BLOCKED'].includes(s)) return 'red';
+  if (['KYC_VERIFIED','SERVICE_ENABLED'].includes(s)) return 'sky';
+  return 'amber';
+};
+
+const openConfirm = (type, newValue) => {
+  confirmDialog.type = type;
+  confirmDialog.newValue = newValue;
+  confirmDialog.reason = '';
+  confirmDialog.loading = false;
+
+  if (type === 'status') {
+    const activating = newValue === true;
+    confirmDialog.severity = activating ? 'info' : 'danger';
+    confirmDialog.title = activating ? 'Activate Merchant' : 'Deactivate Merchant';
+    confirmDialog.subtitle = activating
+      ? 'The merchant will be able to process transactions immediately.'
+      : 'The merchant will not be able to process any transactions.';
+    confirmDialog.fieldLabel = 'Active Status';
+    confirmDialog.fromHtml = pillHtml(merchant.status ? 'Active' : 'Inactive', merchant.status ? 'emerald' : 'red');
+    confirmDialog.toHtml   = pillHtml(activating ? 'Active' : 'Inactive', activating ? 'emerald' : 'red');
+    confirmDialog.actionLabel = activating ? 'Activate' : 'Deactivate';
+  }
+
+  if (type === 'mstatus') {
+    const isRisky = ['SUSPENDED', 'BLOCKED'].includes(newValue);
+    confirmDialog.severity = isRisky ? 'danger' : 'info';
+    confirmDialog.title = 'Change Lifecycle Status';
+    confirmDialog.subtitle = 'This updates the merchant onboarding / compliance stage.';
+    confirmDialog.fieldLabel = 'Lifecycle (mstatus)';
+    confirmDialog.fromHtml = pillHtml(merchant.mstatus, mstatusToColor(merchant.mstatus));
+    confirmDialog.toHtml   = pillHtml(newValue, mstatusToColor(newValue));
+    confirmDialog.actionLabel = 'Confirm Change';
+  }
+
+  if (type === 'riskflag') {
+    const isEscalating = newValue > (merchant.riskflag ?? 0);
+    confirmDialog.severity = newValue >= 3 ? 'danger' : newValue >= 1 ? 'warn' : 'info';
+    confirmDialog.title = newValue === 0 ? 'Clear Risk Flag' : `Set Risk Flag to ${newValue}`;
+    confirmDialog.subtitle = newValue === 0
+      ? 'Risk flag will be cleared. Normal operations will resume.'
+      : isEscalating
+        ? 'This escalates the merchant\'s risk level for closer review.'
+        : 'This lowers the merchant\'s risk flag level.';
+    confirmDialog.fieldLabel = 'Risk Flag';
+    const rfColor = (v) => v === 0 ? 'emerald' : v <= 2 ? 'amber' : 'red';
+    confirmDialog.fromHtml = pillHtml(merchant.riskflag === 0 ? `Clear (0)` : `Flagged (${merchant.riskflag})`, rfColor(merchant.riskflag));
+    confirmDialog.toHtml   = pillHtml(newValue === 0 ? `Clear (0)` : `Flagged (${newValue})`, rfColor(newValue));
+    confirmDialog.actionLabel = newValue === 0 ? 'Clear Flag' : 'Set Flag';
+  }
+
+  confirmDialog.open = true;
+};
+
+const closeConfirm = () => {
+  if (confirmDialog.loading) return;
+  confirmDialog.open = false;
+};
+
+const executeUpdate = async () => {
+  if (confirmDialog.loading) return;
+  confirmDialog.loading = true;
+
+  const payload = { reason: confirmDialog.reason || undefined };
+  let res;
+
+  try {
+    if (confirmDialog.type === 'status') {
+      res = await updateMerchantStatus(props.merchantId, { status: confirmDialog.newValue, ...payload });
+    } else if (confirmDialog.type === 'mstatus') {
+      res = await updateMerchantMstatus(props.merchantId, { mstatus: confirmDialog.newValue, ...payload });
+    } else if (confirmDialog.type === 'riskflag') {
+      res = await updateMerchantRiskflag(props.merchantId, { riskflag: confirmDialog.newValue, ...payload });
+    }
+
+    if (res?.statusCode === '00') {
+      // Optimistic local update
+      if (confirmDialog.type === 'status')   merchant.status   = confirmDialog.newValue;
+      if (confirmDialog.type === 'mstatus')  merchant.mstatus  = confirmDialog.newValue;
+      if (confirmDialog.type === 'riskflag') merchant.riskflag = confirmDialog.newValue;
+
+      showToast(res.message || 'Updated successfully', 'success');
+      confirmDialog.open = false;
+    } else {
+      showToast(res?.message || 'Update failed. Please try again.', 'error');
+    }
+  } catch {
+    showToast('Something went wrong. Please try again.', 'error');
+  } finally {
+    confirmDialog.loading = false;
+  }
+};
 
 const tabs = [
   { key: 'info',         label: 'Merchant Info',  icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>` },
@@ -629,8 +894,8 @@ const tabs = [
 // ── Helpers ──────────────────────────────────────────────────────
 const fmtDate = (d) => { if (!d) return '—'; const dt = new Date(d); if (isNaN(dt)) return '—'; return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`; };
 const genderLabel = (g) => g === 'M' ? 'Male' : g === 'F' ? 'Female' : g === 'O' ? 'Other' : '—';
-const mstatusBadge = (s) => { if (!s) return 'mg-badge--pending'; if (['APPROVED','VERIFIED','ACTIVE'].includes(s)) return 'mg-badge--success'; if (['REJECTED','FAILED'].includes(s)) return 'mg-badge--error'; return 'mg-badge--pending'; };
-const mstatusBadgeClass = (s) => { if (!s) return 'pill--amber'; if (['APPROVED','VERIFIED','ACTIVE'].includes(s)) return 'pill--emerald'; if (['REJECTED','FAILED'].includes(s)) return 'pill--red'; return 'pill--amber'; };
+const mstatusBadge = (s) => { if (!s) return 'mg-badge--pending'; if (['APPROVED','VERIFIED','ACTIVE'].includes(s)) return 'mg-badge--success'; if (['REJECTED','FAILED','BLOCKED'].includes(s)) return 'mg-badge--error'; return 'mg-badge--pending'; };
+const mstatusBadgeClass = (s) => { if (!s) return 'pill--amber'; if (['APPROVED','VERIFIED','ACTIVE'].includes(s)) return 'pill--emerald'; if (['REJECTED','FAILED','BLOCKED'].includes(s)) return 'pill--red'; return 'pill--amber'; };
 const kycStatusPill = (s) => { if (!s || s === 'PENDING') return 'pill--amber'; if (['VERIFIED','APPROVED'].includes(s)) return 'pill--emerald'; if (['REJECTED','FAILED','SUSPENDED'].includes(s)) return 'pill--red'; if (['PROCESSING','UNDER_REVIEW','SUBMITTED'].includes(s)) return 'pill--sky'; return 'pill--amber'; };
 const riskPill = (s) => { if (!s) return 'pill--slate'; if (s === 'LOW') return 'pill--emerald'; if (s === 'MEDIUM') return 'pill--amber'; if (s === 'HIGH') return 'pill--red'; return 'pill--slate'; };
 const docStatusPill = (s) => { if (s==='VERIFIED') return 'pill--emerald'; if (s==='REJECTED') return 'pill--red'; if (s==='SUBMITTED') return 'pill--sky'; return 'pill--amber'; };
@@ -639,8 +904,6 @@ const AVATAR_COLORS = ['#4f46e5','#059669','#d97706','#dc2626','#7c3aed','#0891b
 const avatarBg = (name) => AVATAR_COLORS[(name||'?').charCodeAt(0) % AVATAR_COLORS.length];
 const openDoc = (doc) => { selectedDoc.value = doc; docDialog.value = true; };
 const openPreview = (url) => { previewUrl.value = url; imgPreview.value = true; };
-
-// Build doc verification items from a service KYC record
 const buildDocItems = (svc) => [
   { key: 'pan',      label: 'PAN',         status: svc.panStatus,      verifiedAt: svc.panVerifiedAt,      reason: svc.panRejectionReason },
   { key: 'aadhaar',  label: 'Aadhaar',     status: svc.aadhaarStatus,  verifiedAt: svc.aadhaarVerifiedAt,  reason: svc.aadhaarRejectionReason },
@@ -720,6 +983,59 @@ onMounted(async () => {
 .card__title{font-size:13.5px;font-weight:700;color:#0f172a;}
 .card__ro-badge{margin-left:auto;font-size:9px;font-weight:700;color:#94a3b8;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:2px 8px;text-transform:uppercase;letter-spacing:.5px;}
 
+/* ── STATUS MANAGEMENT CARD ── */
+.status-mgmt-card{}
+.status-mgmt-badge{margin-left:auto;font-size:9px;font-weight:700;color:#f43f5e;background:#fff1f2;border:1px solid #fecdd3;border-radius:5px;padding:2px 8px;text-transform:uppercase;letter-spacing:.5px;}
+.status-mgmt-body{padding:0;}
+
+.smc-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:18px 20px;}
+.smc-row__info{flex:1;min-width:0;}
+.smc-row__label{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:3px;}
+.smc-row__desc{font-size:12px;color:#64748b;line-height:1.5;margin-bottom:8px;}
+.smc-row__current{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:#94a3b8;}
+.smc-row__actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.smc-row__actions--wrap{flex-wrap:wrap;justify-content:flex-end;max-width:360px;}
+.smc-divider{height:1px;background:#f1f5f9;margin:0 20px;}
+
+/* SMC action button */
+.smc-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap;}
+.smc-btn--success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0;}
+.smc-btn--success:hover{background:#a7f3d0;color:#064e3b;}
+.smc-btn--danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;}
+.smc-btn--danger:hover{background:#fecaca;color:#7f1d1d;}
+
+/* Mstatus chips */
+.smc-chip{padding:5px 11px;border-radius:7px;font-size:10.5px;font-weight:700;cursor:pointer;border:1.5px solid transparent;font-family:inherit;transition:all .15s;white-space:nowrap;}
+.smc-chip--idle{background:#f8fafc;color:#64748b;border-color:#e2e8f0;}
+.smc-chip--idle:hover{background:#f1f5f9;color:#0f172a;border-color:#cbd5e1;}
+.smc-chip--active{cursor:default;opacity:.55;}
+.smc-chip--emerald.smc-chip--active{background:#d1fae5;color:#065f46;border-color:#a7f3d0;}
+.smc-chip--amber.smc-chip--active{background:#fef3c7;color:#92400e;border-color:#fde68a;}
+.smc-chip--sky.smc-chip--active{background:#e0f2fe;color:#0369a1;border-color:#bae6fd;}
+.smc-chip--red.smc-chip--active{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
+.smc-chip--slate.smc-chip--active{background:#f1f5f9;color:#64748b;border-color:#e2e8f0;}
+.smc-chip--emerald.smc-chip--idle:hover{background:#d1fae5;color:#065f46;border-color:#a7f3d0;}
+.smc-chip--amber.smc-chip--idle:hover{background:#fef3c7;color:#92400e;border-color:#fde68a;}
+.smc-chip--sky.smc-chip--idle:hover{background:#e0f2fe;color:#0369a1;border-color:#bae6fd;}
+.smc-chip--red.smc-chip--idle:hover{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
+.smc-chip:disabled{pointer-events:none;}
+
+/* Risk flag buttons */
+.smc-risk-btn{width:36px;height:36px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;border:1.5px solid transparent;font-family:inherit;transition:all .15s;display:grid;place-items:center;}
+.smc-risk-btn--clear{background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;}
+.smc-risk-btn--clear:hover{background:#dcfce7;}
+.smc-risk-btn--low{background:#f8fafc;color:#475569;border-color:#e2e8f0;}
+.smc-risk-btn--low:hover{background:#fef3c7;color:#92400e;border-color:#fde68a;}
+.smc-risk-btn--medium{background:#f8fafc;color:#475569;border-color:#e2e8f0;}
+.smc-risk-btn--medium:hover{background:#fef9c3;color:#a16207;border-color:#fde047;}
+.smc-risk-btn--high{background:#f8fafc;color:#475569;border-color:#e2e8f0;}
+.smc-risk-btn--high:hover{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
+.smc-risk-btn--active.smc-risk-btn--clear{background:#16a34a;color:#fff;border-color:#16a34a;cursor:default;opacity:.6;}
+.smc-risk-btn--active.smc-risk-btn--low{background:#d97706;color:#fff;border-color:#d97706;cursor:default;opacity:.6;}
+.smc-risk-btn--active.smc-risk-btn--medium{background:#ca8a04;color:#fff;border-color:#ca8a04;cursor:default;opacity:.6;}
+.smc-risk-btn--active.smc-risk-btn--high{background:#dc2626;color:#fff;border-color:#dc2626;cursor:default;opacity:.6;}
+.smc-risk-btn:disabled{pointer-events:none;}
+
 /* ── INFO GRID ── */
 .info-grid{display:grid;gap:0;}
 .info-grid--4{grid-template-columns:repeat(4,1fr);}
@@ -735,7 +1051,7 @@ onMounted(async () => {
 .api-key-row__label{font-size:9.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px;flex-shrink:0;}
 .api-key-val{color:#475569;word-break:break-all;}
 
-/* ── KYC SERVICE CARDS ── */
+/* ── KYC ── */
 .svc-icon-sm{width:34px;height:34px;border-radius:9px;background:#0f172a;color:#fff;display:grid;place-items:center;font-size:10px;font-weight:800;flex-shrink:0;}
 .svc-head-info{display:flex;align-items:center;gap:8px;min-width:0;}
 .svc-interface-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:#e0e7ff;color:#4338ca;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;}
@@ -761,7 +1077,7 @@ onMounted(async () => {
 .data-table td{padding:11px 14px;color:#334155;border-bottom:1px solid #f9fafb;vertical-align:top;}
 .data-table tbody tr:last-child td{border-bottom:none;}
 .data-table tbody tr:hover td{background:#f8fafc;}
-.rate-cell{font-family:'JetBrains Mono',monospace;font-weight:700;color:#4f46e5;font-size:12px;}
+.rate-cell{font-family:'JetBrains Mono','Fira Code',monospace;font-weight:700;color:#4f46e5;font-size:12px;}
 .rate-type{font-size:9.5px;font-weight:600;color:#94a3b8;text-transform:uppercase;font-family:inherit;}
 
 /* ── PILLS / FLAGS ── */
@@ -853,7 +1169,8 @@ onMounted(async () => {
 .dialog-overlay{position:fixed;inset:0;z-index:400;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px;}
 .dialog{background:#fff;border-radius:16px;width:100%;max-width:760px;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden;max-height:90dvh;display:flex;flex-direction:column;}
 .dialog--img{max-width:600px;}
-.dialog__hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9;flex-shrink:0;}
+.dialog--confirm{max-width:480px;}
+.dialog__hdr{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #f1f5f9;flex-shrink:0;}
 .dialog__hdr-right{display:flex;align-items:center;gap:8px;}
 .dialog__title{font-size:15px;font-weight:700;color:#0f172a;}
 .dialog__sub{font-size:12px;color:#64748b;margin-top:2px;}
@@ -866,13 +1183,58 @@ onMounted(async () => {
 .doc-img-thumb{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;cursor:pointer;transition:opacity .13s;}
 .doc-img-thumb:hover{opacity:.82;}
 .img-preview{width:100%;max-height:520px;object-fit:contain;border-radius:8px;}
-.dialog-enter-active,.dialog-leave-active{transition:opacity .2s ease;}
-.dialog-enter-from,.dialog-leave-to{opacity:0;}
+
+/* ── CONFIRM DIALOG ── */
+.confirm-icon-wrap{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;}
+.confirm-icon-wrap--info{background:#e0e7ff;color:#4338ca;}
+.confirm-icon-wrap--warn{background:#fef3c7;color:#d97706;}
+.confirm-icon-wrap--danger{background:#fee2e2;color:#dc2626;}
+
+.confirm-change-summary{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+.ccs-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0;}
+.ccs-row--new{margin-top:2px;}
+.ccs-label{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.ccs-val{font-size:12.5px;font-weight:600;color:#0f172a;text-align:right;}
+.ccs-arrow{display:flex;justify-content:center;padding:6px 0;}
+
+.confirm-reason{margin-bottom:14px;}
+.confirm-reason__label{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.confirm-reason__opt{font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;}
+.confirm-reason__input{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit;color:#0f172a;background:#fff;resize:none;transition:border-color .15s;outline:none;}
+.confirm-reason__input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1);}
+.confirm-reason__count{font-size:10px;color:#94a3b8;text-align:right;margin-top:4px;}
+
+.confirm-warn-note{display:flex;align-items:flex-start;gap:8px;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:10px 13px;font-size:12px;color:#9a3412;margin-bottom:16px;line-height:1.5;}
+
+.confirm-actions{display:flex;gap:10px;justify-content:flex-end;}
+.btn-secondary{padding:9px 18px;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;font-weight:600;background:#fff;color:#475569;cursor:pointer;font-family:inherit;transition:all .15s;}
+.btn-secondary:hover{background:#f1f5f9;}
+.btn-secondary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-confirm{display:flex;align-items:center;gap:7px;padding:9px 20px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
+.btn-confirm--info{background:#4f46e5;color:#fff;}
+.btn-confirm--info:hover{background:#4338ca;}
+.btn-confirm--warn{background:#d97706;color:#fff;}
+.btn-confirm--warn:hover{background:#b45309;}
+.btn-confirm--danger{background:#dc2626;color:#fff;}
+.btn-confirm--danger:hover{background:#b91c1c;}
+.btn-confirm:disabled{opacity:.6;cursor:not-allowed;}
+.btn-spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.16);z-index:500;white-space:nowrap;}
+.toast--success{background:#0f172a;color:#34d399;}
+.toast--error{background:#0f172a;color:#f87171;}
+.toast-enter-active,.toast-leave-active{transition:all .25s ease;}
+.toast-enter-from,.toast-leave-to{opacity:0;transform:translateX(-50%) translateY(10px);}
 
 /* ── LOADER ── */
 .mg-loader{display:flex;align-items:center;justify-content:center;height:100vh;background:#f1f5f9;}
 .mg-loader__spinner{width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#0f172a;border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── TRANSITIONS ── */
+.dialog-enter-active,.dialog-leave-active{transition:opacity .2s ease;}
+.dialog-enter-from,.dialog-leave-to{opacity:0;}
 
 /* ── UTILITIES ── */
 .ml-auto{margin-left:auto;}
@@ -893,6 +1255,9 @@ onMounted(async () => {
   .svc-doc-grid{grid-template-columns:repeat(3,1fr);}
   .svc-doc-item:nth-child(5n){border-right:1px solid #f1f5f9;}
   .svc-doc-item:nth-child(3n){border-right:none;}
+  .smc-row{flex-direction:column;align-items:flex-start;}
+  .smc-row__actions{width:100%;}
+  .smc-row__actions--wrap{max-width:100%;}
 }
 
 /* ══ MOBILE ≤640px ══ */
@@ -948,9 +1313,12 @@ onMounted(async () => {
   .svc-doc-item:nth-child(2n){border-right:none;}
   .svc-flags-row{gap:6px 12px;padding:10px 14px;}
 
+  .smc-row{padding:14px 16px;}
+  .smc-row__actions--wrap{max-width:100%;}
   .dialog-overlay{padding:10px;}
   .dialog{max-height:95dvh;border-radius:12px;}
   .doc-img-grid{grid-template-columns:repeat(2,1fr);}
+  .toast{font-size:12px;padding:9px 14px;bottom:110px;}
 }
 
 /* ══ XS ≤400px ══ */
