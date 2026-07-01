@@ -375,10 +375,10 @@ const typeOptions = [
 
 // ── Computed stats ──
 const totalCredits = computed(() =>
-  historyData.value.filter(r => r.type === 'CREDIT').reduce((s, r) => s + (r.amount ?? 0), 0)
+  historyData.value.filter(r => r.type === 'CREDIT').reduce((s, r) => s + (Number(r.amount) ?? 0), 0)
 );
 const totalDebits = computed(() =>
-  historyData.value.filter(r => r.type === 'DEBIT').reduce((s, r) => s + (r.amount ?? 0), 0)
+  historyData.value.filter(r => r.type === 'DEBIT').reduce((s, r) => s + (Number(r.amount) ?? 0), 0)
 );
 
 // ── Add Money ──
