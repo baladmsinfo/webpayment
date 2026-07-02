@@ -48,7 +48,7 @@
         </div>
         <div class="stat-pill" style="--c:#7c3aed">
           <span class="pill-label">Commission</span>
-          <span class="pill-val">₹{{ fmt(txn.totalCommission) }}</span>
+          <span class="pill-val">₹{{ fmt(txn.settlement?.netSettlement) || fmt(txn.totalCommission) }}</span>
         </div>
         <div class="stat-pill" style="--c:#d97706">
           <span class="pill-label">GST</span>
@@ -105,8 +105,8 @@
           <div class="field-list">
             <div class="field-row"><span class="field-lbl">Gross Amount</span><span class="field-val mono">₹{{ fmt(txn.amount) }}</span></div>
             <div class="field-row"><span class="field-lbl">Net Amount</span><span class="field-val mono">₹{{ fmt(txn.netAmount) }}</span></div>
-            <div class="field-row"><span class="field-lbl">Commission</span><span class="field-val mono">₹{{ fmt(txn.totalCommission) }}</span></div>
-            <div class="field-row"><span class="field-lbl">GST</span><span class="field-val mono">₹{{ fmt(txn.gstAmount) }}</span></div>
+            <!-- <div class="field-row"><span class="field-lbl">Commission</span><span class="field-val mono">₹{{ fmt(txn.totalCommission) }}</span></div>
+            <div class="field-row"><span class="field-lbl">GST</span><span class="field-val mono">₹{{ fmt(txn.gstAmount) }}</span></div> -->
             <div class="field-row" v-if="txn.customerFee"><span class="field-lbl">Customer Fee</span><span class="field-val mono">₹{{ fmt(txn.customerFee) }}</span></div>
           </div>
         </div>
@@ -129,17 +129,6 @@
             <div class="field-row"><span class="field-lbl">GL Posted</span><span class="field-val"><span class="chip chip-sm" :class="txn.reconciliation.posted ? 'chip-green' : 'chip-amber'">{{ txn.reconciliation.posted ? 'Yes' : 'No' }}</span></span></div>
             <div class="field-row"><span class="field-lbl">Settled</span><span class="field-val"><span class="chip chip-sm" :class="txn.reconciliation.settled ? 'chip-green' : 'chip-amber'">{{ txn.reconciliation.settled ? 'Yes' : 'No' }}</span></span></div>
             <div class="field-row" v-if="txn.reconciliation.reconciledAt"><span class="field-lbl">Reconciled At</span><span class="field-val">{{ fmtDate(txn.reconciliation.reconciledAt) }}</span></div>
-          </div>
-        </div>
-
-        <!-- Commission Snapshot -->
-        <div class="info-card" v-if="txn.commissionSnapshot">
-          <div class="card-hdr"><span class="mdi mdi-percent card-hdr-icon" style="color:#64748b"></span>Commission Snapshot</div>
-          <div class="field-list">
-            <div class="field-row"><span class="field-lbl">Rate</span><span class="field-val mono">{{ txn.commissionSnapshot.rate ?? '—' }}%</span></div>
-            <div class="field-row"><span class="field-lbl">GST Rate</span><span class="field-val mono">{{ txn.commissionSnapshot.gstRate ?? '—' }}%</span></div>
-            <div class="field-row"><span class="field-lbl">Flat Fee</span><span class="field-val mono">₹{{ fmt(txn.commissionSnapshot.flatFee) }}</span></div>
-            <div class="field-row"><span class="field-lbl">Basis</span><span class="field-val">{{ txn.commissionSnapshot.commissionBasis ?? '—' }}</span></div>
           </div>
         </div>
 
@@ -166,43 +155,6 @@
           </div>
         </div>
 
-      </div>
-
-      <!-- GL Journal Entries -->
-      <div class="gl-card" v-if="txn.ledgerEntries?.length">
-        <div class="card-hdr"><span class="mdi mdi-scale-balance card-hdr-icon" style="color:#1142d4"></span>GL Journal Entries</div>
-        <div class="gl-table-wrap">
-          <table class="gl-table">
-            <thead>
-              <tr>
-                <th>Account</th>
-                <th>Code</th>
-                <th>Type</th>
-                <th>Debit (DR)</th>
-                <th>Credit (CR)</th>
-                <th>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="e in txn.ledgerEntries" :key="e.id">
-                <td>{{ e.account?.name ?? '—' }}</td>
-                <td class="mono">{{ e.account?.code ?? '—' }}</td>
-                <td><span class="chip chip-sm" :class="e.entryType === 'DR' ? 'chip-red' : 'chip-green'">{{ e.entryType }}</span></td>
-                <td class="mono amt-dr">{{ e.entryType === 'DR' ? '₹' + fmt(e.amount) : '—' }}</td>
-                <td class="mono amt-cr">{{ e.entryType === 'CR' ? '₹' + fmt(e.amount) : '—' }}</td>
-                <td class="note-cell">{{ e.note ?? '' }}</td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colspan="3" class="gl-foot-label">Totals</td>
-                <td class="mono amt-dr">₹{{ fmt(drTotal) }}</td>
-                <td class="mono amt-cr">₹{{ fmt(crTotal) }}</td>
-                <td><span class="chip chip-sm" :class="balanced ? 'chip-green' : 'chip-red'">{{ balanced ? 'Balanced' : 'Imbalanced' }}</span></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
       </div>
 
     </template>

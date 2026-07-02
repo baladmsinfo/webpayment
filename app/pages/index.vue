@@ -234,14 +234,13 @@ async function onSubmit() {
         show: true,
         message: 'No user found for our services. Please contact support.',
       };
+      loading.value = false;
     }
   } catch (e) {
     alert.value = {
       show: true,
       message: e?.data?.message || 'Invalid credentials. Please try again.',
     };
-  } finally {
-    loading.value = false;
   }
 }
 </script>
