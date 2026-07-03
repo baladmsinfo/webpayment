@@ -52,6 +52,17 @@
                     <p class="form-sub">Enter your credentials — you'll be routed to your dashboard automatically.</p>
                 </div>
 
+                <!-- Session displaced banner -->
+                <transition name="t-alert">
+                    <div v-if="auth.sessionDisplaced" class="alert-box alert-box--info">
+                        <span class="mdi mdi-devices alert-icon" style="color:#1142d4"></span>
+                        <span class="alert-msg" style="color:#1e3a8a">{{ auth.sessionDisplacedMessage }}</span>
+                        <button class="alert-close" style="color:#1142d4" @click="auth.sessionDisplaced = false">
+                            <span class="mdi mdi-close"></span>
+                        </button>
+                    </div>
+                </transition>
+
                 <!-- Alert -->
                 <transition name="t-alert">
                     <div v-if="alert.show" class="alert-box">
@@ -143,10 +154,30 @@
 <script setup>
 import { ref, computed, reactive } from "vue";
 import { useUsersApi } from "@/composables/apis/useUsersApi";
+import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
 
-const { login } = useUsersApi();
+const { login, updateSessionDevice, updateSessionLocation } = useUsersApi();
+const auth = useAuthStore();
 const router = useRouter();
+
+function reportSessionContext() {
+  // Fire-and-forget: send browser fingerprint, then try GPS
+  updateSessionDevice({
+    timezone:     Intl.DateTimeFormat().resolvedOptions().timeZone,
+    language:     navigator.language,
+    screenWidth:  screen.width,
+    screenHeight: screen.height,
+  });
+
+  if (typeof navigator !== "undefined" && navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => updateSessionLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => { /* permission denied — silent */ },
+      { timeout: 8_000, maximumAge: 60_000 }
+    );
+  }
+}
 
 definePageMeta({ middleware: "guest" });
 
@@ -221,13 +252,15 @@ async function onSubmit() {
     const isFirst = res?.data?.user?.isfirst;
  
     if (isFirst) {
+      reportSessionContext();
       router.push('/change-default-pass');
-      return; 
+      return;
     }
- 
+
     const route = ROLE_ROUTES[role];
- 
+
     if (route) {
+      reportSessionContext();
       router.push(route);
     } else {
       alert.value = {
@@ -530,6 +563,11 @@ async function onSubmit() {
 
 .alert-close:hover {
     opacity: 1;
+}
+
+.alert-box--info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
 }
 
 .t-alert-enter-active,

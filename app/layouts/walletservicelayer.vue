@@ -4,6 +4,13 @@
       <template #content>
         <div class="layout-body">
 
+          <IdleWarning
+            :show="showWarning"
+            :countdown="countdown"
+            @keep-alive="keepAlive"
+            @logout="doLogout"
+          />
+
           <div v-if="!docVerified" class="action-banner">
             <div class="banner-left">
               <div class="banner-icon-wrap">
@@ -36,9 +43,11 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useUsersApi } from "@/composables/apis/useUsersApi";
+import { useIdleTimer } from "~/composables/useIdleTimer";
 
 const {getWalletMe} = useUsersApi();
 const auth = useAuthStore();
+const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
 
 const Title = ref();
 

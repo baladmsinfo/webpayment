@@ -119,8 +119,10 @@
 <script setup>
 import { ref, computed, inject, onMounted, onBeforeUnmount } from "vue"
 import { useAuthStore } from "@/stores/auth";
+import { useUsersApi } from "@/composables/apis/useUsersApi";
 
 const auth = useAuthStore();
+const { logout: apiLogout } = useUsersApi();
 
 const props = defineProps({
   title:  { type: String,  default: "BUCKSBOX" },
@@ -160,14 +162,12 @@ function handleMobileClose() {
 /* ── Logout ── */
 const loading = ref(false)
 async function logout() {
-  loading.value = true
+  loading.value = true;
   try {
-    await auth.logout()
-    const authToken = useCookie("authToken")
-    authToken.value = null
-    await navigateTo("/")
+    await apiLogout();
+    await navigateTo("/");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>

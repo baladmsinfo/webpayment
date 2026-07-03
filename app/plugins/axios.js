@@ -3,8 +3,7 @@ import axios from "axios";
 
 export default defineNuxtPlugin(() => {
   const runtimeConfig = useRuntimeConfig();
-
-  // console.log(runtimeConfig.public.API_ENDPOINT)
+  const router = useRouter();
 
   const axiosInstance = axios.create({
     baseURL: runtimeConfig.public.API_ENDPOINT || "http://localhost:3010",
@@ -25,7 +24,16 @@ export default defineNuxtPlugin(() => {
     (response) => response,
     (error) => {
       if (error.response?.status === 401) {
-        useAuthStore()?.logout?.();
+        const auth = useAuthStore();
+        const data = error.response?.data;
+
+        if (data?.statusCode === "SESSION_DISPLACED") {
+          auth.markDisplaced(data.message);
+        } else {
+          auth.logout();
+        }
+
+        router.push("/");
       }
       return Promise.reject(error);
     }

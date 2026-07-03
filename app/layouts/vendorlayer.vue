@@ -7,6 +7,13 @@
         <slot />
       </div>
     </main>
+
+    <IdleWarning
+      :show="showWarning"
+      :countdown="countdown"
+      @keep-alive="keepAlive"
+      @logout="doLogout"
+    />
   </div>
 </template>
 
@@ -15,9 +22,11 @@ import { ref, computed, provide, onMounted, onBeforeUnmount } from "vue"
 import { useVendorLinkedServiceApi } from '~/composables/apis/useVendorLinkedServiceApi'
 import { useAuthStore } from "@/stores/auth";
 import { useVendorApi } from "@/composables/apis/useVendorApi";
+import { useIdleTimer } from "~/composables/useIdleTimer";
 
 const { getVendor } = useVendorApi();
 const auth = useAuthStore();
+const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
 
 const Title = ref();
 
