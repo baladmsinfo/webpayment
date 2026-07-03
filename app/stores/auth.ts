@@ -7,6 +7,8 @@ export const useAuthStore = defineStore("auth", {
     walletProfile: null as Record<string, any> | null,
     mobile_number: null as number | null,
     token: null as string | null,
+    sessionDisplaced: false,
+    sessionDisplacedMessage: null as string | null,
 
     merchants: {
       active: 0,
@@ -100,7 +102,20 @@ export const useAuthStore = defineStore("auth", {
     logout() {
       this.user = null;
       this.token = null;
+      this.sessionDisplaced = false;
+      this.sessionDisplacedMessage = null;
       localStorage.removeItem("token");
+      const authToken = useCookie("authToken");
+      authToken.value = null;
+    },
+    markDisplaced(message?: string) {
+      this.sessionDisplaced = true;
+      this.sessionDisplacedMessage = message ?? "Your account was signed in from another device. You have been logged out.";
+      this.user = null;
+      this.token = null;
+      localStorage.removeItem("token");
+      const authToken = useCookie("authToken");
+      authToken.value = null;
     },
   },
 });

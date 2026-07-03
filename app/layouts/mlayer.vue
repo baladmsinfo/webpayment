@@ -7,6 +7,13 @@
         <slot />
       </div>
     </main>
+
+    <IdleWarning
+      :show="showWarning"
+      :countdown="countdown"
+      @keep-alive="keepAlive"
+      @logout="doLogout"
+    />
   </div>
 </template>
 
@@ -14,9 +21,11 @@
 import { ref, computed, provide, watch, onMounted, onBeforeUnmount } from "vue"
 import { useUsersApi } from "~/composables/apis/useUsersApi"
 import { useAuthStore } from "@/stores/auth";
+import { useIdleTimer } from "~/composables/useIdleTimer";
 
 const { getProfile } = useUsersApi();
 const auth = useAuthStore();
+const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
 
 const Title = ref();
 

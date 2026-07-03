@@ -10,6 +10,13 @@
         </div>
       </template>
     </AggregatorNavbar>
+
+    <IdleWarning
+      :show="showWarning"
+      :countdown="countdown"
+      @keep-alive="keepAlive"
+      @logout="doLogout"
+    />
   </div>
 </template>
 
@@ -18,9 +25,11 @@ import { ref, computed, provide, onMounted, onBeforeUnmount } from "vue"
 import { useOnboadingApi } from "~/composables/apis/useOnboadingApi";
 import { useAuthStore } from "@/stores/auth";
 import { useAggregatorApi } from "@/composables/apis/useAggregatorApi";
+import { useIdleTimer } from "~/composables/useIdleTimer";
 
 const { getAggregator } = useAggregatorApi();
 const auth = useAuthStore();
+const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
 
 const Title = ref();
 
@@ -90,6 +99,11 @@ const menus = ref([
     title: "Accounting",
     icon: "mdi-scale-balance",
     url: "/aggregator/accounting",
+  },
+  {
+    title: "Reports",
+    icon: "mdi-chart-bar",
+    url: "/aggregator/reports",
   },
   {
     title: "Settings",

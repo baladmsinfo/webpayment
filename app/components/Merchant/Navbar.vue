@@ -131,8 +131,10 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue"
 import { useAuthStore } from "@/stores/auth";
+import { useUsersApi } from "@/composables/apis/useUsersApi";
 
 const auth = useAuthStore();
+const { logout: apiLogout } = useUsersApi();
 
 const props = defineProps({
   title:  { type: String,  default: "BUCKSBOX" },
@@ -178,11 +180,9 @@ function isParentActive(item) {
 }
 
 async function logout() {
-  loading.value = true
-  await auth.logout()
-  const authToken = useCookie("authToken")
-  authToken.value = null
-  navigateTo("/")
+  loading.value = true;
+  await apiLogout();
+  navigateTo("/");
 }
 </script>
 

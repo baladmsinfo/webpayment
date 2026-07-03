@@ -172,6 +172,30 @@ export function useUsersApi() {
     return res;
   };
 
+  const logout = async () => {
+    try {
+      await post("/logout", {});
+    } catch { /* ignore — clean up client side regardless */ }
+    auth.logout();
+  };
+
+  const updateSessionDevice = async (payload: {
+    timezone?: string; language?: string; screenWidth?: number; screenHeight?: number;
+  }) => {
+    try { await post("/session/device", payload); } catch { /* silent */ }
+  };
+
+  const updateSessionLocation = async (payload: { lat: number; lng: number }) => {
+    try { await post("/session/location", payload); } catch { /* silent */ }
+  };
+
+  const getSessionInfo = async () => {
+    try {
+      const res = await get("/session/info");
+      return res.data?.data ?? null;
+    } catch { return null; }
+  };
+
   const changeDefaultPassword = async (payload: { newPassword: string }) => {
     try {
       const res = await post("/change-default-password", payload);
@@ -329,5 +353,5 @@ export function useUsersApi() {
     }
   };
 
-  return { SendOtp, getRole, changeDefaultPassword, getWalletMe, getAllMerchantTransactions, getMerchantTransactionById, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  return { SendOtp, getRole, logout, updateSessionDevice, updateSessionLocation, getSessionInfo, changeDefaultPassword, getWalletMe, getAllMerchantTransactions, getMerchantTransactionById, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }
