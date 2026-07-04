@@ -241,6 +241,7 @@ async function onSubmit() {
       show: true,
       message: e?.data?.message || 'Invalid credentials. Please try again.',
     };
+    loading.value = false;
   }
 }
 </script>

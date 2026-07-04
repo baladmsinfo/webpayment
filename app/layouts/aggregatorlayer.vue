@@ -92,6 +92,11 @@ const menus = ref([
     url: "/aggregator/accounting",
   },
   {
+    title: "Reports",
+    icon: "mdi-file-chart-outline",
+    url: "/aggregator/reports",
+  },
+  {
     title: "Settings",
     icon: "mdi-cog-outline",
     url: "/aggregator/settings",
