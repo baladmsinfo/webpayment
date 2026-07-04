@@ -188,6 +188,30 @@ export function useAggregatorApi() {
         }
     };
 
+    const getReportDmtSummary = async (params: { from?: string; to?: string } = {}) => {
+        const q = new URLSearchParams(params as any).toString();
+        const res = await get(`/aggregator/reports/dmt-summary${q ? '?' + q : ''}`);
+        return res.data;
+    };
+
+    const getReportCommissionSummary = async (params: { from?: string; to?: string } = {}) => {
+        const q = new URLSearchParams(params as any).toString();
+        const res = await get(`/aggregator/reports/commission-summary${q ? '?' + q : ''}`);
+        return res.data;
+    };
+
+    const getReportSettlementPosition = async (params: { from?: string; to?: string } = {}) => {
+        const q = new URLSearchParams(params as any).toString();
+        const res = await get(`/aggregator/reports/settlement-position${q ? '?' + q : ''}`);
+        return res.data;
+    };
+
+    const getReportNsdlEmdMovement = async (params: { from?: string; to?: string; page?: number; limit?: number } = {}) => {
+        const q = new URLSearchParams(Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)]))).toString();
+        const res = await get(`/aggregator/reports/nsdl-emd-movement${q ? '?' + q : ''}`);
+        return res.data;
+    };
+
     return {
         getAggregator,
         resetPassword,
@@ -208,5 +232,9 @@ export function useAggregatorApi() {
         getVendorById,
         getTransactionById,
         getDashboardAnalytics,
+        getReportDmtSummary,
+        getReportCommissionSummary,
+        getReportSettlementPosition,
+        getReportNsdlEmdMovement,
     };
 }

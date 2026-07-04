@@ -140,8 +140,10 @@ import { useRoute } from "vue-router";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 
 import { useAuthStore } from "@/stores/auth";
+import { useUsersApi } from "@/composables/apis/useUsersApi";
 
 const { getAggregator } = useAggregatorApi();
+const { logout: apiLogout } = useUsersApi();
 
 const auth = useAuthStore();
 
@@ -178,9 +180,7 @@ function isActive(url) {
 
 async function logout() {
   loading.value = true;
-  await auth.logout()
-  const authToken = useCookie("authToken");
-  authToken.value = null;
+  await apiLogout();
   navigateTo("/");
 }
 </script>
