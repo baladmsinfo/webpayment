@@ -100,6 +100,33 @@ export function useAggregatorApi() {
         }
     };
 
+    const updateVendorStatus = async (id: string, payload: { status: boolean; reason?: string }) => {
+        try {
+            const res = await post(`/aggregator/vendor/${id}/status`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor status" };
+        }
+    };
+
+    const updateVendorMstatus = async (id: string, payload: { mstatus: string; reason?: string }) => {
+        try {
+            const res = await post(`/aggregator/vendor/${id}/mstatus`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor status" };
+        }
+    };
+
+    const updateVendorRiskflag = async (id: string, payload: { riskflag: number; reason?: string }) => {
+        try {
+            const res = await post(`/aggregator/vendor/${id}/riskflag`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor risk flag" };
+        }
+    };
+
     const getAllAggregatorTransactions = async ({
         page = 1,
         limit = 20,
@@ -230,6 +257,9 @@ export function useAggregatorApi() {
         getPendingVendors,
         getMerchantById,
         getVendorById,
+        updateVendorStatus,
+        updateVendorMstatus,
+        updateVendorRiskflag,
         getTransactionById,
         getDashboardAnalytics,
         getReportDmtSummary,

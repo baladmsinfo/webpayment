@@ -113,6 +113,93 @@
       <!-- ════ TAB: VENDOR INFO ════ -->
       <section v-show="activeTab === 'info'" class="tab-section">
 
+        <!-- ── STATUS MANAGEMENT PANEL ── -->
+        <div class="card status-mgmt-card">
+          <div class="card__head">
+            <div class="card__head-dot card__head-dot--rose"></div>
+            <h3 class="card__title">Status Management</h3>
+            <span class="status-mgmt-badge">Operator Controls</span>
+          </div>
+
+          <div class="status-mgmt-body">
+
+            <!-- Active Status -->
+            <div class="smc-row">
+              <div class="smc-row__info">
+                <p class="smc-row__label">Active Status</p>
+                <p class="smc-row__desc">Controls whether this vendor can operate and create merchants</p>
+                <div class="smc-row__current">
+                  Current:
+                  <span :class="['pill', vendorForm.status ? 'pill--emerald' : 'pill--red']">
+                    {{ vendorForm.status ? 'Active' : 'Inactive' }}
+                  </span>
+                </div>
+              </div>
+              <div class="smc-row__actions">
+                <button :class="['smc-btn', vendorForm.status ? 'smc-btn--danger' : 'smc-btn--success']"
+                  @click="openConfirm('status', !vendorForm.status)">
+                  <svg v-if="vendorForm.status" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                  </svg>
+                  <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="16" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                  </svg>
+                  {{ vendorForm.status ? 'Deactivate' : 'Activate' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="smc-divider"></div>
+
+            <!-- Lifecycle Status -->
+            <div class="smc-row">
+              <div class="smc-row__info">
+                <p class="smc-row__label">Lifecycle Status</p>
+                <p class="smc-row__desc">Represents the vendor's onboarding and approval stage</p>
+                <div class="smc-row__current">
+                  Current:
+                  <span :class="['pill', mstatusPillClass(vendorForm.mstatus)]">{{ vendorForm.mstatus || '—' }}</span>
+                </div>
+              </div>
+              <div class="smc-row__actions smc-row__actions--wrap">
+                <button v-for="ms in mstatusOptions" :key="ms.value"
+                  :class="['smc-chip', vendorForm.mstatus === ms.value ? 'smc-chip--active' : 'smc-chip--idle', `smc-chip--${ms.color}`]"
+                  :disabled="vendorForm.mstatus === ms.value" @click="openConfirm('mstatus', ms.value)">
+                  {{ ms.label }}
+                </button>
+              </div>
+            </div>
+
+            <div class="smc-divider"></div>
+
+            <!-- Risk Flag -->
+            <div class="smc-row">
+              <div class="smc-row__info">
+                <p class="smc-row__label">Risk Flag</p>
+                <div class="smc-row__current">
+                  Current:
+                  <span :class="['pill', vendorForm.riskflag > 0 ? 'pill--red' : 'pill--emerald']">
+                    {{ vendorForm.riskflag === 0 ? 'Clear (0)' : `Flagged (${vendorForm.riskflag})` }}
+                  </span>
+                </div>
+              </div>
+              <div class="smc-row__actions smc-row__actions--wrap">
+                <button v-for="rf in [0, 1, 2, 3, 4, 5]" :key="rf"
+                  :class="['smc-risk-btn', vendorForm.riskflag === rf ? 'smc-risk-btn--active' : '', rf === 0 ? 'smc-risk-btn--clear' : rf <= 2 ? 'smc-risk-btn--low' : rf <= 4 ? 'smc-risk-btn--medium' : 'smc-risk-btn--high']"
+                  :disabled="vendorForm.riskflag === rf" @click="openConfirm('riskflag', rf)">
+                  {{ rf }}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         <div class="card">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--indigo"></div>
@@ -1701,6 +1788,68 @@
       </div>
     </Transition>
 
+    <!-- ░░ STATUS CHANGE CONFIRM MODAL ░░ -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="confirmDialog.open" class="modal-overlay" @click.self="closeConfirm">
+          <div class="modal-box">
+
+            <div class="modal-box__header">
+              <h3 class="modal-box__title">{{ confirmDialog.title }}</h3>
+              <button class="modal-close" @click="closeConfirm">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="modal-box__body">
+              <p class="confirm-subtitle">{{ confirmDialog.subtitle }}</p>
+
+              <div class="confirm-change-summary">
+                <div class="ccs-row">
+                  <span class="ccs-label">Vendor</span>
+                  <span class="ccs-val font-mono">{{ vendorForm.code }}</span>
+                </div>
+                <div class="ccs-row">
+                  <span class="ccs-label">Field</span>
+                  <span class="ccs-val">{{ confirmDialog.fieldLabel }}</span>
+                </div>
+                <div class="ccs-row">
+                  <span class="ccs-label">Current value</span>
+                  <span class="ccs-val" v-html="confirmDialog.fromHtml"></span>
+                </div>
+                <div class="ccs-row ccs-row--new">
+                  <span class="ccs-label">New value</span>
+                  <span class="ccs-val" v-html="confirmDialog.toHtml"></span>
+                </div>
+              </div>
+
+              <div class="modal-field modal-field--full" style="margin-top:14px">
+                <label>Reason <span class="text-xs" style="color:#94a3b8;font-weight:400">(optional)</span></label>
+                <textarea v-model="confirmDialog.reason" rows="2" maxlength="300"
+                  placeholder="e.g. Approved after document verification…" class="confirm-reason__input"></textarea>
+              </div>
+            </div>
+
+            <div class="modal-box__footer">
+              <button class="btn-cancel" @click="closeConfirm" :disabled="confirmDialog.loading">Cancel</button>
+              <button class="btn-primary" :disabled="confirmDialog.loading" @click="executeConfirm">
+                <svg v-if="confirmDialog.loading" class="spin-icon" width="14" height="14" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                {{ confirmDialog.loading ? 'Saving…' : confirmDialog.actionLabel }}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
   </div>
 </template>
 
@@ -2396,7 +2545,7 @@ const deleteCommissionSlab = async (slabId) => {
 
 const props = defineProps({ vendorId: String });
 const router = useRouter();
-const { getVendorById, verifyOnboarding } = useAggregatorApi();
+const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag } = useAggregatorApi();
 const { getAllTransactionsUnderVendor } = useUsersApi();
 
 const vendorForm = reactive({});
@@ -2479,6 +2628,124 @@ const getVendor = async (id) => {
     const res = await getVendorById(id);
     Object.assign(vendorForm, res.data || {});
   } catch { showSnack('Failed to load vendor data', 'error'); }
+};
+
+// ── Status Management (Active / Lifecycle / Risk Flag) ─────────────
+const confirmDialog = reactive({
+  open: false,
+  type: null, // 'status' | 'mstatus' | 'riskflag'
+  newValue: null,
+  reason: '',
+  loading: false,
+  title: '',
+  subtitle: '',
+  fieldLabel: '',
+  fromHtml: '',
+  toHtml: '',
+  actionLabel: '',
+});
+
+const mstatusOptions = [
+  { value: 'PENDING', label: 'Pending', color: 'amber' },
+  { value: 'ONBOARDED', label: 'Onboarded', color: 'sky' },
+  { value: 'APPROVED', label: 'Approved', color: 'emerald' },
+  { value: 'SUSPENDED', label: 'Suspended', color: 'amber' },
+  { value: 'BLOCKED', label: 'Blocked', color: 'red' },
+];
+
+const pillHtml = (text, cls) => `<span class="pill pill--sm pill--${cls}">${text}</span>`;
+
+const mstatusToColor = (s) => {
+  if (!s) return 'amber';
+  if (['APPROVED'].includes(s)) return 'emerald';
+  if (['BLOCKED'].includes(s)) return 'red';
+  if (['ONBOARDED'].includes(s)) return 'sky';
+  return 'amber';
+};
+
+const mstatusPillClass = (s) => `pill--${mstatusToColor(s)}`;
+
+const openConfirm = (type, newValue) => {
+  confirmDialog.type = type;
+  confirmDialog.newValue = newValue;
+  confirmDialog.reason = '';
+  confirmDialog.loading = false;
+
+  if (type === 'status') {
+    const activating = newValue === true;
+    confirmDialog.title = activating ? 'Activate Vendor' : 'Deactivate Vendor';
+    confirmDialog.subtitle = activating
+      ? 'The vendor will be able to operate immediately.'
+      : 'The vendor will not be able to operate or create merchants.';
+    confirmDialog.fieldLabel = 'Active Status';
+    confirmDialog.fromHtml = pillHtml(vendorForm.status ? 'Active' : 'Inactive', vendorForm.status ? 'emerald' : 'red');
+    confirmDialog.toHtml = pillHtml(activating ? 'Active' : 'Inactive', activating ? 'emerald' : 'red');
+    confirmDialog.actionLabel = activating ? 'Activate' : 'Deactivate';
+  }
+
+  if (type === 'mstatus') {
+    confirmDialog.title = 'Change Lifecycle Status';
+    confirmDialog.subtitle = 'This updates the vendor onboarding / approval stage.';
+    confirmDialog.fieldLabel = 'Lifecycle (mstatus)';
+    confirmDialog.fromHtml = pillHtml(vendorForm.mstatus, mstatusToColor(vendorForm.mstatus));
+    confirmDialog.toHtml = pillHtml(newValue, mstatusToColor(newValue));
+    confirmDialog.actionLabel = 'Confirm Change';
+  }
+
+  if (type === 'riskflag') {
+    const isEscalating = newValue > (vendorForm.riskflag ?? 0);
+    confirmDialog.title = newValue === 0 ? 'Clear Risk Flag' : `Set Risk Flag to ${newValue}`;
+    confirmDialog.subtitle = newValue === 0
+      ? 'Risk flag will be cleared. Normal operations will resume.'
+      : isEscalating
+        ? "This escalates the vendor's risk level for closer review."
+        : "This lowers the vendor's risk flag level.";
+    confirmDialog.fieldLabel = 'Risk Flag';
+    const rfColor = (v) => v === 0 ? 'emerald' : v <= 2 ? 'amber' : 'red';
+    confirmDialog.fromHtml = pillHtml(vendorForm.riskflag === 0 ? 'Clear (0)' : `Flagged (${vendorForm.riskflag})`, rfColor(vendorForm.riskflag));
+    confirmDialog.toHtml = pillHtml(newValue === 0 ? 'Clear (0)' : `Flagged (${newValue})`, rfColor(newValue));
+    confirmDialog.actionLabel = newValue === 0 ? 'Clear Flag' : 'Set Flag';
+  }
+
+  confirmDialog.open = true;
+};
+
+const closeConfirm = () => {
+  if (confirmDialog.loading) return;
+  confirmDialog.open = false;
+};
+
+const executeConfirm = async () => {
+  if (confirmDialog.loading) return;
+  confirmDialog.loading = true;
+
+  const payload = { reason: confirmDialog.reason || undefined };
+  let res;
+
+  try {
+    if (confirmDialog.type === 'status') {
+      res = await updateVendorStatus(props.vendorId, { status: confirmDialog.newValue, ...payload });
+    } else if (confirmDialog.type === 'mstatus') {
+      res = await updateVendorMstatus(props.vendorId, { mstatus: confirmDialog.newValue, ...payload });
+    } else if (confirmDialog.type === 'riskflag') {
+      res = await updateVendorRiskflag(props.vendorId, { riskflag: confirmDialog.newValue, ...payload });
+    }
+
+    if (res?.statusCode === '00') {
+      if (confirmDialog.type === 'status') vendorForm.status = confirmDialog.newValue;
+      if (confirmDialog.type === 'mstatus') vendorForm.mstatus = confirmDialog.newValue;
+      if (confirmDialog.type === 'riskflag') vendorForm.riskflag = confirmDialog.newValue;
+
+      showSnack(res.message || 'Updated successfully');
+      confirmDialog.open = false;
+    } else {
+      showSnack(res?.message || 'Update failed. Please try again.', 'error');
+    }
+  } catch {
+    showSnack('Something went wrong. Please try again.', 'error');
+  } finally {
+    confirmDialog.loading = false;
+  }
 };
 
 const submitForm = async () => {
@@ -2624,6 +2891,7 @@ onMounted(() => {
   color: #991b1b;
   border: 1px solid #fca5a5;
 }
+
 
 .mh-header__actions {
   display: flex;
@@ -3140,6 +3408,50 @@ onMounted(() => {
   background: #f1f5f9;
   color: #64748b;
 }
+
+/* ── Status Management Card ── */
+.status-mgmt-badge { margin-left: auto; font-size: 9px; font-weight: 700; color: #7c3aed; background: #ede9fe; border: 1px solid #ddd6fe; border-radius: 5px; padding: 2px 8px; text-transform: uppercase; letter-spacing: .5px; }
+.status-mgmt-body { display: flex; flex-direction: column; }
+.smc-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 18px; flex-wrap: wrap; }
+.smc-row__info { flex: 1; min-width: 0; }
+.smc-row__label { font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
+.smc-row__desc { font-size: 11.5px; color: #64748b; margin-bottom: 8px; line-height: 1.5; }
+.smc-row__current { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b; font-weight: 600; }
+.smc-row__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.smc-row__actions--wrap { flex-wrap: wrap; }
+.smc-divider { height: 1px; background: #f1f5f9; margin: 0 18px; }
+.smc-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
+.smc-btn--success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+.smc-btn--success:hover { background: #a7f3d0; }
+.smc-btn--danger { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.smc-btn--danger:hover { background: #fca5a5; }
+.smc-chip { padding: 6px 14px; border-radius: 9px; font-size: 11.5px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .15s; font-family: inherit; }
+.smc-chip:disabled { cursor: default; opacity: .7; }
+.smc-chip--idle { background: #f1f5f9; color: #64748b; }
+.smc-chip--active { box-shadow: 0 0 0 2px currentColor; }
+.smc-chip--amber { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.smc-chip--emerald { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.smc-chip--sky { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+.smc-chip--red { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.smc-chip--slate { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+.smc-risk-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 9px; border: 1px solid transparent; font-size: 13px; font-weight: 800; cursor: pointer; font-family: 'DM Mono', monospace; transition: all .15s; }
+.smc-risk-btn:disabled { cursor: default; }
+.smc-risk-btn--active { box-shadow: 0 0 0 2.5px currentColor; }
+.smc-risk-btn--clear { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.smc-risk-btn--low { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.smc-risk-btn--medium { background: #fed7aa; color: #9a3412; border-color: #fdba74; }
+.smc-risk-btn--high { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+/* ── Confirm summary (status change modal) ── */
+.confirm-subtitle { font-size: 12px; color: #64748b; margin-bottom: 14px; line-height: 1.5; }
+.confirm-change-summary { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+.ccs-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #f1f5f9; gap: 10px; }
+.ccs-row:last-child { border-bottom: none; }
+.ccs-row--new { background: rgba(79,70,229,.04); }
+.ccs-label { font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; flex-shrink: 0; }
+.ccs-val { font-size: 13px; font-weight: 600; color: #0f172a; }
+.confirm-reason__input { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px; font-family: inherit; font-size: 12.5px; color: #0f172a; resize: vertical; outline: none; transition: border .15s; }
+.confirm-reason__input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.08); }
 
 .flag {
   font-size: 10.5px;
