@@ -68,6 +68,64 @@
 
     </div>
 
+    <!-- ── Domestic Money Transfer entry point ── -->
+    <div class="dmt-entry-card">
+      <div class="dmt-entry-left">
+        <div class="dmt-entry-icon"><span class="mdi mdi-bank-transfer"></span></div>
+        <div>
+          <h2 class="dmt-entry-title">Domestic Money Transfer</h2>
+          <p class="dmt-entry-sub">Send money for your customers in under 60 seconds</p>
+        </div>
+      </div>
+      <div class="dmt-entry-stats">
+        <div class="dmt-stat">
+          <span class="dmt-stat-label">Today's Transfer</span>
+          <span class="dmt-stat-value">₹{{ fmtAmt(dmtStore.todaysSessionSummary.amount) }}</span>
+        </div>
+        <div class="dmt-stat">
+          <span class="dmt-stat-label">Today's Commission</span>
+          <span class="dmt-stat-value dmt-stat-green">₹{{ fmtAmt(dmtStore.todaysSessionSummary.commission) }}</span>
+        </div>
+        <div class="dmt-stat">
+          <span class="dmt-stat-label">Remaining Wallet Balance</span>
+          <span class="dmt-stat-value">₹{{ fmtAmt(balanceData.balance) }}</span>
+        </div>
+      </div>
+      <NuxtLink to="/merchant/dmt" class="dmt-entry-cta">
+        <span class="mdi mdi-send"></span>
+        Send Money
+      </NuxtLink>
+    </div>
+
+    <!-- ── AEPS entry point ── -->
+    <div class="dmt-entry-card">
+      <div class="dmt-entry-left">
+        <div class="dmt-entry-icon"><span class="mdi mdi-fingerprint"></span></div>
+        <div>
+          <h2 class="dmt-entry-title">AEPS Services</h2>
+          <p class="dmt-entry-sub">Cash withdrawal, balance enquiry &amp; mini statement via Aadhaar</p>
+        </div>
+      </div>
+      <div class="dmt-entry-stats">
+        <div class="dmt-stat">
+          <span class="dmt-stat-label">Today's AEPS Txns</span>
+          <span class="dmt-stat-value">{{ aepsStore.todaysSessionSummary.count }}</span>
+        </div>
+        <div class="dmt-stat">
+          <span class="dmt-stat-label">Cash Disbursed</span>
+          <span class="dmt-stat-value dmt-stat-green">₹{{ fmtAmt(aepsStore.todaysSessionSummary.cashDisbursed) }}</span>
+        </div>
+        <div class="dmt-stat">
+          <span class="dmt-stat-label">Wallet Balance</span>
+          <span class="dmt-stat-value">₹{{ fmtAmt(balanceData.balance) }}</span>
+        </div>
+      </div>
+      <NuxtLink to="/merchant/aeps" class="dmt-entry-cta">
+        <span class="mdi mdi-fingerprint"></span>
+        Start Transaction
+      </NuxtLink>
+    </div>
+
     <!-- ── 4 Collection Stat Cards + Donut ── -->
     <!-- ── Transaction Status Summary Strip ── -->
     <div class="status-strip">
@@ -362,6 +420,8 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { usePaymentsStore } from "~/stores/payments";
+import { useDmtStore } from "~/stores/dmt";
+import { useAepsStore } from "~/stores/aeps";
 import { usePaymentsApi } from "~/composables/apis/usepaymentsApi";
 import { useMerchantBalanceApi } from "~/composables/apis/useMerchantBalanceApi";
 import VueApexCharts from "vue3-apexcharts";
@@ -372,6 +432,8 @@ const apexchart = VueApexCharts;
 
 // ── Payments store / api ───────────────────────────────────────
 const store = usePaymentsStore();
+const dmtStore = useDmtStore();
+const aepsStore = useAepsStore();
 const { getMerchantCollections, getPaymentsByGranularity, getMerchantDashboardStats } = usePaymentsApi();
 const { totalCollection: collections } = storeToRefs(store);
 
@@ -1132,6 +1194,35 @@ onMounted(async () => {
 .chip-red   { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
 .chip-amber { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
 .chip-blue  { background: rgba(17,66,212,.07); color: #1142d4; border: 1px solid rgba(17,66,212,.15); }
+
+/* ── DMT Entry Card ── */
+.dmt-entry-card {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  background: #fff; border: 1px solid #e8edf3; border-radius: 16px;
+  padding: 20px 22px; box-shadow: 0 1px 6px rgba(0,0,0,.04);
+}
+.dmt-entry-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 220px; }
+.dmt-entry-icon {
+  width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
+  background: linear-gradient(135deg, #1142d4, #4169e1); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+.dmt-entry-title { font-size: 15px; font-weight: 800; color: #0f172a; }
+.dmt-entry-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+.dmt-entry-stats { display: flex; gap: 22px; flex-wrap: wrap; }
+.dmt-stat { display: flex; flex-direction: column; gap: 2px; }
+.dmt-stat-label { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+.dmt-stat-value { font-size: 15px; font-weight: 800; color: #0f172a; font-family: 'DM Mono', monospace; }
+.dmt-stat-green { color: #059669; }
+.dmt-entry-cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #1142d4, #4169e1); color: #fff;
+  padding: 12px 22px; border-radius: 12px; font-size: 13.5px; font-weight: 700;
+  text-decoration: none; box-shadow: 0 8px 22px rgba(17,66,212,.28); white-space: nowrap;
+  transition: filter .15s;
+}
+.dmt-entry-cta:hover { filter: brightness(1.08); }
+.dmt-entry-cta .mdi { font-size: 16px; }
 
 /* ── Skeletons ── */
 .skel { background: linear-gradient(90deg, #f1f5f9 25%, #e8edf3 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; }

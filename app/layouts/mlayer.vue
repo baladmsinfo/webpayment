@@ -59,6 +59,28 @@ const menus = ref([
     open: false,
   },
   {
+    title: "Money Transfer",
+    icon: "mdi-bank-transfer",
+    url: "/merchant/dmt",
+    open: false,
+    children: [
+      { title: "Send Money", icon: "mdi-send-outline", url: "/merchant/dmt" },
+      { title: "Transfer History", icon: "mdi-history", url: "/merchant/dmt/history" },
+    ],
+  },
+  {
+    title: "AEPS Services",
+    icon: "mdi-fingerprint",
+    url: "/merchant/aeps",
+    open: false,
+    children: [
+      { title: "Cash Withdrawal", icon: "mdi-cash-multiple", url: "/merchant/aeps/cash-withdrawal" },
+      { title: "Balance Enquiry", icon: "mdi-wallet-outline", url: "/merchant/aeps/balance-enquiry" },
+      { title: "Mini Statement", icon: "mdi-receipt-text-outline", url: "/merchant/aeps/mini-statement" },
+      { title: "Aadhaar Pay", icon: "mdi-fingerprint", url: "/merchant/aeps/aadhaar-pay" },
+    ],
+  },
+  {
     title: "Transactions",
     icon: "mdi-swap-horizontal",
     url: "/merchant/payments",
@@ -94,6 +116,12 @@ const serviceIconMap = {
   POS:  "mdi-point-of-sale",
 }
 
+// Services with their own purpose-built history page (richer than the generic
+// per-service ledger at /merchant/payments/:service) route there instead.
+const serviceHistoryOverride = {
+  DMT: "/merchant/dmt/history",
+}
+
 onMounted(async () => {
   window.addEventListener("resize", onResize)
 
@@ -125,7 +153,7 @@ onMounted(async () => {
       txMenu.children = uniqueServices.map((svc) => ({
         title: `${svc} Transactions`,
         icon:  serviceIconMap[svc] ?? "mdi-clipboard-list-outline",
-        url:   `/merchant/payments/${svc.toLowerCase()}`,
+        url:   serviceHistoryOverride[svc] ?? `/merchant/payments/${svc.toLowerCase()}`,
       }))
     }
   } catch (e) {
