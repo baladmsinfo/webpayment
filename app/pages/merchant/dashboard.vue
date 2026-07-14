@@ -15,61 +15,42 @@
       </div>
     </div>
 
-    <div class="hero-row">
-
-      <!-- Wallet Summary Card -->
-      <div class="balance-panel">
-        <template v-if="!balanceLoading">
-          <div class="bp-top">
-            <span class="bp-label">Available Balance</span>
-            <span class="bp-status-dot" :class="balanceData.walletActive ? 'dot-active' : 'dot-inactive'"></span>
-          </div>
-          <div class="bp-amount">
-            <span class="bp-currency">₹</span>
-            <span class="bp-value">{{ formatCurrency(balanceData.balance) }}</span>
-          </div>
-          <div class="bp-wallet-hint">
-            <span class="mdi mdi-information-outline"></span>
-            Manage your balance, add money and withdraw from the Wallet page
-          </div>
-          <div class="bp-actions">
-            <NuxtLink to="/merchant/wallet" class="bp-btn bp-btn--add">
-              <span class="mdi mdi-wallet-outline"></span>
-              Manage Wallet
-            </NuxtLink>
-            <button class="bp-btn bp-btn--account" @click="navigateTo('/merchant/account')">
-              <span class="mdi mdi-bank-outline"></span>
-              View Account
-            </button>
-          </div>
-        </template>
-        <template v-else>
-          <div class="skel skel-sm mb-2"></div>
-          <div class="skel skel-xl mb-3"></div>
-          <div class="skel skel-md mb-4"></div>
-          <div class="skel skel-sm"></div>
-        </template>
-      </div>
-
-            <!-- Donut -->
-      <div class="card donut-card">
-        <div class="card-header">
-          <div class="card-title-wrap">
-            <div class="card-icon-dot" style="background:rgba(17,66,212,.1);color:#1142d4">
-              <span class="mdi mdi-chart-donut"></span>
-            </div>
-            <h2 class="card-title">Transaction Status</h2>
-          </div>
+    <!-- Wallet Summary Card -->
+    <div class="balance-panel" v-if="hasWallet">
+      <template v-if="!balanceLoading">
+        <div class="bp-top">
+          <span class="bp-label">Available Balance</span>
+          <span class="bp-status-dot" :class="balanceData.walletActive ? 'dot-active' : 'dot-inactive'"></span>
         </div>
-        <div class="chart-wrap">
-          <apexchart type="donut" width="100%" :options="statusDonutOptions" :series="statusDonutSeries" />
+        <div class="bp-amount">
+          <span class="bp-currency">₹</span>
+          <span class="bp-value">{{ formatCurrency(balanceData.balance) }}</span>
         </div>
-      </div>
-
+        <div class="bp-wallet-hint">
+          <span class="mdi mdi-information-outline"></span>
+          Manage your balance, add money and withdraw from the Wallet page
+        </div>
+        <div class="bp-actions">
+          <NuxtLink to="/merchant/wallet" class="bp-btn bp-btn--add">
+            <span class="mdi mdi-wallet-outline"></span>
+            Manage Wallet
+          </NuxtLink>
+          <button class="bp-btn bp-btn--account" @click="navigateTo('/merchant/account')">
+            <span class="mdi mdi-bank-outline"></span>
+            View Account
+          </button>
+        </div>
+      </template>
+      <template v-else>
+        <div class="skel skel-sm mb-2"></div>
+        <div class="skel skel-xl mb-3"></div>
+        <div class="skel skel-md mb-4"></div>
+        <div class="skel skel-sm"></div>
+      </template>
     </div>
 
     <!-- ── Domestic Money Transfer entry point ── -->
-    <div class="dmt-entry-card">
+    <div class="dmt-entry-card" v-if="hasDMT">
       <div class="dmt-entry-left">
         <div class="dmt-entry-icon"><span class="mdi mdi-bank-transfer"></span></div>
         <div>
@@ -98,7 +79,7 @@
     </div>
 
     <!-- ── AEPS entry point ── -->
-    <div class="dmt-entry-card">
+    <div class="dmt-entry-card" v-if="hasAEPS">
       <div class="dmt-entry-left">
         <div class="dmt-entry-icon"><span class="mdi mdi-fingerprint"></span></div>
         <div>
@@ -313,8 +294,23 @@
 
     </div>
 
-    <!-- ── Analytics Row 1: Payment Method Bar + Success Rate ── -->
-    <div class="analytics-row two-three">
+    <!-- ── Analytics Row 1: Transaction Status + Payment Method Bar + Success Rate ── -->
+    <div class="analytics-row three-col">
+
+      <!-- Transaction Status Donut -->
+      <div class="card donut-card">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <div class="card-icon-dot" style="background:rgba(17,66,212,.1);color:#1142d4">
+              <span class="mdi mdi-chart-donut"></span>
+            </div>
+            <h2 class="card-title">Transaction Status</h2>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <apexchart type="donut" width="100%" :options="statusDonutOptions" :series="statusDonutSeries" />
+        </div>
+      </div>
 
       <!-- Payment by Method (amount) -->
       <div class="card chart-card">
@@ -424,6 +420,7 @@ import { useDmtStore } from "~/stores/dmt";
 import { useAepsStore } from "~/stores/aeps";
 import { usePaymentsApi } from "~/composables/apis/usepaymentsApi";
 import { useMerchantBalanceApi } from "~/composables/apis/useMerchantBalanceApi";
+import { useMerchantServices } from "~/composables/useMerchantServices";
 import VueApexCharts from "vue3-apexcharts";
 
 definePageMeta({ layout: "mlayer", middleware: "auth" });
@@ -442,6 +439,9 @@ const {
   balanceData, balanceLoading,
   fetchBalance, formatCurrency,
 } = useMerchantBalanceApi();
+
+// ── Verified merchant services (AEPS / DMT / ...) ──────────────
+const { hasAEPS, hasDMT, hasWallet, loadMerchantServices } = useMerchantServices();
 
 // ── Chart tabs ─────────────────────────────────────────────────
 const tab = ref("day");
@@ -650,6 +650,7 @@ const showToast = (message, type = "success") => {
 // ── Lifecycle ──────────────────────────────────────────────────
 onMounted(async () => {
   await Promise.all([
+    loadMerchantServices(),
     getMerchantCollections(),
     loadTimeSeries(tab.value),
     fetchBalance(),
@@ -702,20 +703,6 @@ onMounted(async () => {
 .sp-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #94a3b8; }
 .sp-count { font-size: 18px; font-weight: 800; color: #0f172a; font-family: 'DM Mono', monospace; line-height: 1.2; }
 .sp-amount { font-size: 11px; font-weight: 600; color: #64748b; font-family: 'DM Mono', monospace; }
-
-/* ══════════════════════════════════════════════════
-   HERO ROW  (Balance LEFT + Merchant Stats RIGHT)
-══════════════════════════════════════════════════ */
-.hero-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 16px;
-  margin-bottom: 0;
-  align-items: stretch;
-}
-@media (max-width: 900px) {
-  .hero-row { grid-template-columns: 1fr; }
-}
 
 /* ── Balance Panel ── */
 .balance-panel {
@@ -1178,6 +1165,7 @@ onMounted(async () => {
 /* ── Analytics Row ── */
 .analytics-row { display: grid; grid-template-columns: 1fr; gap: 14px; }
 @media (min-width: 1024px) { .analytics-row.two-three { grid-template-columns: 2fr 1fr; } }
+@media (min-width: 1024px) { .analytics-row.three-col { grid-template-columns: 1fr 1.5fr 1fr; } }
 .rate-stats { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .rate-stat  { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .rate-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }

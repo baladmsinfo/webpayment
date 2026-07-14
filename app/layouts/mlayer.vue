@@ -22,14 +22,14 @@ import { ref, computed, provide, watch, onMounted, onBeforeUnmount } from "vue"
 import { useUsersApi } from "~/composables/apis/useUsersApi"
 import { useAuthStore } from "@/stores/auth";
 import { useIdleTimer } from "~/composables/useIdleTimer";
+import { useMerchantServices } from "~/composables/useMerchantServices";
 
 const { getProfile } = useUsersApi();
 const auth = useAuthStore();
 const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
+const { verifiedServices, hasAEPS, hasDMT, hasWallet, loadMerchantServices } = useMerchantServices();
 
 const Title = ref();
-
-const { fetchMerchant } = useUsersApi()
 
 /* ── DRAWER STATE — shared with MerchantNavbar via provide ── */
 const drawerOpen = ref(false)
@@ -137,28 +137,27 @@ onMounted(async () => {
   
   Title.value = auth.merchant?.legal_name || auth.merchant?.data?.legal_name || "Bucksbox";
 
-  try {
-    const res = await fetchMerchant()
-    const services = (res?.data?.services ?? []).filter(s => s.status === "VERIFIED")
+  await loadMerchantServices()
 
-    const txMenu = menus.value.find(m => m.title === "Transactions")
+  const services = verifiedServices.value
+  const txMenu = menus.value.find(m => m.title === "Transactions")
 
-    if (!services.length) {
-      menus.value = menus.value.filter(m => m.title !== "Transactions")
-      return
-    }
-
-    if (txMenu) {
-      const uniqueServices = [...new Set(services.map(s => s.service))]
-      txMenu.children = uniqueServices.map((svc) => ({
-        title: `${svc} Transactions`,
-        icon:  serviceIconMap[svc] ?? "mdi-clipboard-list-outline",
-        url:   serviceHistoryOverride[svc] ?? `/merchant/payments/${svc.toLowerCase()}`,
-      }))
-    }
-  } catch (e) {
-    console.error("Failed to fetch merchant services:", e)
+  if (txMenu && services.length) {
+    const uniqueServices = [...new Set(services.map(s => s.service))]
+    txMenu.children = uniqueServices.map((svc) => ({
+      title: `${svc} Transactions`,
+      icon:  serviceIconMap[svc] ?? "mdi-clipboard-list-outline",
+      url:   serviceHistoryOverride[svc] ?? `/merchant/payments/${svc.toLowerCase()}`,
+    }))
   }
+
+  menus.value = menus.value.filter((m) => {
+    if (m.title === "Transactions")    return services.length > 0
+    if (m.title === "Wallet")          return hasWallet.value
+    if (m.title === "Money Transfer")  return hasDMT.value
+    if (m.title === "AEPS Services")   return hasAEPS.value
+    return true
+  })
 })
 
 onBeforeUnmount(() => window.removeEventListener("resize", onResize))

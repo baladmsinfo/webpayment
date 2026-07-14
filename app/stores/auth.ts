@@ -1,6 +1,8 @@
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     merchant: null as Record<string, any> | null,
+    merchantServices: [] as Array<Record<string, any>>,
+    merchantServicesLoaded: false,
     aggregator: null as Record<string, any> | null,
     vendor: null as Record<string, any> | null,
     user: null as Record<string, any> | null,
@@ -47,6 +49,10 @@ export const useAuthStore = defineStore("auth", {
     },
     setMerchant(payload: any) {
       this.merchant = payload;
+    },
+    setMerchantServices(services: Array<Record<string, any>>) {
+      this.merchantServices = services;
+      this.merchantServicesLoaded = true;
     },
     setWalletProfile(payload: any) {
       this.walletProfile = payload;
