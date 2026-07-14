@@ -196,7 +196,17 @@ export const useDmtStore = defineStore("dmt", {
         };
         return "found" as const;
       }
-      if (res.statusCode === "01" || res.statusCode === "404") {
+      // NSDL's real GETCUSTONBOARDDTLS "not found" response is passed through
+      // as-is by build_response_message() (statusCode = raw NSDL responsecode,
+      // not normalized) — confirmed live: { statusCode: "99", message: "Failed.
+      // No Customer found", data: { respcode: "99", response: "Failed. No
+      // Customer found" } }. "99" is also NSDL's generic catch-all failure code
+      // for other errors, so only treat it as "not found" when the message
+      // text confirms it — anything else falls through to the real error path.
+      const notFoundMessage = /no\s*customer\s*found|customer\s*not\s*found/i.test(
+        res.message || res.data?.response || ""
+      );
+      if (res.statusCode === "01" || res.statusCode === "404" || (res.statusCode === "99" && notFoundMessage)) {
         this.customer = { ...emptyCustomer(), mobile };
         return "not-found" as const;
       }
@@ -212,7 +222,14 @@ export const useDmtStore = defineStore("dmt", {
         this.lastError = res.message || "Registration failed";
         return { ok: false, message: this.lastError };
       }
-      const referenceid = res.data?.referenceid ?? res.data?.referenceId;
+      // Onboarding()'s actual response (confirmed live) puts requestId, otp_status,
+      // and otp_reqid at the TOP level, not under data — and there is no
+      // res.data.referenceid at all. requestId is enc_const_data.requestreferenceno
+      // on the backend, the same value it uses internally for the auto-fired
+      // request_otp call, and the same one every later step (validate_otp,
+      // verify_UID, updatebiodetail, submit, statusCheck) expects as `referenceid`.
+      const referenceid = res.requestId != null ? String(res.requestId) : (res.data?.referenceid ?? res.data?.referenceId);
+      this.otpReqId = res.otp_reqid ?? res.data?.otp_reqid ?? null;
       this.customer = {
         ...emptyCustomer(),
         referenceid,
@@ -223,11 +240,24 @@ export const useDmtStore = defineStore("dmt", {
         state: payload.state,
       };
 
-      // Kick off mobile OTP straight away so the OTP screen has a live otpreqid + timer.
-      const otpRes = await customerRequestOtp(referenceid);
-      if (otpRes.statusCode === "00") {
-        this.otpReqId = otpRes.data?.otpreqid ?? otpRes.data?.otpReqId ?? null;
+      if (!referenceid) {
+        this.lastError = "Registration succeeded but no reference id was returned";
+        return { ok: false, message: this.lastError };
       }
+
+      // Onboarding() auto-fires request_otp server-side — res.otp_status reflects
+      // whether that succeeded. If it failed, resend explicitly rather than
+      // sending the user to an OTP screen with no live otpReqId.
+      if (res.otp_status === false) {
+        const otpRes = await customerRequestOtp(referenceid);
+        if (otpRes.statusCode === "00") {
+          this.otpReqId = otpRes.data?.otpreqid ?? otpRes.data?.otpReqId ?? this.otpReqId;
+        } else {
+          this.lastError = otpRes.message || "Registered, but could not send OTP";
+          return { ok: false, message: this.lastError };
+        }
+      }
+
       return { ok: true, otpRequired: true };
     },
 
@@ -273,7 +303,12 @@ export const useDmtStore = defineStore("dmt", {
       if (!this.customer.referenceid || !this.customer.aadhaarRaw) {
         return { ok: false, message: "Verify Aadhaar before capturing biometrics" };
       }
-      const { customerUpdateBiodetail, customerSubmit } = useDmtCustomerApi();
+      // updatebiodetail already chains NSDL confirmation + statusCheck server-side
+      // on success (see dmt.customer.controller.js#update_biodetail) and returns
+      // that combined result — a separate customerSubmit() call here would
+      // re-confirm the same referenceid a second time, risking NSDL rejecting
+      // the duplicate and failing an onboarding that had already succeeded.
+      const { customerUpdateBiodetail } = useDmtCustomerApi();
       const res = await customerUpdateBiodetail({
         PidData: pidData,
         aadhaarno: this.customer.aadhaarRaw,
@@ -282,7 +317,6 @@ export const useDmtStore = defineStore("dmt", {
       if (res.statusCode !== "00") {
         return { ok: false, message: res.message || "Biometric verification failed" };
       }
-      await customerSubmit();
       this.customer.kycVerified = true;
       this.customer.aadhaarRaw = null; // purge the raw number now that KYC is complete
       return { ok: true };

@@ -25,9 +25,9 @@ export function useDmtTxnApi() {
     }
   };
 
-  /** POST /dmt/txn/v1/remitter/register — { mobilenumber } */
-  const remitterRegister = (mobilenumber: string) =>
-    handle("remitter/register", () => post(`/dmt/txn/v1/remitter/register`, { mobilenumber }));
+  /** POST /dmt/txn/v1/remitter/register — { sender_mobilenumber } (senderId also accepted upstream) */
+  const remitterRegister = (sender_mobilenumber: string) =>
+    handle("remitter/register", () => post(`/dmt/txn/v1/remitter/register`, { sender_mobilenumber }));
 
   /** POST /dmt/txn/v1/remitter/details — { sender_mobilenumber } (senderId also accepted upstream) */
   const remitterDetails = (sender_mobilenumber: string) =>

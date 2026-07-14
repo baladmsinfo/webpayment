@@ -4,7 +4,7 @@
 // Statement, Aadhaar Pay). Each flow is a single biometric-authenticated call — there's
 // no OTP step and no requery endpoint on the backend, so results are immediate.
 import { defineStore } from "pinia";
-import { useAepsTxnApi, type AepsTxnPayload } from "~/composables/apis/useAepsTxnApi";
+import { useAepsTxnApi, type AepsTxnPayload, type AepsBank } from "~/composables/apis/useAepsTxnApi";
 
 export type AepsTxnType = "WITHDRAWAL" | "BALANCE" | "MINISTATEMENT" | "AADHAAR_PAY";
 export type AepsStatus = "SUCCESS" | "FAILED" | "PENDING";
@@ -69,6 +69,8 @@ export const useAepsStore = defineStore("aeps", {
     currentResult: null as AepsResult | null,
     sessionTransactions: [] as AepsResult[],
     lastError: null as string | null,
+    banks: [] as AepsBank[],
+    banksLoading: false,
   }),
 
   getters: {
@@ -83,6 +85,21 @@ export const useAepsStore = defineStore("aeps", {
   },
 
   actions: {
+    /** Fetches the AEPS bank (IIN) list once and caches it — shared across
+     *  cash-withdrawal / balance-enquiry / mini-statement, all of which use
+     *  the same "Select Bank" form. */
+    async fetchBanks() {
+      if (this.banks.length || this.banksLoading) return this.banks;
+      this.banksLoading = true;
+      try {
+        const { banks } = useAepsTxnApi();
+        this.banks = await banks();
+        return this.banks;
+      } finally {
+        this.banksLoading = false;
+      }
+    },
+
     resetDraft() {
       this.draft = emptyDraft();
       this.geoCoords = null;

@@ -7,8 +7,9 @@ import { useApi } from "./useApi";
 import type { DmtApiResult } from "./useDmtCustomerApi";
 
 /** Shared request shape for every AEPS transaction endpoint (see aeps.txn.controller.js
- *  REQUIRED_TXN_FIELDS: AadharNo, TxnAmount, Latitude, Longitude, CustomerName, PidData).
- *  BankName is optional — the backend defaults to the UAT sandbox code '990326' if omitted. */
+ *  REQUIRED_TXN_FIELDS: AadharNo, TxnAmount, Latitude, Longitude, CustomerName, PidData,
+ *  BankName). BankName is the customer's NSDL IIN code — required, and validated against
+ *  the AepsBank table server-side (no default; see GET /aeps/banks). */
 export interface AepsTxnPayload {
   AadharNo: string;
   TxnAmount: number; // required by the backend's validator even for balance/statement — send 0 if not applicable
@@ -16,11 +17,16 @@ export interface AepsTxnPayload {
   Longitude: number | string;
   CustomerName: string;
   PidData: string;
-  BankName?: string;
+  BankName: string;
+}
+
+export interface AepsBank {
+  iin: string;
+  bankName: string;
 }
 
 export function useAepsTxnApi() {
-  const { post } = useApi();
+  const { get, post } = useApi();
 
   const handle = async (label: string, fn: () => Promise<any>): Promise<DmtApiResult> => {
     try {
@@ -49,5 +55,11 @@ export function useAepsTxnApi() {
   /** POST /aeps/purchase — used here for "Aadhaar Pay" (merchant-assisted debit). */
   const purchase = (payload: AepsTxnPayload) => handle("purchase", () => post(`/aeps/purchase`, payload));
 
-  return { withdrawal, balance, ministatement, purchase };
+  /** GET /aeps/banks — official NSDL IIN → bank name list, for the "Select Bank" dropdown. */
+  const banks = async (): Promise<AepsBank[]> => {
+    const res = await handle("banks", () => get(`/aeps/banks`));
+    return Array.isArray(res?.data) ? res.data : [];
+  };
+
+  return { withdrawal, balance, ministatement, purchase, banks };
 }

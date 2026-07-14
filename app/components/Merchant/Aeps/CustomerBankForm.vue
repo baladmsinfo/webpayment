@@ -24,9 +24,10 @@
         v-model="bankIin"
         variant="outlined"
         density="comfortable"
-        :items="AEPS_BANKS"
-        item-title="name"
+        :items="aepsStore.banks"
+        item-title="bankName"
         item-value="iin"
+        :loading="aepsStore.banksLoading"
         placeholder="Choose issuing bank"
       />
     </div>
@@ -54,8 +55,8 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { AEPS_BANKS, bankNameByIin } from "~/utils/aepsBanks";
+import { ref, onMounted } from "vue";
+import { useAepsStore } from "~/stores/aeps";
 import { BX } from "~/utils/dmtTheme";
 
 const props = defineProps({
@@ -64,6 +65,11 @@ const props = defineProps({
   maxAmount: { type: Number, default: 0 }, // wallet balance ceiling — 0 disables the check
 });
 const emit = defineEmits(["continue"]);
+
+const aepsStore = useAepsStore();
+onMounted(() => { aepsStore.fetchBanks(); });
+
+const bankNameByIin = (iin) => aepsStore.banks.find((b) => b.iin === iin)?.bankName ?? "";
 
 const customerName = ref("");
 const aadhaar = ref("");
