@@ -20,9 +20,9 @@
         </button>
 
         <div class="app-bar-brand">
-          <div class="brand-dot">
+          <!-- <div class="brand-dot">
             <span class="mdi mdi-shield-crown-outline"></span>
-          </div>
+          </div> -->
           <span class="brand-label">Bucksbox</span>
         </div>
       </div>
