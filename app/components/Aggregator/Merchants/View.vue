@@ -461,13 +461,16 @@
 
       <!-- ════ TAB: TERMINALS & OUTLETS ════ -->
       <section v-show="activeTab === 'terminals'" class="tab-section">
-        <div class="card" v-if="merchant.terminals?.length">
+        <div class="card">
           <div class="card-header">
             <div class="card-icon-dot" style="background:rgba(17,66,212,.1);color:#1142d4"><span class="mdi mdi-point-of-sale"></span></div>
             <h3 class="card-title">Terminals</h3>
-            <span class="ml-auto"><span class="pill pill--sm pill--indigo">{{ merchant.terminals.length }}</span></span>
+            <span class="pill pill--sm pill--indigo" v-if="merchant.terminals?.length">{{ merchant.terminals.length }}</span>
+            <button v-if="canManageTerminals" class="term-create-btn ml-auto" @click="openCreateTerminal">
+              <span class="mdi mdi-plus"></span> Create Terminal
+            </button>
           </div>
-          <div class="terminal-grid">
+          <div class="terminal-grid" v-if="merchant.terminals?.length">
             <div class="terminal-card" v-for="t in merchant.terminals" :key="t.id">
               <div class="terminal-top">
                 <div class="terminal-icon"><span class="mdi mdi-credit-card-chip-outline"></span></div>
@@ -475,17 +478,27 @@
                   <p class="terminal-tid">{{ t.tid || 'No TID' }}</p>
                   <p class="terminal-type">{{ t.type }} · {{ t.interfaceType }}</p>
                 </div>
-                <span :class="['pill pill--sm ml-auto', t.status ? 'pill--emerald' : 'pill--red']">{{ t.status ? 'Active' : 'Inactive' }}</span>
+                <span :class="['pill pill--sm', t.status ? 'pill--emerald' : 'pill--red']">{{ t.status ? 'Active' : 'Inactive' }}</span>
+                <div class="term-menu-wrap" v-if="canManageTerminals">
+                  <button class="term-menu-btn" @click.stop="toggleTerminalMenu(t.id, $event)">
+                    <span class="mdi mdi-dots-vertical"></span>
+                  </button>
+                </div>
               </div>
               <div class="info-grid info-grid--3">
                 <div class="info-item"><label>MID</label><p class="mono text-xs">{{ t.mid || '—' }}</p></div>
                 <div class="info-item"><label>Interface</label><p>{{ t.interface }}</p></div>
                 <div class="info-item"><label>Service</label><p>{{ t.service || '—' }}</p></div>
                 <div class="info-item"><label>Interface Type</label><p>{{ t.interfaceType || '—' }}</p></div>
+                <div class="info-item"><label>Outlet</label><p>{{ t.outlet?.name || '—' }}</p></div>
                 <div class="info-item"><label>Soundbox</label><p><span :class="['flag', t.soundbox ? 'flag--on' : 'flag--off']">{{ t.soundbox ? 'Yes' : 'No' }}</span></p></div>
                 <div class="info-item"><label>Risk Flag</label><p><span :class="['pill pill--sm', t.riskflag > 0 ? 'pill--red' : 'pill--emerald']">{{ t.riskflag }}</span></p></div>
               </div>
             </div>
+          </div>
+          <div class="empty-state" v-else>
+            <div class="empty-icon-wrap"><span class="mdi mdi-credit-card-off-outline"></span></div>
+            <p class="empty-title">No terminals assigned yet</p>
           </div>
         </div>
 
@@ -519,10 +532,6 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="empty-state" v-if="!merchant.terminals?.length && !merchant.outlets?.length">
-          <div class="empty-icon-wrap"><span class="mdi mdi-credit-card-off-outline"></span></div>
-          <p class="empty-title">No terminals or outlets assigned</p>
         </div>
       </section>
 
@@ -873,6 +882,144 @@
         </div>
       </Transition>
 
+      <!-- ░░ TERMINAL ACTION MENU ░░ -->
+      <div v-if="openTerminalMenuId" class="term-menu-backdrop" @click="closeTerminalMenu"></div>
+      <Transition name="dialog-fade">
+        <div v-if="openTerminalMenuId && activeMenuTerminal" class="term-menu-dropdown" :style="{ top: menuPos.top + 'px', left: menuPos.left + 'px' }">
+          <button class="term-menu-item" @click="openEditTerminal(activeMenuTerminal)">
+            <span class="mdi mdi-pencil-outline"></span> Edit
+          </button>
+          <button class="term-menu-item" @click="openTerminalStatusConfirm(activeMenuTerminal)">
+            <span class="mdi" :class="activeMenuTerminal.status ? 'mdi-toggle-switch-off-outline' : 'mdi-toggle-switch-outline'"></span>
+            {{ activeMenuTerminal.status ? 'Deactivate' : 'Activate' }}
+          </button>
+          <button class="term-menu-item term-menu-item--danger" @click="openTerminalDeleteConfirm(activeMenuTerminal)">
+            <span class="mdi mdi-trash-can-outline"></span> Delete
+          </button>
+        </div>
+      </Transition>
+
+      <!-- ░░ TERMINAL CREATE / EDIT MODAL ░░ -->
+      <Transition name="dialog-fade">
+        <div v-if="terminalModal.open" class="dialog-overlay" @click.self="closeTerminalModal">
+          <div class="dialog">
+            <div class="dialog-hdr">
+              <div>
+                <p class="dialog-title">{{ terminalModal.mode === 'edit' ? 'Edit Terminal' : 'Create Terminal' }}</p>
+                <p class="dialog-sub">{{ merchant.legal_name || merchant.business_name }} · {{ merchant.mid }}</p>
+              </div>
+              <button class="icon-close" @click="closeTerminalModal" :disabled="terminalModal.saving"><span class="mdi mdi-close"></span></button>
+            </div>
+
+            <div class="term-form-error" v-if="terminalFormError">{{ terminalFormError }}</div>
+
+            <div class="term-form-grid">
+              <div class="term-field">
+                <label>Outlet *</label>
+                <select class="term-select" v-model="terminalForm.outletId">
+                  <option value="">Select outlet</option>
+                  <option v-for="o in merchant.outlets || []" :key="o.id" :value="o.id">{{ o.name }} ({{ o.code }})</option>
+                </select>
+              </div>
+              <div class="term-field">
+                <label>TID *</label>
+                <input class="term-input" v-model="terminalForm.tid" placeholder="e.g. TID123456" />
+              </div>
+              <div class="term-field">
+                <label>MID *</label>
+                <input class="term-input" v-model="terminalForm.mid" placeholder="e.g. MID123456" />
+              </div>
+              <div class="term-field">
+                <label>Terminal Type *</label>
+                <select class="term-select" v-model="terminalForm.type">
+                  <option v-for="opt in terminalTypeOptions" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="term-field">
+                <label>Interface *</label>
+                <select class="term-select" v-model="terminalForm.interface">
+                  <option value="">Select interface</option>
+                  <option v-for="opt in terminalInterfaceOptions" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="term-field">
+                <label>Interface Type</label>
+                <select class="term-select" v-model="terminalForm.interfaceType">
+                  <option v-for="opt in terminalInterfaceTypeOptions" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="term-field">
+                <label>Service</label>
+                <select class="term-select" v-model="terminalForm.service">
+                  <option v-for="opt in terminalServiceOptions" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="term-field">
+                <label>Risk Flag</label>
+                <input class="term-input" type="number" min="0" v-model.number="terminalForm.riskflag" />
+              </div>
+              <div class="term-field term-field--full">
+                <div class="term-switch-row">
+                  <label style="margin:0">Status (Active)</label>
+                  <button type="button" :class="['term-switch', terminalForm.status && 'term-switch--on']" @click="terminalForm.status = !terminalForm.status"></button>
+                </div>
+                <div class="term-switch-row">
+                  <label style="margin:0">Soundbox</label>
+                  <button type="button" :class="['term-switch', terminalForm.soundbox && 'term-switch--on']" @click="terminalForm.soundbox = !terminalForm.soundbox"></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="term-form-footer">
+              <button class="btn-secondary" @click="closeTerminalModal" :disabled="terminalModal.saving">Cancel</button>
+              <button class="term-create-btn" @click="saveTerminal" :disabled="terminalModal.saving">
+                <span v-if="terminalModal.saving" class="btn-spinner"></span>
+                <span v-else>{{ terminalModal.mode === 'edit' ? 'Save Changes' : 'Create Terminal' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- ░░ TERMINAL STATUS / DELETE CONFIRM ░░ -->
+      <Transition name="dialog-fade">
+        <div v-if="terminalConfirm.open" class="dialog-overlay" @click.self="closeTerminalConfirm">
+          <div class="dialog dialog--confirm">
+            <div class="dialog__hdr">
+              <div class="confirm-icon-wrap" :class="`confirm-icon-wrap--${terminalConfirm.mode === 'delete' ? 'danger' : 'info'}`">
+                <svg v-if="terminalConfirm.mode === 'delete'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </div>
+              <div>
+                <p class="dialog__title">
+                  {{ terminalConfirm.mode === 'delete' ? 'Delete Terminal' : (terminalConfirm.newStatus ? 'Activate Terminal' : 'Deactivate Terminal') }}
+                </p>
+                <p class="dialog__sub">
+                  {{ terminalConfirm.mode === 'delete'
+                    ? `Are you sure you want to delete terminal ${terminalConfirm.terminal?.tid || terminalConfirm.terminal?.id}? This cannot be undone.`
+                    : `This will ${terminalConfirm.newStatus ? 'allow' : 'prevent'} terminal ${terminalConfirm.terminal?.tid || ''} from processing transactions.` }}
+                </p>
+              </div>
+              <button class="icon-close-btn ml-auto" @click="closeTerminalConfirm">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="dialog__body">
+              <div class="confirm-actions">
+                <button class="btn-secondary" @click="closeTerminalConfirm" :disabled="terminalConfirm.loading">Cancel</button>
+                <button
+                  :class="['btn-confirm', `btn-confirm--${terminalConfirm.mode === 'delete' ? 'danger' : 'info'}`]"
+                  @click="executeTerminalConfirm"
+                  :disabled="terminalConfirm.loading">
+                  <span v-if="terminalConfirm.loading" class="btn-spinner"></span>
+                  <span v-else>{{ terminalConfirm.mode === 'delete' ? 'Delete' : (terminalConfirm.newStatus ? 'Activate' : 'Deactivate') }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
       <!-- ░░ CONFIRM DIALOG ░░ -->
       <Transition name="dialog">
         <div v-if="confirmDialog.open" class="dialog-overlay" @click.self="closeConfirm">
@@ -988,13 +1135,18 @@ import { useRouter } from "vue-router";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 import { useUsersApi } from "~/composables/apis/useUsersApi";
 import { useMerchantUpdateApi } from "~/composables/apis/useMerchantUpdateApi";
+import { useTerminalApi } from "~/composables/apis/useTerminalApi";
 import { useApi } from "~/composables/apis/useApi";
+import { useAuthStore } from "~/stores/auth";
 
 const props = defineProps({ merchantId: String });
 const router = useRouter();
 const { getMerchantById } = useAggregatorApi();
 const { getTransactionsByMerchantId } = useUsersApi();
 const { updateMerchantStatus, updateMerchantMstatus, updateMerchantRiskflag } = useMerchantUpdateApi();
+const { createTerminal, updateTerminal, updateTerminalStatus, deleteTerminal } = useTerminalApi();
+const auth = useAuthStore();
+const canManageTerminals = computed(() => (auth.user?.role || 'aggregator') === 'aggregator');
 
 const merchant     = reactive({});
 const transactions = ref({ data: [], pagination: {} });
@@ -1259,6 +1411,172 @@ const executeUpdate = async () => {
   }
 };
 
+// ── Terminal Management ─────────────────────────────────────────────
+const terminalTypeOptions          = ['POS', 'mPOS', 'SoftPOS', 'QR', 'Soundbox'];
+const terminalInterfaceOptions     = ['ISG', 'MOS', 'WORLD', 'BUCKSBOX', 'AXIS', 'NSDL', 'FINO', 'CANARA'];
+const terminalInterfaceTypeOptions = ['POS', 'ANDROID', 'WEB', 'QR'];
+const terminalServiceOptions       = ['AEPS', 'DMT', 'UPI', 'BBPS', 'MATM', 'POS'];
+
+const refreshMerchant = async () => {
+  try {
+    const res = await getMerchantById(props.merchantId);
+    Object.assign(merchant, res.data || {});
+  } catch (e) {
+    console.error('Failed to refresh merchant:', e);
+  }
+};
+
+// -- Three-dot action menu --
+const openTerminalMenuId = ref(null);
+const menuPos = reactive({ top: 0, left: 0 });
+const activeMenuTerminal = computed(() => (merchant.terminals || []).find(t => t.id === openTerminalMenuId.value) || null);
+
+const toggleTerminalMenu = (id, evt) => {
+  if (openTerminalMenuId.value === id) { openTerminalMenuId.value = null; return; }
+  const rect = evt.currentTarget.getBoundingClientRect();
+  menuPos.top = rect.bottom + 6;
+  menuPos.left = Math.max(12, rect.right - 180);
+  openTerminalMenuId.value = id;
+};
+const closeTerminalMenu = () => { openTerminalMenuId.value = null; };
+
+// -- Create / Edit modal --
+const defaultTerminalForm = () => ({
+  id: null,
+  outletId: '',
+  tid: '',
+  mid: '',
+  type: 'POS',
+  interface: '',
+  interfaceType: 'POS',
+  service: 'AEPS',
+  status: true,
+  soundbox: false,
+  riskflag: 0,
+});
+const terminalForm = reactive(defaultTerminalForm());
+const terminalFormError = ref('');
+const terminalModal = reactive({ open: false, mode: 'add', saving: false });
+
+const openCreateTerminal = () => {
+  Object.assign(terminalForm, defaultTerminalForm());
+  terminalModal.mode = 'add';
+  terminalFormError.value = '';
+  terminalModal.open = true;
+  closeTerminalMenu();
+};
+
+const openEditTerminal = (t) => {
+  Object.assign(terminalForm, {
+    id: t.id,
+    outletId: t.outletId || t.outlet?.id || '',
+    tid: t.tid || '',
+    mid: t.mid || '',
+    type: t.type || 'POS',
+    interface: t.interface || '',
+    interfaceType: t.interfaceType || 'POS',
+    service: t.service || 'AEPS',
+    status: !!t.status,
+    soundbox: !!t.soundbox,
+    riskflag: t.riskflag ?? 0,
+  });
+  terminalModal.mode = 'edit';
+  terminalFormError.value = '';
+  terminalModal.open = true;
+  closeTerminalMenu();
+};
+
+const closeTerminalModal = () => {
+  if (terminalModal.saving) return;
+  terminalModal.open = false;
+};
+
+const saveTerminal = async () => {
+  terminalFormError.value = '';
+  if (!terminalForm.outletId) { terminalFormError.value = 'Outlet is required'; return; }
+  if (!terminalForm.tid)      { terminalFormError.value = 'TID is required'; return; }
+  if (!terminalForm.mid)      { terminalFormError.value = 'MID is required'; return; }
+  if (!terminalForm.type)     { terminalFormError.value = 'Terminal type is required'; return; }
+  if (!terminalForm.interface) { terminalFormError.value = 'Interface is required'; return; }
+
+  terminalModal.saving = true;
+  try {
+    const payload = {
+      outletId:      terminalForm.outletId,
+      tid:           terminalForm.tid,
+      mid:           terminalForm.mid,
+      type:          terminalForm.type,
+      interface:     terminalForm.interface,
+      interfaceType: terminalForm.interfaceType,
+      service:       terminalForm.service,
+      status:        terminalForm.status,
+      soundbox:      terminalForm.soundbox,
+      riskflag:      Number(terminalForm.riskflag) || 0,
+    };
+
+    const res = terminalModal.mode === 'edit'
+      ? await updateTerminal(props.merchantId, terminalForm.id, payload)
+      : await createTerminal(props.merchantId, payload);
+
+    if (res?.statusCode === '00') {
+      showToast(res.message || (terminalModal.mode === 'edit' ? 'Terminal updated successfully' : 'Terminal created successfully'), 'success');
+      terminalModal.open = false;
+      await refreshMerchant();
+    } else {
+      terminalFormError.value = res?.message || 'Failed to save terminal';
+    }
+  } catch {
+    terminalFormError.value = 'Something went wrong. Please try again.';
+  } finally {
+    terminalModal.saving = false;
+  }
+};
+
+// -- Status toggle / delete confirm --
+const terminalConfirm = reactive({ open: false, mode: null, terminal: null, newStatus: null, loading: false });
+
+const openTerminalStatusConfirm = (t) => {
+  terminalConfirm.mode = 'status';
+  terminalConfirm.terminal = t;
+  terminalConfirm.newStatus = !t.status;
+  terminalConfirm.open = true;
+  closeTerminalMenu();
+};
+
+const openTerminalDeleteConfirm = (t) => {
+  terminalConfirm.mode = 'delete';
+  terminalConfirm.terminal = t;
+  terminalConfirm.open = true;
+  closeTerminalMenu();
+};
+
+const closeTerminalConfirm = () => {
+  if (terminalConfirm.loading) return;
+  terminalConfirm.open = false;
+};
+
+const executeTerminalConfirm = async () => {
+  if (terminalConfirm.loading || !terminalConfirm.terminal) return;
+  terminalConfirm.loading = true;
+  try {
+    const res = terminalConfirm.mode === 'delete'
+      ? await deleteTerminal(props.merchantId, terminalConfirm.terminal.id)
+      : await updateTerminalStatus(props.merchantId, terminalConfirm.terminal.id, terminalConfirm.newStatus);
+
+    if (res?.statusCode === '00') {
+      showToast(res.message || 'Done', 'success');
+      terminalConfirm.open = false;
+      await refreshMerchant();
+    } else {
+      showToast(res?.message || 'Action failed. Please try again.', 'error');
+    }
+  } catch {
+    showToast('Something went wrong. Please try again.', 'error');
+  } finally {
+    terminalConfirm.loading = false;
+  }
+};
+
 const tabs = [
   { key: 'info',         label: 'Merchant Info',  mdi: 'mdi-account-circle-outline' },
   { key: 'address',      label: 'Address',         mdi: 'mdi-map-marker-outline' },
@@ -1443,6 +1761,35 @@ onMounted(async () => {
 .terminal-info { flex: 1; min-width: 0; }
 .terminal-tid  { font-size: 13.5px; font-weight: 700; color: #0f172a; }
 .terminal-type { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+/* ── Terminal Management ── */
+.term-create-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #1142d4; color: #fff; border: none; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; }
+.term-create-btn:hover:not(:disabled) { background: #0e35a8; }
+.term-create-btn:disabled { opacity: .55; cursor: not-allowed; }
+.term-menu-wrap  { position: relative; flex-shrink: 0; }
+.term-menu-btn   { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: none; background: transparent; border-radius: 7px; cursor: pointer; color: #64748b; font-size: 16px; transition: background .15s; }
+.term-menu-btn:hover { background: #e2e8f0; color: #0f172a; }
+.term-menu-backdrop  { position: fixed; inset: 0; z-index: 410; }
+.term-menu-dropdown  { position: fixed; z-index: 420; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.14); min-width: 176px; overflow: hidden; padding: 4px; }
+.term-menu-item  { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: none; background: transparent; text-align: left; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; border-radius: 7px; font-family: inherit; }
+.term-menu-item:hover { background: #f1f5f9; }
+.term-menu-item .mdi  { font-size: 15px; }
+.term-menu-item--danger { color: #dc2626; }
+.term-menu-item--danger:hover { background: #fee2e2; }
+
+.term-form-error  { margin: 0 20px; margin-top: 14px; padding: 9px 12px; background: #fee2e2; border: 1px solid #fecaca; border-radius: 9px; font-size: 11.5px; color: #991b1b; }
+.term-form-grid   { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 16px; padding: 20px; }
+.term-field       { display: flex; flex-direction: column; gap: 6px; }
+.term-field--full { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; }
+.term-field label { font-size: 11px; font-weight: 700; color: #334155; }
+.term-input, .term-select { width: 100%; border: 1px solid #e2e8f0; border-radius: 9px; padding: 9px 12px; font-size: 12.5px; font-family: inherit; color: #0f172a; outline: none; background: #fff; transition: border .15s; }
+.term-input:focus, .term-select:focus { border-color: #1142d4; box-shadow: 0 0 0 3px rgba(17,66,212,.08); }
+.term-switch-row  { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+.term-switch      { position: relative; width: 38px; height: 22px; border-radius: 20px; background: #e2e8f0; cursor: pointer; transition: background .15s; border: none; flex-shrink: 0; }
+.term-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.term-switch--on  { background: #1142d4; }
+.term-switch--on::after { transform: translateX(16px); }
+.term-form-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 16px 20px; border-top: 1px solid #f1f5f9; }
 
 /* ── Outlets ── */
 .outlet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; padding: 14px 18px; }
