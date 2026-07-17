@@ -23,7 +23,7 @@
           <!-- <div class="brand-dot">
             <span class="mdi mdi-shield-crown-outline"></span>
           </div> -->
-          <span class="brand-label">Bucksbox</span>
+          <span class="brand-label">{{ brandName }}</span>
         </div>
       </div>
 
@@ -132,6 +132,9 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue"
 import { useAuthStore } from "@/stores/auth";
 import { useUsersApi } from "@/composables/apis/useUsersApi";
+
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
 
 const auth = useAuthStore();
 const { logout: apiLogout } = useUsersApi();

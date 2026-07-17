@@ -51,11 +51,6 @@ const menus = ref([
     url: "/aggregator/dashboard",
   },
   {
-    title: "Wallet",
-    icon: "mdi-wallet-outline",
-    url: "/aggregator/wallet",
-  },
-  {
     title: "Merchants",
     icon: "mdi-storefront-outline",
     url: "/aggregator/merchants",
@@ -114,6 +109,10 @@ const menus = ref([
     title: "Settings",
     icon: "mdi-cog-outline",
     url: "/aggregator/settings",
+    children: [
+      { title: "Profile", icon: "mdi-cog-outline", url: "/aggregator/settings" },
+      { title: "Wallet",   icon: "mdi-wallet-outline", url: "/aggregator/wallet"},
+    ],
   },
 ]);
 
