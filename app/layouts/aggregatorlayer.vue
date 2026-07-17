@@ -70,11 +70,11 @@ const menus = ref([
     //   { title: "Pending Vendors",   icon: "mdi-account-clock-outline", url: "/aggregator/vendor/pending"   },
     // ],
   },
-  {
-    title: "Virtual A/C Profiles",
-    icon: "mdi-bank-outline",
-    url: "/aggregator/profiles",
-  },
+  // {
+  //   title: "Virtual A/C Profiles",
+  //   icon: "mdi-bank-outline",
+  //   url: "/aggregator/profiles",
+  // },
   {
     title: "Transactions",
     icon: "mdi-swap-horizontal",
