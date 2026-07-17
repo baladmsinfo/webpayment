@@ -71,6 +71,11 @@ const menus = ref([
     // ],
   },
   {
+    title: "Virtual A/C Profiles",
+    icon: "mdi-bank-outline",
+    url: "/aggregator/profiles",
+  },
+  {
     title: "Transactions",
     icon: "mdi-swap-horizontal",
     url: "/aggregator/transactions",
