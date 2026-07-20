@@ -24,8 +24,11 @@ export const RD_VENDORS: RdVendor[] = [
   { id: "secugen", name: "Secugen", port: 11102 }, // placeholder — verify against SecuGen docs
 ];
 
-const PID_OPTIONS_XML =
-  '<?xml version="1.0"?><PidOptions ver="1.0"><Opts fCount="1" fType="2" iCount="0" iType="0" pCount="0" pType="0" format="0" pidVer="2.0" timeout="10000" posh="UNKNOWN" env="P" wadh="E0jzJ/P8UopUHAieZn8CKqS4WPMi5ZSYXgfnlfkWjrc="/></PidOptions>';
+// const PID_OPTIONS_XML =
+//   '<?xml version="1.0"?><PidOptions ver="1.0"><Opts fCount="1" fType="2" iCount="0" iType="0" pCount="0" pType="0" format="0" pidVer="2.0" timeout="10000" posh="UNKNOWN" env="P" wadh="E0jzJ/P8UopUHAieZn8CKqS4WPMi5ZSYXgfnlfkWjrc="/></PidOptions>';
+
+  const PID_OPTIONS_XML =
+  '<?xml version="1.0"?><PidOptions ver="1.0"><Opts fCount="1" fType="2" iCount="0" iType="0" pCount="0" pType="0" format="0" pidVer="2.0" timeout="10000" posh="UNKNOWN" env="P" wadh=""/></PidOptions>';
 
 function attr(xml: string, name: string): string | undefined {
   // Checks both a root-level attribute and one nested under <Devices><Device ...>,
