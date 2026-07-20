@@ -53,12 +53,6 @@ const menus = ref([
     open: false,
   },
   {
-    title: "Wallet",
-    icon: "mdi-wallet-outline",
-    url: "/merchant/wallet",
-    open: false,
-  },
-  {
     title: "Money Transfer",
     icon: "mdi-bank-transfer",
     url: "/merchant/dmt",
@@ -103,6 +97,11 @@ const menus = ref([
         icon: "mdi-card-account-details-outline",
         url: "/merchant/account",
       },
+      {
+        title: "Wallet",
+        icon: "mdi-wallet-outline",
+        url: "/merchant/wallet",
+      },
     ]
   },
 ])
@@ -116,8 +115,6 @@ const serviceIconMap = {
   POS:  "mdi-point-of-sale",
 }
 
-// Services with their own purpose-built history page (richer than the generic
-// per-service ledger at /merchant/payments/:service) route there instead.
 const serviceHistoryOverride = {
   DMT: "/merchant/dmt/history",
 }
@@ -151,9 +148,13 @@ onMounted(async () => {
     }))
   }
 
+  const settingsMenu = menus.value.find(m => m.title === "Settings")
+  if (settingsMenu?.children && !hasWallet.value) {
+    settingsMenu.children = settingsMenu.children.filter(c => c.title !== "Wallet")
+  }
+
   menus.value = menus.value.filter((m) => {
     if (m.title === "Transactions")    return services.length > 0
-    if (m.title === "Wallet")          return hasWallet.value
     if (m.title === "Money Transfer")  return hasDMT.value
     if (m.title === "AEPS Services")   return hasAEPS.value
     return true

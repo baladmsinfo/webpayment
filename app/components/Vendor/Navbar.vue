@@ -15,7 +15,7 @@
           <span class="mdi mdi-shield-crown-outline"></span>
         </div> -->
         <!-- <span class="nav-brand-title">{{ title }}</span> -->
-        <span class="nav-brand-title">Bucksbox</span>
+        <span class="nav-brand-title">{{ brandName }}</span>
       </div>
 
       <div class="nav-appbar-right">
@@ -123,6 +123,9 @@ import { useUsersApi } from "@/composables/apis/useUsersApi";
 
 const auth = useAuthStore();
 const { logout: apiLogout } = useUsersApi();
+
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
 
 const props = defineProps({
   title:  { type: String,  default: "BUCKSBOX" },

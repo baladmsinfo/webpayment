@@ -49,12 +49,6 @@ const menus = ref([
     open: false,
   },
   {
-    title: "Wallet",
-    icon: "mdi-wallet-outline",
-    url: "/vendor/wallet",
-    open: false,
-  },
-  {
     title: "Merchants",
     icon: "mdi-store-outline",
     url: "/vendor/merchants",
@@ -81,6 +75,11 @@ const menus = ref([
         title: "Profile",
         icon: "mdi-account-circle",
         url: "/vendor/settings",
+      },
+      {
+        title: "wallet",
+        icon: "mdi-wallet-outline",
+        url: "/vendor/wallet",
       },
       {
         title: "Account Details",
