@@ -51,11 +51,6 @@ const menus = ref([
     url: "/aggregator/dashboard",
   },
   {
-    title: "Wallet",
-    icon: "mdi-wallet-outline",
-    url: "/aggregator/wallet",
-  },
-  {
     title: "Merchants",
     icon: "mdi-storefront-outline",
     url: "/aggregator/merchants",
@@ -69,6 +64,11 @@ const menus = ref([
     //   { title: "Onboarded Vendors", icon: "mdi-account-check-outline", url: "/aggregator/vendor/onboarded" },
     //   { title: "Pending Vendors",   icon: "mdi-account-clock-outline", url: "/aggregator/vendor/pending"   },
     // ],
+  },
+  {
+    title: "Profiles",
+    icon: "mdi-bank-outline",
+    url: "/aggregator/profiles",
   },
   {
     title: "Transactions",
@@ -109,6 +109,10 @@ const menus = ref([
     title: "Settings",
     icon: "mdi-cog-outline",
     url: "/aggregator/settings",
+    children: [
+      { title: "Profile", icon: "mdi-cog-outline", url: "/aggregator/settings" },
+      { title: "Wallet",   icon: "mdi-wallet-outline", url: "/aggregator/wallet"},
+    ],
   },
 ]);
 
