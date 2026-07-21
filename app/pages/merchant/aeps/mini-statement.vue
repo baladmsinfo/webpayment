@@ -57,9 +57,13 @@ const subtitle = computed(() => ({
 
 onBeforeRouteLeave(() => { if (aepsStore.isProcessing) return false; });
 const beforeUnloadGuard = (e) => { if (aepsStore.isProcessing) { e.preventDefault(); e.returnValue = ""; } };
-onMounted(() => {
+onMounted(async () => {
   aepsStore.resetDraft();
   window.addEventListener("beforeunload", beforeUnloadGuard);
+  // Direct-navigation safety net — the dashboard already gates these links behind
+  // agent authentication, but a bookmark/back-button could land here first.
+  if (!aepsStore.authChecked) await aepsStore.checkAuthStatus();
+  if (!aepsStore.authenticated) router.replace("/merchant/aeps/agent-auth");
 });
 onBeforeUnmount(() => window.removeEventListener("beforeunload", beforeUnloadGuard));
 
