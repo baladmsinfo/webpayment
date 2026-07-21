@@ -25,6 +25,13 @@ export interface AepsBank {
   bankName: string;
 }
 
+export interface AepsAuthStatus {
+  authenticated: boolean;
+  tid: string | null;
+  authenticatedAt: string | null;
+  expiresAt: string | null;
+}
+
 export function useAepsTxnApi() {
   const { get, post } = useApi();
 
@@ -55,11 +62,24 @@ export function useAepsTxnApi() {
   /** POST /aeps/purchase — used here for "Aadhaar Pay" (merchant-assisted debit). */
   const purchase = (payload: AepsTxnPayload) => handle("purchase", () => post(`/aeps/purchase`, payload));
 
+  /** POST /aeps/reqAuth — one-time (24h) agent/terminal authentication with NSDL.
+   *  Must succeed before withdrawal/balance/statement/purchase can be used; those
+   *  endpoints will also auto-run this on demand if no session exists, but the
+   *  dashboard gate calls it explicitly so the agent goes through it up front. */
+  const reqAuth = (payload: AepsTxnPayload) => handle("reqAuth", () => post(`/aeps/reqAuth`, payload));
+
+  /** GET /aeps/authStatus — read-only check for whether a reqAuth session already
+   *  exists for this merchant's terminal. Never calls NSDL. */
+  const authStatus = async (): Promise<AepsAuthStatus> => {
+    const res = await handle("authStatus", () => get(`/aeps/authStatus`));
+    return res?.data ?? { authenticated: false, tid: null, authenticatedAt: null, expiresAt: null };
+  };
+
   /** GET /aeps/banks — official NSDL IIN → bank name list, for the "Select Bank" dropdown. */
   const banks = async (): Promise<AepsBank[]> => {
     const res = await handle("banks", () => get(`/aeps/banks`));
     return Array.isArray(res?.data) ? res.data : [];
   };
 
-  return { withdrawal, balance, ministatement, purchase, banks };
+  return { withdrawal, balance, ministatement, purchase, reqAuth, authStatus, banks };
 }

@@ -4,7 +4,7 @@
 // Statement, Aadhaar Pay). Each flow is a single biometric-authenticated call — there's
 // no OTP step and no requery endpoint on the backend, so results are immediate.
 import { defineStore } from "pinia";
-import { useAepsTxnApi, type AepsTxnPayload, type AepsBank } from "~/composables/apis/useAepsTxnApi";
+import { useAepsTxnApi, type AepsTxnPayload, type AepsBank, type AepsAuthStatus } from "~/composables/apis/useAepsTxnApi";
 
 export type AepsTxnType = "WITHDRAWAL" | "BALANCE" | "MINISTATEMENT" | "AADHAAR_PAY";
 export type AepsStatus = "SUCCESS" | "FAILED" | "PENDING";
@@ -71,6 +71,13 @@ export const useAepsStore = defineStore("aeps", {
     lastError: null as string | null,
     banks: [] as AepsBank[],
     banksLoading: false,
+
+    // Agent/terminal reqAuth gate — checked once on the AEPS dashboard before
+    // Cash Withdrawal / Balance Enquiry / Mini Statement / Aadhaar Pay unlock.
+    authChecked: false,
+    authChecking: false,
+    authenticated: false,
+    authExpiresAt: null as string | null,
   }),
 
   getters: {
@@ -97,6 +104,41 @@ export const useAepsStore = defineStore("aeps", {
         return this.banks;
       } finally {
         this.banksLoading = false;
+      }
+    },
+
+    /** Read-only reqAuth session check — call before showing the AEPS services grid.
+     *  Safe to call repeatedly; never hits NSDL (see aeps.txn.controller.js authStatus). */
+    async checkAuthStatus() {
+      this.authChecking = true;
+      try {
+        const { authStatus } = useAepsTxnApi();
+        const res: AepsAuthStatus = await authStatus();
+        this.authenticated = !!res.authenticated;
+        this.authExpiresAt = res.expiresAt;
+        this.authChecked = true;
+        return this.authenticated;
+      } finally {
+        this.authChecking = false;
+      }
+    },
+
+    /** One-time agent/terminal authentication (NSDL reqAuth). On success the backend
+     *  caches the session for 24h, so this only needs to run again after it expires. */
+    async performReqAuth() {
+      if (this.isProcessing) return { ok: false, busy: true, message: "A transaction is already in progress" };
+      this.isProcessing = true;
+      try {
+        const { reqAuth } = useAepsTxnApi();
+        const res = await reqAuth(this.buildPayload());
+        const ok = res?.statusCode === "00";
+        if (ok) {
+          this.authenticated = true;
+          this.authChecked = true;
+        }
+        return { ok, statusCode: res?.statusCode, message: res?.message };
+      } finally {
+        this.isProcessing = false;
       }
     },
 

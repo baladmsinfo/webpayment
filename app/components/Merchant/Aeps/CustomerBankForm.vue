@@ -18,7 +18,7 @@
       />
     </div>
 
-    <div class="field">
+    <div class="field" v-if="withBank">
       <label class="field-label">Select Bank</label>
       <v-select
         v-model="bankIin"
@@ -63,11 +63,12 @@ const props = defineProps({
   withAmount: { type: Boolean, default: false },
   amountLabel: { type: String, default: "Amount" },
   maxAmount: { type: Number, default: 0 }, // wallet balance ceiling — 0 disables the check
+  withBank: { type: Boolean, default: true }, // reqAuth (agent-auth.vue) sends a fixed IIN server-side — no bank to pick
 });
 const emit = defineEmits(["continue"]);
 
 const aepsStore = useAepsStore();
-onMounted(() => { aepsStore.fetchBanks(); });
+onMounted(() => { if (props.withBank) aepsStore.fetchBanks(); });
 
 const bankNameByIin = (iin) => aepsStore.banks.find((b) => b.iin === iin)?.bankName ?? "";
 
@@ -86,7 +87,7 @@ const onContinue = () => {
 
   if (!customerName.value.trim()) { errorMsg.value = "Enter the customer's name"; return; }
   if (!/^\d{12}$/.test(aadhaar.value)) { aadhaarError.value = "Enter a valid 12-digit Aadhaar number"; return; }
-  if (!bankIin.value) { errorMsg.value = "Select the customer's bank"; return; }
+  if (props.withBank && !bankIin.value) { errorMsg.value = "Select the customer's bank"; return; }
 
   let amount = 0;
   if (props.withAmount) {
