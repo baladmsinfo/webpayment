@@ -36,11 +36,15 @@ export function useDmtTxnApi() {
   /**
    * POST /dmt/txn/v1/beneficiary/accountVerification
    * Penny-drop style verification before a beneficiary is added.
+   * Field names match dmt.txn.controller.js#accountVerification's request
+   * body exactly (receiver_account_no/receiverIfscCode, same convention as
+   * beneficiaryAdd below) — this previously sent accountnumber/ifsccode,
+   * which the backend never read, so every verification call failed.
    */
   const beneficiaryAccountVerification = (payload: {
     sender_mobilenumber: string;
-    accountnumber: string;
-    ifsccode: string;
+    receiver_account_no: string;
+    receiverIfscCode: string;
     receivername: string;
     receivermobilenumber: string;
     receiveremailid?: string;

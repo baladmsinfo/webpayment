@@ -386,8 +386,8 @@ export const useDmtStore = defineStore("dmt", {
 
     // ───────────────────────── Beneficiaries ─────────────────────────
     async verifyBeneficiaryAccount(payload: {
-      accountnumber: string;
-      ifsccode: string;
+      receiver_account_no: string;
+      receiverIfscCode: string;
       receivername: string;
       receivermobilenumber: string;
       receiveremailid?: string;

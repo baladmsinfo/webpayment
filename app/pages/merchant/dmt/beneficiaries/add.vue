@@ -124,8 +124,8 @@ const onVerifyAccount = async () => {
   verifying.value = true;
   try {
     const res = await store.verifyBeneficiaryAccount({
-      accountnumber: form.receiver_account_no,
-      ifsccode: form.receiverIfscCode,
+      receiver_account_no: form.receiver_account_no,
+      receiverIfscCode: form.receiverIfscCode,
       receivername: form.receivername,
       receivermobilenumber: form.receivermobilenumber,
     });
