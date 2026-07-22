@@ -330,7 +330,7 @@ export const useDmtStore = defineStore("dmt", {
       let res = await remitterDetails(mobile);
       console.debug("[DMT] remitter/details raw response for", mobile, res);
 
-      if (res.statusCode !== "00" || !res.data) {
+      if (res.statusCode == "400") {
         console.debug("[DMT] remitter/details failed, auto-registering:", res.statusCode, res.message);
         const regRes = await remitterRegister(mobile);
         if (regRes.statusCode !== "00") {
