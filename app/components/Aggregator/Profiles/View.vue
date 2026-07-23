@@ -329,15 +329,18 @@
 
       <!-- ════ TAB: COMMISSIONS ════ -->
       <section v-show="activeTab === 'commissions'" class="tab-section">
-        <div class="card" v-if="profile.commissionconfig?.length">
+        <div class="card">
           <div class="card-header">
             <div class="card-icon-dot" style="background:rgba(5,150,105,.1);color:#059669"><span class="mdi mdi-percent-box-outline"></span></div>
             <h3 class="card-title">Commission Slabs</h3>
-            <span class="ml-auto"><span class="pill pill--sm pill--slate">{{ profile.commissionconfig.length }} record(s)</span></span>
+            <span class="pill pill--sm pill--slate" v-if="profile.commissionconfig?.length">{{ profile.commissionconfig.length }} record(s)</span>
+            <button class="term-create-btn ml-auto" @click="openCreateCommission">
+              <span class="mdi mdi-plus"></span> Add Commission
+            </button>
           </div>
-          <div class="table-scroll">
+          <div class="table-scroll" v-if="profile.commissionconfig?.length">
             <table class="data-table">
-              <thead><tr><th>Level</th><th>Payment Method</th><th>Provider</th><th>Txn Type</th><th>Min Amt</th><th>Max Amt</th><th>Default</th><th>Active</th></tr></thead>
+              <thead><tr><th>Level</th><th>Payment Method</th><th>Provider</th><th>Txn Type</th><th>Min Amt</th><th>Max Amt</th><th>Components</th><th>Default</th><th>Active</th><th></th></tr></thead>
               <tbody>
                 <tr v-for="c in profile.commissionconfig" :key="c.id">
                   <td>{{ c.level }}</td>
@@ -346,16 +349,27 @@
                   <td>{{ c.txnType }}</td>
                   <td class="mono">{{ c.minAmount }}</td>
                   <td class="mono">{{ c.maxAmount }}</td>
+                  <td>
+                    <span v-for="cm in c.components" :key="cm.id" class="pill pill--sm pill--slate" style="margin:2px 3px 2px 0;display:inline-block">
+                      {{ cm.name }}: {{ cm.value }}{{ cm.chargeType === 'PERCENTAGE' ? '%' : ' ₹' }}
+                    </span>
+                  </td>
                   <td><span :class="['pill pill--sm', c.isDefault ? 'pill--indigo' : 'pill--slate']">{{ c.isDefault ? 'Yes' : 'No' }}</span></td>
                   <td><span :class="['pill pill--sm', c.active ? 'pill--emerald' : 'pill--red']">{{ c.active ? 'Active' : 'Inactive' }}</span></td>
+                  <td>
+                    <div style="display:flex;gap:6px;">
+                      <button class="icon-close" title="Edit" @click="openEditCommission(c)"><span class="mdi mdi-pencil-outline"></span></button>
+                      <button class="icon-close" title="Disable" :disabled="!c.active" @click="openDeleteCommission(c)"><span class="mdi mdi-trash-can-outline"></span></button>
+                    </div>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
-        <div class="empty-state" v-else>
-          <div class="empty-icon-wrap"><span class="mdi mdi-percent-outline"></span></div>
-          <p class="empty-title">No commission slabs configured</p>
+          <div class="empty-state" v-else>
+            <div class="empty-icon-wrap"><span class="mdi mdi-percent-outline"></span></div>
+            <p class="empty-title">No commission slabs configured</p>
+          </div>
         </div>
       </section>
 
@@ -534,6 +548,143 @@
         </div>
       </Transition>
 
+      <!-- ░░ COMMISSION ADD / EDIT MODAL ░░ -->
+      <Transition name="dialog-fade">
+        <div v-if="commissionModal.open" class="dialog-overlay" @click.self="closeCommissionModal">
+          <div class="dialog dialog--commission">
+            <div class="dialog-hdr">
+              <div>
+                <p class="dialog-title">{{ commissionModal.mode === 'edit' ? 'Edit Commission Slab' : 'Add Commission Slab' }}</p>
+                <p class="dialog-sub">{{ profile.name }} · {{ profile.code }}</p>
+              </div>
+              <button class="icon-close" @click="closeCommissionModal" :disabled="commissionModal.saving"><span class="mdi mdi-close"></span></button>
+            </div>
+
+            <div class="dialog-body">
+              <div class="term-form-error" v-if="commissionModal.error">{{ commissionModal.error }}</div>
+
+              <div class="term-form-grid">
+                <div class="term-field">
+                  <label>Level</label>
+                  <select class="term-select" v-model="commissionModal.form.level" :disabled="commissionModal.mode === 'edit'">
+                    <option v-for="opt in COMMISSION_LEVELS" :key="opt" :value="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="term-field">
+                  <label>Payment Method</label>
+                  <select class="term-select" v-model="commissionModal.form.paymentMethod" :disabled="commissionModal.mode === 'edit'">
+                    <option v-for="opt in PAYMENT_METHODS" :key="opt" :value="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="term-field">
+                  <label>Provider</label>
+                  <select class="term-select" v-model="commissionModal.form.provider" :disabled="commissionModal.mode === 'edit'">
+                    <option v-for="opt in PROVIDERS" :key="opt" :value="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="term-field">
+                  <label>Txn Type</label>
+                  <select class="term-select" v-model="commissionModal.form.txnType" :disabled="commissionModal.mode === 'edit'">
+                    <option v-for="opt in TXN_TYPES" :key="opt" :value="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="term-field">
+                  <label>Min Amount</label>
+                  <input class="term-input" type="number" min="0" v-model.number="commissionModal.form.minAmount" />
+                </div>
+                <div class="term-field">
+                  <label>Max Amount</label>
+                  <input class="term-input" type="number" min="0" v-model.number="commissionModal.form.maxAmount" />
+                </div>
+              </div>
+
+              <div class="comp-section-hdr">
+                <p class="dialog-section-lbl" style="margin:0">Components</p>
+                <button class="comp-add-btn" @click="addComponentRow"><span class="mdi mdi-plus"></span> Add Component</button>
+              </div>
+
+              <div class="comp-row" v-for="(comp, i) in commissionModal.form.components" :key="i">
+                <div class="term-field">
+                  <label>Name</label>
+                  <select class="term-select" v-model="comp.name">
+                    <option v-for="opt in COMPONENT_TYPES" :key="opt" :value="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="term-field">
+                  <label>Charge Type</label>
+                  <select class="term-select" v-model="comp.chargeType">
+                    <option v-for="opt in CHARGE_TYPES" :key="opt" :value="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="term-field">
+                  <label>Value</label>
+                  <input class="term-input" type="number" step="0.01" v-model.number="comp.value" />
+                </div>
+                <div class="term-field">
+                  <label>Receiver</label>
+                  <select class="term-select" v-model="comp.receiver">
+                    <option v-for="opt in RECEIVERS" :key="opt" :value="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="term-field">
+                  <label>Applies On</label>
+                  <select class="term-select" v-model="comp.appliesOn">
+                    <option v-for="opt in CHARGE_EVENTS" :key="opt" :value="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="term-field">
+                  <label>Depends On <span style="font-weight:400;color:#94a3b8">(optional)</span></label>
+                  <input class="term-input" v-model="comp.dependsOn" placeholder="e.g. PER_1000" />
+                </div>
+                <button class="comp-remove-btn" title="Remove component" :disabled="commissionModal.form.components.length <= 1" @click="removeComponentRow(i)">
+                  <span class="mdi mdi-trash-can-outline"></span>
+                </button>
+              </div>
+            </div>
+
+            <div class="w-modal-footer">
+              <button class="w-btn-ghost" @click="closeCommissionModal" :disabled="commissionModal.saving">Cancel</button>
+              <button class="w-btn-primary" :disabled="commissionModal.saving" @click="saveCommission">
+                <span v-if="commissionModal.saving" class="mdi mdi-loading spin"></span>
+                {{ commissionModal.saving ? 'Saving…' : (commissionModal.mode === 'edit' ? 'Save Changes' : 'Create Slab') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- ░░ COMMISSION DISABLE CONFIRM ░░ -->
+      <Transition name="dialog-fade">
+        <div v-if="deleteCommissionDialog.open" class="dialog-overlay" @click.self="closeDeleteCommission">
+          <div class="dialog dialog--confirm">
+            <div class="dialog__hdr">
+              <div class="confirm-icon-wrap confirm-icon-wrap--danger">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              </div>
+              <div>
+                <p class="dialog__title">Disable Commission Slab</p>
+                <p class="dialog__sub">This slab will stop applying to new transactions.</p>
+              </div>
+              <button class="icon-close-btn ml-auto" @click="closeDeleteCommission"><span class="mdi mdi-close"></span></button>
+            </div>
+            <div class="dialog__body" v-if="deleteCommissionDialog.target">
+              <div class="confirm-change-summary">
+                <div class="ccs-row"><span class="ccs-label">Payment Method</span><span class="ccs-val">{{ deleteCommissionDialog.target.paymentMethod }}</span></div>
+                <div class="ccs-row"><span class="ccs-label">Txn Type</span><span class="ccs-val">{{ deleteCommissionDialog.target.txnType }}</span></div>
+                <div class="ccs-row"><span class="ccs-label">Range</span><span class="ccs-val font-mono">{{ deleteCommissionDialog.target.minAmount }} – {{ deleteCommissionDialog.target.maxAmount }}</span></div>
+              </div>
+              <div class="confirm-actions">
+                <button class="btn-secondary" @click="closeDeleteCommission" :disabled="deleteCommissionDialog.loading">Cancel</button>
+                <button class="btn-confirm btn-confirm--danger" :disabled="deleteCommissionDialog.loading" @click="confirmDeleteCommission">
+                  <span v-if="deleteCommissionDialog.loading" class="btn-spinner"></span>
+                  <span v-else>Disable</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
       <!-- ░░ TOAST ░░ -->
       <Transition name="toast">
         <div v-if="toast.show" :class="['toast', `toast--${toast.type}`]">
@@ -558,10 +709,12 @@
 import { ref, reactive, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useWalletProfileApi } from "~/composables/apis/useWalletProfileApi";
+import { useWalletCommissionApi } from "~/composables/apis/useWalletCommissionApi";
 
 const props = defineProps({ profileId: String });
 const router = useRouter();
 const { getWalletProfileById, updateWalletProfileStatus, getWalletProfileActivity } = useWalletProfileApi();
+const { getWalletCommissions, createWalletCommission, updateWalletCommission, disableWalletCommission } = useWalletCommissionApi();
 
 const profile    = reactive({});
 const activeTab  = ref('overview');
@@ -663,6 +816,182 @@ const executeUpdate = async () => {
 
 const openDoc     = (doc) => { selectedDoc.value = doc; docDialog.value = true; };
 const openPreview = (url) => { previewUrl.value = url; imgPreview.value = true; };
+
+// ── Commissions (wallet-commission) ─────────────────────────────────
+const PAYMENT_METHODS  = ['UPI','CARD','NETBANKING','CASH','WALLET','AEPS','DMT','ALL','IMPS','NEFT','RTGS'];
+const PROVIDERS        = ['ISG','MOS','WORLD','BUCKSBOX','AXIS','NSDL','FINO','CANARA'];
+const TXN_TYPES        = ['CASH_WITHDRAWAL','BALANCE_ENQUIRY','MINI_STATEMENT','CASH_DEPOSIT','VALIDATION','DMT','PUS','PURCHASE','PAYIN','ADD_MONEY','TOPUP','TRANSFER','CARD_MAINTENANCE_FEE','NONE'];
+const COMPONENT_TYPES  = ['INTERCHANGE','CUSTOMER_FEE','GST','BANK_SHARE','BANK_COMMISSION','MERCHANT_COMMISSION','DISTRIBUTOR_COMMISSION','SUPER_DISTRIBUTOR_COMMISSION','AGGREGATOR_COMMISSION','PLATFORM_COMMISSION','PROCESSING_FEE','VENDOR_SHARE','CARD_ISSUANCE_FEE','CARD_MAINTENANCE_FEE'];
+const CHARGE_TYPES      = ['FIXED','PERCENTAGE','HYBRID'];
+const CHARGE_EVENTS     = ['TRANSACTION','VALIDATION','REGISTRATION'];
+const RECEIVERS         = ['MERCHANT','DISTRIBUTOR','SUPER_DISTRIBUTOR','VENDOR','AGGREGATOR','BANK','BENEFICIARY','PLATFORM','GOVERNMENT','BC_NETWORK'];
+const COMMISSION_LEVELS = ['SUPER_DISTRIBUTOR','DISTRIBUTOR','MERCHANT','PLATFORM'];
+
+const commissionsLoading = ref(false);
+
+const fetchCommissions = async () => {
+  commissionsLoading.value = true;
+  try {
+    const res = await getWalletCommissions(props.profileId);
+    if (res?.success) profile.commissionconfig = res.data;
+  } catch (e) {
+    console.error('Failed to fetch commissions:', e);
+  } finally {
+    commissionsLoading.value = false;
+  }
+};
+
+const emptyComponent = () => ({ name: 'PLATFORM_COMMISSION', chargeType: 'FIXED', value: 0, dependsOn: '', receiver: 'PLATFORM', appliesOn: 'TRANSACTION' });
+
+const commissionModal = reactive({
+  open: false,
+  mode: 'create', // 'create' | 'edit'
+  editingId: null,
+  saving: false,
+  error: '',
+  form: {
+    level: 'PLATFORM',
+    paymentMethod: 'CARD',
+    provider: 'AXIS',
+    txnType: 'PURCHASE',
+    minAmount: 0,
+    maxAmount: 100000,
+    components: [emptyComponent()],
+  },
+});
+
+const openCreateCommission = () => {
+  commissionModal.mode = 'create';
+  commissionModal.editingId = null;
+  commissionModal.error = '';
+  commissionModal.form = {
+    level: 'PLATFORM',
+    paymentMethod: 'CARD',
+    provider: 'AXIS',
+    txnType: 'PURCHASE',
+    minAmount: 0,
+    maxAmount: 100000,
+    components: [emptyComponent()],
+  };
+  commissionModal.open = true;
+};
+
+const openEditCommission = (c) => {
+  commissionModal.mode = 'edit';
+  commissionModal.editingId = c.id;
+  commissionModal.error = '';
+  commissionModal.form = {
+    level: c.level || 'PLATFORM',
+    paymentMethod: c.paymentMethod,
+    provider: c.provider,
+    txnType: c.txnType,
+    minAmount: Number(c.minAmount),
+    maxAmount: Number(c.maxAmount),
+    components: (c.components?.length ? c.components : [emptyComponent()]).map(cm => ({
+      name: cm.name,
+      chargeType: cm.chargeType,
+      value: Number(cm.value),
+      dependsOn: cm.dependsOn || '',
+      receiver: cm.receiver || 'PLATFORM',
+      appliesOn: cm.appliesOn || 'TRANSACTION',
+    })),
+  };
+  commissionModal.open = true;
+};
+
+const closeCommissionModal = () => {
+  if (commissionModal.saving) return;
+  commissionModal.open = false;
+};
+
+const addComponentRow    = () => commissionModal.form.components.push(emptyComponent());
+const removeComponentRow = (i) => {
+  if (commissionModal.form.components.length <= 1) return;
+  commissionModal.form.components.splice(i, 1);
+};
+
+const saveCommission = async () => {
+  commissionModal.error = '';
+
+  const f = commissionModal.form;
+  if (Number(f.minAmount) > Number(f.maxAmount)) {
+    commissionModal.error = 'Min amount cannot exceed max amount';
+    return;
+  }
+  if (!f.components.length) {
+    commissionModal.error = 'At least one component is required';
+    return;
+  }
+
+  commissionModal.saving = true;
+  try {
+    const componentsPayload = f.components.map(c => ({
+      name: c.name,
+      chargeType: c.chargeType,
+      value: Number(c.value),
+      dependsOn: c.dependsOn || undefined,
+      receiver: c.receiver,
+      appliesOn: c.appliesOn,
+    }));
+
+    let res;
+    if (commissionModal.mode === 'create') {
+      res = await createWalletCommission({
+        walletprofileId: props.profileId,
+        level: f.level,
+        paymentMethod: f.paymentMethod,
+        provider: f.provider,
+        txnType: f.txnType,
+        minAmount: Number(f.minAmount),
+        maxAmount: Number(f.maxAmount),
+        components: componentsPayload,
+      });
+    } else {
+      res = await updateWalletCommission(commissionModal.editingId, {
+        minAmount: Number(f.minAmount),
+        maxAmount: Number(f.maxAmount),
+        components: componentsPayload,
+      });
+    }
+
+    if (res?.success) {
+      showToast(commissionModal.mode === 'create' ? 'Commission slab created' : 'Commission slab updated', 'success');
+      commissionModal.open = false;
+      await fetchCommissions();
+    } else {
+      commissionModal.error = res?.message || 'Failed to save commission';
+    }
+  } catch (err) {
+    commissionModal.error = err?.response?.data?.message || err?.message || 'Something went wrong';
+  } finally {
+    commissionModal.saving = false;
+  }
+};
+
+const deleteCommissionDialog = reactive({ open: false, target: null, loading: false });
+
+const openDeleteCommission = (c) => { deleteCommissionDialog.target = c; deleteCommissionDialog.open = true; };
+const closeDeleteCommission = () => { if (deleteCommissionDialog.loading) return; deleteCommissionDialog.open = false; deleteCommissionDialog.target = null; };
+
+const confirmDeleteCommission = async () => {
+  if (!deleteCommissionDialog.target) return;
+  deleteCommissionDialog.loading = true;
+  try {
+    const res = await disableWalletCommission(deleteCommissionDialog.target.id);
+    if (res?.success) {
+      showToast('Commission slab disabled', 'success');
+      deleteCommissionDialog.open = false;
+      deleteCommissionDialog.target = null;
+      await fetchCommissions();
+    } else {
+      showToast(res?.message || 'Failed to disable commission', 'error');
+    }
+  } catch (err) {
+    showToast(err?.response?.data?.message || 'Something went wrong', 'error');
+  } finally {
+    deleteCommissionDialog.loading = false;
+  }
+};
 
 const tabs = [
   { key: 'overview',      label: 'Overview',      mdi: 'mdi-account-circle-outline' },
@@ -919,4 +1248,37 @@ onMounted(async () => {
 .loader-spinner { width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top-color: #1142d4; border-radius: 50%; animation: spin .8s linear infinite; }
 .loader-text  { font-size: 13px; color: #64748b; font-family: 'DM Sans', sans-serif; font-weight: 600; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Add Commission button ── */
+.term-create-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border: none; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; background: #1142d4; color: #fff; transition: background .15s; }
+.term-create-btn:hover { background: #0e35a8; }
+.icon-close:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Commission form dialog ── */
+.dialog--commission { max-width: 720px; }
+.term-form-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; border-radius: 9px; padding: 10px 14px; font-size: 12.5px; font-weight: 600; margin-bottom: 14px; }
+.term-form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
+.term-field { display: flex; flex-direction: column; gap: 5px; }
+.term-field label { font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.term-select, .term-input { border: 1px solid #e2e8f0; border-radius: 9px; padding: 8px 11px; font-size: 12.5px; font-family: inherit; color: #0f172a; outline: none; transition: border .15s; background: #fff; }
+.term-select:focus, .term-input:focus { border-color: #1142d4; box-shadow: 0 0 0 3px rgba(17,66,212,.08); }
+.term-select:disabled, .term-input:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+
+.comp-section-hdr { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 10px; }
+.comp-add-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border: 1px dashed #1142d4; border-radius: 8px; background: rgba(17,66,212,.05); color: #1142d4; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; }
+.comp-add-btn:hover { background: rgba(17,66,212,.1); }
+.comp-row { display: grid; grid-template-columns: repeat(6, 1fr) auto; gap: 10px; align-items: end; padding: 12px; border: 1px solid #f1f5f9; border-radius: 10px; background: #fafafa; margin-bottom: 10px; }
+.comp-remove-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 1px solid #fca5a5; border-radius: 8px; background: #fee2e2; color: #991b1b; cursor: pointer; flex-shrink: 0; transition: background .15s; }
+.comp-remove-btn:hover:not(:disabled) { background: #fca5a5; }
+.comp-remove-btn:disabled { opacity: .4; cursor: not-allowed; }
+@media (max-width: 760px) { .term-form-grid { grid-template-columns: repeat(2, 1fr); } .comp-row { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── Modal footer / buttons (shared by commission + wallet-style modals) ── */
+.w-modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 16px 20px; border-top: 1px solid #f1f5f9; flex-shrink: 0; }
+.w-btn-ghost { padding: 9px 18px; border: 1px solid #e2e8f0; border-radius: 9px; font-size: 12.5px; font-weight: 600; background: #f8fafc; color: #475569; cursor: pointer; font-family: inherit; transition: all .15s; }
+.w-btn-ghost:hover:not(:disabled) { background: #f1f5f9; color: #0f172a; }
+.w-btn-ghost:disabled { opacity: .55; cursor: not-allowed; }
+.w-btn-primary { display: flex; align-items: center; gap: 6px; padding: 9px 20px; border: none; border-radius: 9px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; background: #1142d4; color: #fff; transition: background .15s; }
+.w-btn-primary:hover:not(:disabled) { background: #0e35a8; }
+.w-btn-primary:disabled { opacity: .55; cursor: not-allowed; }
 </style>

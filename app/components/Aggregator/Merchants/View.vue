@@ -9,16 +9,15 @@
           Back
         </button>
         <div class="view-brand">
-          <div class="view-avatar" :style="{ background: avatarBg(merchant.legal_name || merchant.business_name || 'M') }">
-            {{ initials(merchant.legal_name || merchant.business_name || 'M') }}
+          <div class="view-avatar" :style="{ background: avatarBg(merchant.dba_name || merchant.business_name || merchant.legal_name || 'M') }">
+            {{ initials(merchant.dba_name || merchant.business_name || merchant.legal_name || 'M') }}
           </div>
           <div class="view-brand-text">
-            <h1 class="view-merchant-name">{{ merchant.legal_name || merchant.business_name || '—' }}</h1>
+            <h1 class="view-merchant-name">{{ merchant.dba_name || merchant.business_name || merchant.legal_name || '—' }}</h1>
             <div class="view-meta">
               <span class="mid-chip">{{ merchant.mid }}</span>
               <span :class="['status-pill', mstatusBadge(merchant.mstatus)]">{{ merchant.mstatus }}</span>
               <span :class="['status-pill', merchant.status ? 'pill--emerald' : 'pill--red']">{{ merchant.status ? 'Active' : 'Inactive' }}</span>
-              <span class="status-pill pill--slate">{{ merchant.interface }}</span>
             </div>
           </div>
         </div>
@@ -174,9 +173,9 @@
           <div class="info-grid info-grid--4">
             <div class="info-item"><label>Legal Name</label><p>{{ merchant.legal_name || '—' }}</p></div>
             <div class="info-item"><label>Business Name</label><p>{{ merchant.business_name || '—' }}</p></div>
+            <div class="info-item"><label>DBA Name</label><p>{{ merchant.dba_name || '—' }}</p></div>
             <div class="info-item"><label>MID</label><p class="mono">{{ merchant.mid || '—' }}</p></div>
             <div class="info-item"><label>App ID</label><p class="mono text-xs">{{ merchant.appid || '—' }}</p></div>
-            <div class="info-item"><label>Interface</label><p><span class="pill pill--indigo">{{ merchant.interface || '—' }}</span></p></div>
             <div class="info-item"><label>Lifecycle Status</label><p><span :class="['pill', mstatusBadgeClass(merchant.mstatus)]">{{ merchant.mstatus || '—' }}</span></p></div>
             <div class="info-item"><label>Active</label><p><span :class="['pill', merchant.status ? 'pill--emerald' : 'pill--red']">{{ merchant.status ? 'Active' : 'Inactive' }}</span></p></div>
             <div class="info-item"><label>Risk Flag</label><p><span :class="['pill', merchant.riskflag > 0 ? 'pill--red' : 'pill--emerald']">{{ merchant.riskflag }}</span></p></div>
