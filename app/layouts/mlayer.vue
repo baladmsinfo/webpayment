@@ -4,6 +4,7 @@
 
     <main class="admin-main" :class="{ 'admin-main-shifted': drawerOpen && !isMobile }">
       <div class="admin-main-inner">
+        <MerchantKycNotificationCard v-if="showKycBanner" />
         <slot />
       </div>
     </main>
@@ -19,15 +20,21 @@
 
 <script setup>
 import { ref, computed, provide, watch, onMounted, onBeforeUnmount } from "vue"
+import { useRoute } from "vue-router"
 import { useUsersApi } from "~/composables/apis/useUsersApi"
 import { useAuthStore } from "@/stores/auth";
 import { useIdleTimer } from "~/composables/useIdleTimer";
 import { useMerchantServices } from "~/composables/useMerchantServices";
+import { useKycStatus } from "~/composables/useKycStatus";
 
 const { getProfile } = useUsersApi();
 const auth = useAuthStore();
+const route = useRoute();
 const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
 const { verifiedServices, hasAEPS, hasDMT, hasWallet, loadMerchantServices } = useMerchantServices();
+const { isKycComplete, loadKycStatus } = useKycStatus();
+
+const showKycBanner = computed(() => !isKycComplete.value && route.path !== "/merchant/onboarding/isg");
 
 const Title = ref();
 
@@ -135,6 +142,7 @@ onMounted(async () => {
   Title.value = auth.merchant?.legal_name || auth.merchant?.data?.legal_name || "Bucksbox";
 
   await loadMerchantServices()
+  await loadKycStatus()
 
   const services = verifiedServices.value
   const txMenu = menus.value.find(m => m.title === "Transactions")
