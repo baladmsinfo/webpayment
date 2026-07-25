@@ -110,11 +110,11 @@
               <!-- Merchant -->
               <td>
                 <div class="merchant-cell">
-                  <div class="merchant-avatar" :style="{ background: avatarColor(item.legal_name) }">
-                    {{ initials(item.legal_name) }}
+                  <div class="merchant-avatar" :style="{ background: avatarColor(item.dba_name || item.business_name || item.legal_name) }">
+                    {{ initials(item.dba_name || item.business_name || item.legal_name) }}
                   </div>
                   <div>
-                    <p class="merchant-name">{{ item.legal_name }}</p>
+                    <p class="merchant-name">{{ item.dba_name || item.business_name || item.legal_name }}</p>
                     <p class="merchant-mid th-hide-lg">{{ item.mid }}</p>
                   </div>
                 </div>

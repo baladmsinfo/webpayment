@@ -3,6 +3,8 @@ export const useAuthStore = defineStore("auth", {
     merchant: null as Record<string, any> | null,
     merchantServices: [] as Array<Record<string, any>>,
     merchantServicesLoaded: false,
+    kycCompliant: null as boolean | null,
+    kycStatusLoaded: false,
     aggregator: null as Record<string, any> | null,
     vendor: null as Record<string, any> | null,
     user: null as Record<string, any> | null,
@@ -53,6 +55,10 @@ export const useAuthStore = defineStore("auth", {
     setMerchantServices(services: Array<Record<string, any>>) {
       this.merchantServices = services;
       this.merchantServicesLoaded = true;
+    },
+    setKycCompliant(compliant: boolean) {
+      this.kycCompliant = compliant;
+      this.kycStatusLoaded = true;
     },
     setWalletProfile(payload: any) {
       this.walletProfile = payload;

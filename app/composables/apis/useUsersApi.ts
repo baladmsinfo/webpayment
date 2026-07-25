@@ -65,24 +65,9 @@ export function useUsersApi() {
     }
   };
 
+  // Creates the merchant only — does not log the caller in or touch auth state.
   const registor = async (payload) => {
     const res = await post("/register", payload);
-
-    if (res.statusCode === "00") {
-      const data = res.data;
-
-      // if (data.user) {
-      //   // If backend returns user object with role
-      //   auth.setUser(data.user, data.token);
-      // } else if (data.aggregator) {
-      //   // If backend sends aggregator directly
-      //   auth.setUser({ role: "aggregator", aggregator: data.aggregator }, data.token);
-      // } else if (data.merchant) {
-      //   // If backend sends merchant directly
-      //   auth.setUser({ role: "merchant", merchant: data.merchant }, data.token);
-      // }
-    }
-
     return res.data;
   };
 
