@@ -467,12 +467,12 @@ export const useDmtStore = defineStore("dmt", {
         const charge = Number(res.data.charge ?? res.data.txnCharge ?? 0);
         const gst = Number(res.data.gst ?? res.data.gstAmount ?? +(charge * 0.18).toFixed(2));
         const commission = Number(res.data.commission ?? res.data.merchantCommission ?? 0);
-        this.charges = { charge, gst, commission, totalDebit: +(amount + charge + gst).toFixed(2) };
+        this.charges = { charge, gst, commission, totalDebit: amount };
       } else {
         // Fallback slab so the screen still functions if charges/quote is unavailable.
         const charge = 15;
         const gst = +(charge * 0.18).toFixed(2);
-        this.charges = { charge, gst, commission: +(charge * 0.4).toFixed(2), totalDebit: +(amount + charge + gst).toFixed(2) };
+        this.charges = { charge, gst, commission: +(charge * 0.4).toFixed(2), totalDebit: amount };
       }
     },
 
@@ -518,6 +518,14 @@ export const useDmtStore = defineStore("dmt", {
           account_holder_name: this.selectedBeneficiary.name,
           receiverMobilenumber: this.selectedBeneficiary.mobile,
         });
+
+        // A pre-flight validation/server error (bad field, insufficient balance, wallet
+        // inactive, etc.) is rejected before NSDL is ever called and carries no `data` —
+        // it must stop here and surface the message, not fall through as an ambiguous
+        // PENDING transaction that the requery poller can never resolve.
+        if (res.statusCode !== "00" && !res.data) {
+          return { ok: false, message: res.message || "Transfer could not be processed" };
+        }
 
         const status = mapTxnStatus(res);
         const txn: DmtTransaction = {

@@ -63,10 +63,10 @@
           <span class="dmt-stat-label">Today's Transfer</span>
           <span class="dmt-stat-value">₹{{ fmtAmt(dmtStore.todaysSessionSummary.amount) }}</span>
         </div>
-        <div class="dmt-stat">
+        <!-- <div class="dmt-stat">
           <span class="dmt-stat-label">Today's Commission</span>
           <span class="dmt-stat-value dmt-stat-green">₹{{ fmtAmt(dmtStore.todaysSessionSummary.commission) }}</span>
-        </div>
+        </div> -->
         <div class="dmt-stat">
           <span class="dmt-stat-label">Remaining Wallet Balance</span>
           <span class="dmt-stat-value">₹{{ fmtAmt(balanceData.balance) }}</span>

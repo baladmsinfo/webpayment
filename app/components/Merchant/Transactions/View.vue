@@ -96,6 +96,7 @@
             <div class="field-row"><span class="field-lbl">Commission</span><span class="field-val mono">₹{{ fmt(txn.totalCommission) }}</span></div>
             <div class="field-row"><span class="field-lbl">GST</span><span class="field-val mono">₹{{ fmt(txn.gstAmount) }}</span></div>
             <div class="field-row" v-if="txn.customerFee"><span class="field-lbl">Customer Fee</span><span class="field-val mono">₹{{ fmt(txn.customerFee) }}</span></div>
+            <div class="field-row" v-if="txn.processingFee"><span class="field-lbl">Processing Fee</span><span class="field-val mono">₹{{ fmt(txn.processingFee) }}</span></div>
           </div>
         </div>
 
@@ -154,10 +155,26 @@
           </div>
         </div>
 
+        <!-- DMT Transfer Details -->
+        <div class="info-card" v-if="txn.dmtDetail">
+          <div class="card-hdr"><span class="mdi mdi-bank-transfer card-hdr-icon" style="color:#0891b2"></span>DMT Transfer Details</div>
+          <div class="field-list">
+            <div class="field-row"><span class="field-lbl">Beneficiary</span><span class="field-val">{{ txn.dmtDetail.beneficiaryName ?? '—' }}</span></div>
+            <div class="field-row"><span class="field-lbl">Account No</span><span class="field-val mono">{{ maskAccount(txn.dmtDetail.accountNumber) }}</span></div>
+            <div class="field-row"><span class="field-lbl">IFSC</span><span class="field-val mono">{{ txn.dmtDetail.ifsc ?? '—' }}</span></div>
+            <div class="field-row"><span class="field-lbl">Bank</span><span class="field-val">{{ txn.dmtDetail.bankName ?? '—' }}</span></div>
+            <div class="field-row" v-if="txn.dmtDetail.branchName"><span class="field-lbl">Branch</span><span class="field-val">{{ txn.dmtDetail.branchName }}</span></div>
+            <div class="field-row"><span class="field-lbl">RRN</span><span class="field-val mono">{{ txn.dmtDetail.rrn ?? '—' }}</span></div>
+            <div class="field-row"><span class="field-lbl">Bank Reference</span><span class="field-val mono">{{ txn.dmtDetail.bankReference ?? '—' }}</span></div>
+            <div class="field-row" v-if="txn.dmtDetail.remarks"><span class="field-lbl">Remarks</span><span class="field-val">{{ txn.dmtDetail.remarks }}</span></div>
+            <div class="field-row" v-if="txn.dmtDetail.bankRemarks"><span class="field-lbl">Bank Remarks</span><span class="field-val">{{ txn.dmtDetail.bankRemarks }}</span></div>
+          </div>
+        </div>
+
       </div>
 
       <!-- GL Journal Entries -->
-      <div class="gl-card" v-if="txn.ledgerEntries?.length">
+      <!--<div class="gl-card" v-if="txn.ledgerEntries?.length">
         <div class="card-hdr"><span class="mdi mdi-scale-balance card-hdr-icon" style="color:#1142d4"></span>GL Journal Entries</div>
         <div class="gl-table-wrap">
           <table class="gl-table">
@@ -193,7 +210,7 @@
             </tfoot>
           </table>
         </div>
-      </div>
+      </div>-->
 
     </template>
   </div>
@@ -236,6 +253,7 @@ const balanced = computed(() => Math.abs(drTotal.value - crTotal.value) < 0.01);
 
 const fmt     = (v: any) => v != null ? Number(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
 const fmtDate = (d: string | null) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+const maskAccount = (acc: string | null) => acc ? acc.replace(/.(?=.{4})/g, '•') : '—';
 
 const statusChip = (s: string) => {
   if (s === 'SUCCESS')  return 'chip-green';

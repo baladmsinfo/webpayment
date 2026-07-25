@@ -752,6 +752,25 @@
                   <span :class="['flag', cfg.active ? 'flag--on' : 'flag--off']" style="font-size:10px">
                     {{ cfg.active ? 'Active' : 'Inactive' }}
                   </span>
+                  <div class="action-btns" v-if="cfg.active" @click.stop>
+                    <button class="icon-btn icon-btn--edit" @click="openEditConfig(cfg)" title="Edit">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                    <button class="icon-btn icon-btn--delete" @click="deleteConfig(cfg)" title="Disable">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14H6L5 6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                        <path d="M9 6V4h6v2" />
+                      </svg>
+                    </button>
+                  </div>
                   <span class="cc-expand-caret">{{ expandedCfg === cfg.id ? '▲' : '▼' }}</span>
                 </div>
               </div>
@@ -833,7 +852,7 @@
               <div class="modal-box modal-box--wide">
 
                 <div class="modal-box__header">
-                  <h3 class="modal-box__title">Add Commission Config</h3>
+                  <h3 class="modal-box__title">{{ cfgModal.mode === 'edit' ? 'Edit Commission Config' : 'Add Commission Config' }}</h3>
                   <button class="modal-close" @click="closeCfgModal">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                       stroke-linecap="round" stroke-linejoin="round">
@@ -850,7 +869,8 @@
                   <div class="modal-grid">
                     <div class="modal-field">
                       <label>Payment Method <span class="req">*</span></label>
-                      <select v-model="cfgForm.paymentMethod" @change="onCfgMethodChange">
+                      <select v-model="cfgForm.paymentMethod" @change="onCfgMethodChange"
+                        :disabled="cfgModal.mode === 'edit'">
                         <option value="">Select</option>
                         <option v-for="m in cfgPaymentMethods" :key="m" :value="m">{{ m }}</option>
                       </select>
@@ -858,14 +878,14 @@
                     <div class="modal-field">
                       <label>Provider <span class="req">*</span></label>
                       <select v-model="cfgForm.provider" @change="onCfgProviderChange"
-                        :disabled="!cfgForm.paymentMethod">
+                        :disabled="cfgModal.mode === 'edit' || !cfgForm.paymentMethod">
                         <option value="">Select</option>
                         <option v-for="p in cfgAvailableProviders" :key="p" :value="p">{{ p }}</option>
                       </select>
                     </div>
                     <div class="modal-field">
                       <label>Txn Type <span class="req">*</span></label>
-                      <select v-model="cfgForm.txnType" :disabled="!cfgForm.provider">
+                      <select v-model="cfgForm.txnType" :disabled="cfgModal.mode === 'edit' || !cfgForm.provider">
                         <option value="">Select</option>
                         <option v-for="t in cfgAvailableTxnTypes" :key="t" :value="t">{{ t }}</option>
                       </select>
@@ -878,6 +898,16 @@
                       <label>Max Amount (₹) <span class="req">*</span></label>
                       <input type="number" v-model.number="cfgForm.maxAmount" min="0" />
                     </div>
+                    <template v-if="cfgForm.paymentMethod === 'AEPS'">
+                      <div class="modal-field">
+                        <label>Min GMV (₹)</label>
+                        <input type="number" v-model.number="cfgForm.minGmv" min="0" placeholder="Blank = no GMV tiering" />
+                      </div>
+                      <div class="modal-field">
+                        <label>Max GMV (₹)</label>
+                        <input type="number" v-model.number="cfgForm.maxGmv" min="0" placeholder="Blank = open-ended" />
+                      </div>
+                    </template>
                     <div class="modal-field modal-field--full">
                       <label class="toggle-label">
                         <span>Mark as Default Config</span>
@@ -892,6 +922,28 @@
                   <!-- Step 2: Components (auto-filled, shares editable) -->
                   <template v-if="cfgForm.paymentMethod && cfgForm.provider && cfgForm.txnType">
                     <p class="cfg-section-label" style="margin-top:20px">2. Commission Components</p>
+                    <p v-if="cfgForm.paymentMethod === 'UPI'" class="text-xs" style="color:#94a3b8;margin:-4px 0 10px">
+                      Note: UPI commission is configured here for reference — transactions currently record this
+                      config but do not yet calculate a live commission from it.
+                    </p>
+                    <div v-if="cfgAvailableComponentTypes.length" class="modal-field modal-field--full"
+                      style="display:flex;gap:8px;align-items:flex-end;max-width:360px;margin-bottom:14px">
+                      <div style="flex:1">
+                        <label>Add Component</label>
+                        <select v-model="newComponentType">
+                          <option value="">Select component type</option>
+                          <option v-for="t in cfgAvailableComponentTypes" :key="t" :value="t">{{ t }}</option>
+                        </select>
+                      </div>
+                      <button class="btn-cancel" :disabled="!newComponentType" @click="addComponent">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                          stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px">
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Add
+                      </button>
+                    </div>
                     <div v-for="(comp, idx) in cfgForm.components" :key="idx" class="comp-block">
                       <div class="comp-block__head">
                         <span :class="['pill pill--sm', componentPillClass(comp.name)]">{{ comp.name }}</span>
@@ -904,11 +956,43 @@
                         <span class="pill pill--sm pill--sky">{{ comp.appliesOn }}</span>
                         <span v-if="comp.dependsOn" class="text-xs" style="color:#64748b">depends: {{ comp.dependsOn
                         }}</span>
-                        <span :class="['pill pill--sm', receiverPillClass(comp.receiver)]">{{ comp.receiver }}</span>
+                        <span v-if="comp.receiver" :class="['pill pill--sm', receiverPillClass(comp.receiver)]">{{ comp.receiver }}</span>
+                        <button class="icon-btn icon-btn--delete ml-auto" title="Remove component"
+                          @click="removeComponent(idx)">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
                       </div>
 
-                      <!-- Only show share inputs if this component has shares -->
-                      <div v-if="comp.merchantShare != null || comp.distributorShare != null"
+                      <!-- Split vs single-recipient mode toggle — income component only -->
+                      <div v-if="isIncomeComponent(comp)" class="modal-field modal-field--full" style="margin:8px 0">
+                        <label class="toggle-label">
+                          <span>{{ comp.__singleReceiver ? 'Pay to a single receiver' : 'Split among parties' }}</span>
+                          <div class="toggle-wrap">
+                            <input type="checkbox" :checked="comp.__singleReceiver"
+                              @change="onToggleSingleReceiver(comp, $event.target.checked)"
+                              class="toggle-input" :id="`cfgSingleRecv${idx}`" />
+                            <label :for="`cfgSingleRecv${idx}`" class="toggle-track"></label>
+                          </div>
+                        </label>
+                      </div>
+
+                      <!-- Single-recipient: whole component amount to ONE receiver, no split -->
+                      <div v-if="isIncomeComponent(comp) && comp.__singleReceiver" class="comp-block__shares">
+                        <div class="share-field">
+                          <label>Receiver <span class="req">*</span></label>
+                          <select v-model="comp.receiver">
+                            <option value="">Select</option>
+                            <option v-for="r in cfgReceivers" :key="r" :value="r">{{ r }}</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Split mode: show share inputs if this component has shares -->
+                      <div v-else-if="comp.merchantShare != null || comp.distributorShare != null"
                         class="comp-block__shares">
                         <div class="share-field">
                           <label>Merchant %</label>
@@ -923,6 +1007,10 @@
                           <input type="number" v-model.number="comp.superDistributorShare" min="0" max="100" step="1" />
                         </div>
                         <div class="share-field">
+                          <label>Aggregator %</label>
+                          <input type="number" v-model.number="comp.aggregatorShare" min="0" max="100" step="1" />
+                        </div>
+                        <div class="share-field">
                           <label>Platform %</label>
                           <input type="number" v-model.number="comp.platformShare" min="0" max="100" step="1"
                             :disabled="true" :value="autoplatformShare(comp)" />
@@ -933,10 +1021,41 @@
                         </div>
                       </div>
 
-                      <!-- minAmount/maxAmount editable per component if applicable -->
-                      <div v-if="cfgForm.paymentMethod === 'AEPS' || cfgForm.paymentMethod === 'DMT'"
-                        class="comp-block__range">
-                        <div class="share-field" v-if="comp.name === 'INTERCHANGE' || comp.name === 'CUSTOMER_FEE'">
+                      <!-- Charge Type / Applies On / Receiver / Value / Min / Max —
+                           editable for every component, any payment method -->
+                      <div class="comp-block__range">
+                        <div class="share-field">
+                          <label>Charge Type</label>
+                          <select v-model="comp.chargeType">
+                            <option value="FIXED">FIXED</option>
+                            <option value="PERCENTAGE">PERCENTAGE</option>
+                            <option value="HYBRID">HYBRID</option>
+                          </select>
+                        </div>
+                        <div class="share-field">
+                          <label>Applies On</label>
+                          <select v-model="comp.appliesOn">
+                            <option v-for="a in cfgAppliesOnOptions" :key="a" :value="a">{{ a }}</option>
+                          </select>
+                        </div>
+                        <!-- The income component's Receiver is edited above (required, drives
+                             single-recipient routing) when __singleReceiver is on — avoid a
+                             second, conflicting input for the same field in that case. -->
+                        <div class="share-field" v-if="!(isIncomeComponent(comp) && comp.__singleReceiver)">
+                          <label>Receiver</label>
+                          <select v-model="comp.receiver">
+                            <option value="">None</option>
+                            <option v-for="r in cfgReceivers" :key="r" :value="r">{{ r }}</option>
+                          </select>
+                        </div>
+                        <div class="share-field">
+                          <label>Depends On</label>
+                          <select v-model="comp.dependsOn">
+                            <option value="">None</option>
+                            <option v-for="t in cfgComponentTypes" :key="t" :value="t">{{ t }}</option>
+                          </select>
+                        </div>
+                        <div class="share-field">
                           <label>Value</label>
                           <input type="number" v-model.number="comp.value" min="0" step="0.01" />
                         </div>
@@ -965,10 +1084,43 @@
                       stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                     </svg>
-                    {{ cfgSaving ? 'Saving…' : 'Save Config' }}
+                    {{ cfgSaving ? 'Saving…' : (cfgModal.mode === 'edit' ? 'Update Config' : 'Save Config') }}
                   </button>
                 </div>
 
+              </div>
+            </div>
+          </Transition>
+        </Teleport>
+
+        <!-- ── Generic confirm dialog (delete/disable etc.) ── -->
+        <Teleport to="body">
+          <Transition name="modal-fade">
+            <div v-if="confirmModal.open" class="modal-overlay" @click.self="closeConfirmModal">
+              <div class="modal-box">
+                <div class="modal-box__header">
+                  <h3 class="modal-box__title">{{ confirmModal.title }}</h3>
+                  <button class="modal-close" @click="closeConfirmModal" :disabled="confirmModal.loading">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="modal-box__body">
+                  <p class="confirm-subtitle">{{ confirmModal.message }}</p>
+                </div>
+                <div class="modal-box__footer">
+                  <button class="btn-cancel" @click="closeConfirmModal" :disabled="confirmModal.loading">Cancel</button>
+                  <button class="btn-primary" :disabled="confirmModal.loading" @click="runConfirmModal">
+                    <svg v-if="confirmModal.loading" class="spin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    {{ confirmModal.loading ? 'Working…' : confirmModal.confirmLabel }}
+                  </button>
+                </div>
               </div>
             </div>
           </Transition>
@@ -1866,11 +2018,90 @@ import { useOnboadingApi } from '~/composables/apis/useOnboadingApi'
 
 // ── Commission Config ──────────────────────────────────────────────
 import { useVendorCommissionConfigApi } from '~/composables/apis/useVendorCommissionConfigApi'
-const { createCommissionConfig } = useVendorCommissionConfigApi()
+const { createCommissionConfig, updateCommissionConfig, disableCommissionConfig } = useVendorCommissionConfigApi()
 
 const expandedCfg = ref(null)
-const cfgModal = reactive({ open: false })
+const cfgModal = reactive({ open: false, mode: 'add', editId: null })
 const cfgSaving = ref(false)
+
+// Generic in-app confirm dialog — replaces window.confirm() for destructive
+// actions (e.g. deleteConfig below) so the UI never shows a native browser
+// dialog. Reusable: pass a title/message/confirm-label and an async action.
+const confirmModal = reactive({ open: false, title: '', message: '', confirmLabel: 'Confirm', loading: false, action: null })
+
+const openConfirmModal = (title, message, confirmLabel, action) => {
+  confirmModal.title = title
+  confirmModal.message = message
+  confirmModal.confirmLabel = confirmLabel
+  confirmModal.action = action
+  confirmModal.loading = false
+  confirmModal.open = true
+}
+
+const closeConfirmModal = () => {
+  if (confirmModal.loading) return
+  confirmModal.open = false
+}
+
+const runConfirmModal = async () => {
+  if (!confirmModal.action) return
+  confirmModal.loading = true
+  try {
+    await confirmModal.action()
+  } finally {
+    confirmModal.loading = false
+    confirmModal.open = false
+  }
+}
+
+// CommissionReceiver enum (schema.prisma) — used by the single-recipient
+// select on the income component (see isIncomeComponent below).
+const cfgReceivers = [
+  'MERCHANT', 'DISTRIBUTOR', 'SUPER_DISTRIBUTOR', 'VENDOR', 'AGGREGATOR',
+  'BANK', 'BENEFICIARY', 'PLATFORM', 'GOVERNMENT', 'BC_NETWORK',
+]
+
+// ChargeEvent enum (schema.prisma)
+const cfgAppliesOnOptions = ['TRANSACTION', 'VALIDATION', 'REGISTRATION']
+
+// ComponentType enum (schema.prisma) — every type an admin can add to a
+// config via the "Add Component" picker. AEPScalculate/DMTcalculate only
+// actively consume INTERCHANGE/CUSTOMER_FEE/GST/BANK_SHARE today; the rest
+// are accepted by the schema and the generic (currently unused) calculate()
+// engine, so they're offered here for completeness/future use.
+const cfgComponentTypes = [
+  'INTERCHANGE', 'CUSTOMER_FEE', 'GST', 'BANK_SHARE', 'BANK_COMMISSION',
+  'MERCHANT_COMMISSION', 'DISTRIBUTOR_COMMISSION', 'SUPER_DISTRIBUTOR_COMMISSION',
+  'AGGREGATOR_COMMISSION', 'PLATFORM_COMMISSION', 'PROCESSING_FEE',
+  'VENDOR_SHARE', 'CARD_ISSUANCE_FEE', 'CARD_MAINTENANCE_FEE',
+]
+
+// Sensible default `receiver` per type when added fresh — purely a
+// starting point, still editable afterward like any other field.
+const cfgDefaultReceiverByType = {
+  GST: 'GOVERNMENT',
+  BANK_SHARE: 'BANK',
+  BANK_COMMISSION: 'BANK',
+  MERCHANT_COMMISSION: 'MERCHANT',
+  DISTRIBUTOR_COMMISSION: 'DISTRIBUTOR',
+  SUPER_DISTRIBUTOR_COMMISSION: 'SUPER_DISTRIBUTOR',
+  AGGREGATOR_COMMISSION: 'AGGREGATOR',
+  PLATFORM_COMMISSION: 'PLATFORM',
+}
+
+const newComponentType = ref('')
+
+// A config can only have one component per name (matches the backend's
+// addCommissionComponent duplicate-name guard) — offer only types not
+// already present.
+const cfgAvailableComponentTypes = computed(() =>
+  cfgComponentTypes.filter((t) => !cfgForm.components.some((c) => c.name === t))
+)
+
+// Only the income component (INTERCHANGE for AEPS, CUSTOMER_FEE for
+// DMT/UPI) can be switched to single-recipient mode — BANK_SHARE/GST rows
+// keep `receiver` as a purely descriptive label, unchanged.
+const isIncomeComponent = (comp) => comp.name === 'INTERCHANGE' || comp.name === 'CUSTOMER_FEE'
 
 const toggleCfgExpand = (id) => {
   expandedCfg.value = expandedCfg.value === id ? null : id
@@ -1915,18 +2146,17 @@ const cfgProviderMap = {
   WALLET: ['BUCKSBOX'],
 }
 
-const cfgTxnTypeMap = {
-  'DMT:NSDL': ['TRANSFER'],
-  'AEPS:NSDL': ['CASH_WITHDRAWAL', 'MINI_STATEMENT', 'BALANCE_ENQUIRY'],
-  'AEPS:FINO': ['CASH_WITHDRAWAL', 'MINI_STATEMENT', 'BALANCE_ENQUIRY'],
-  'AEPS:CANARA': ['CASH_WITHDRAWAL', 'MINI_STATEMENT', 'BALANCE_ENQUIRY'],
-  'UPI:ISG': ['PAYIN'],
-  'UPI:MOS': ['PAYIN'],
-  'CARD:ISG': ['PAYIN'],
-  'CARD:WORLD': ['PAYIN'],
-  'NETBANKING:ISG': ['PAYIN'],
-  'WALLET:BUCKSBOX': ['PAYIN', 'NONE'],
-}
+// txnType enum (schema.prisma) — Txn Type is selectable from the full
+// enum regardless of Payment Method/Provider, rather than a curated
+// per-combo subset (component auto-population still keys off the exact
+// paymentMethod:provider:txnType triple via cfgComponentTemplates below;
+// picking a combo with no template just means "2. Commission Components"
+// starts empty and every component is added manually).
+const cfgTxnTypes = [
+  'CASH_WITHDRAWAL', 'BALANCE_ENQUIRY', 'MINI_STATEMENT', 'CASH_DEPOSIT',
+  'VALIDATION', 'DMT', 'PUS', 'PURCHASE', 'PAYIN', 'ADD_MONEY', 'TOPUP',
+  'TRANSFER', 'CARD_MAINTENANCE_FEE', 'NONE',
+]
 
 // ── Component templates ───────────────────────────────────────────
 const cfgComponentTemplates = {
@@ -2032,6 +2262,44 @@ const cfgComponentTemplates = {
       receiver: 'GOVERNMENT',
     },
   ],
+  // UPI: createUPITransaction() currently stores the resolved config for
+  // reference only and always records zero commission — see the note
+  // shown in the modal when paymentMethod === 'UPI'. Configured here so
+  // the data model is ready whenever that's wired up to a real calculation.
+  'UPI:ISG:PAYIN': [
+    {
+      name: 'CUSTOMER_FEE', chargeType: 'PERCENTAGE', value: 0.5,
+      minValue: null, maxValue: 10,
+      appliesOn: 'TRANSACTION',
+      merchantShare: 50, distributorShare: 20,
+      superDistributorShare: 10, aggregatorShare: 10, platformShare: 10,
+    },
+    {
+      name: 'GST', chargeType: 'PERCENTAGE', value: 18,
+      dependsOn: 'CUSTOMER_FEE',
+      appliesOn: 'TRANSACTION',
+      merchantShare: null, distributorShare: null,
+      superDistributorShare: null, platformShare: null,
+      receiver: 'GOVERNMENT',
+    },
+  ],
+  'UPI:MOS:PAYIN': [
+    {
+      name: 'CUSTOMER_FEE', chargeType: 'PERCENTAGE', value: 0.5,
+      minValue: null, maxValue: 10,
+      appliesOn: 'TRANSACTION',
+      merchantShare: 50, distributorShare: 20,
+      superDistributorShare: 10, aggregatorShare: 10, platformShare: 10,
+    },
+    {
+      name: 'GST', chargeType: 'PERCENTAGE', value: 18,
+      dependsOn: 'CUSTOMER_FEE',
+      appliesOn: 'TRANSACTION',
+      merchantShare: null, distributorShare: null,
+      superDistributorShare: null, platformShare: null,
+      receiver: 'GOVERNMENT',
+    },
+  ],
 }
 
 // ── cfgForm ───────────────────────────────────────────────────────
@@ -2041,6 +2309,8 @@ const defaultCfgForm = () => ({
   txnType: '',
   minAmount: 1,
   maxAmount: 10000,
+  minGmv: null,
+  maxGmv: null,
   isDefault: true,
   components: [],
 })
@@ -2051,10 +2321,7 @@ const cfgAvailableProviders = computed(() => {
   return cfgProviderMap[cfgForm.paymentMethod] ?? []
 })
 
-const cfgAvailableTxnTypes = computed(() => {
-  const key = `${cfgForm.paymentMethod}:${cfgForm.provider}`
-  return cfgTxnTypeMap[key] ?? []
-})
+const cfgAvailableTxnTypes = computed(() => cfgTxnTypes)
 
 const onCfgMethodChange = () => {
   cfgForm.provider = ''
@@ -2070,19 +2337,25 @@ const onCfgProviderChange = () => {
 watch(
   () => cfgForm.txnType,
   (val) => {
+    // Only auto-populate from the template in add mode — in edit mode this
+    // would clobber the config's real, already-edited component values.
+    if (cfgModal.mode === 'edit') return
     if (!val) { cfgForm.components = []; return }
     const key = `${cfgForm.paymentMethod}:${cfgForm.provider}:${val}`
     const tpl = cfgComponentTemplates[key]
     // Deep clone so edits don't mutate the template
-    cfgForm.components = tpl ? JSON.parse(JSON.stringify(tpl)) : []
+    cfgForm.components = tpl
+      ? JSON.parse(JSON.stringify(tpl)).map((c) => ({ ...c, __singleReceiver: false }))
+      : []
   }
 )
 
-// Auto-compute platform share (100 - others)
+// Auto-compute platform share (100 - others, now including aggregator)
 const autoplatformShare = (comp) => {
   const others = (comp.merchantShare ?? 0)
     + (comp.distributorShare ?? 0)
     + (comp.superDistributorShare ?? 0)
+    + (comp.aggregatorShare ?? 0)
   comp.platformShare = Math.max(0, 100 - others)
   return comp.platformShare
 }
@@ -2091,17 +2364,107 @@ const shareTotal = (comp) => {
   return (comp.merchantShare ?? 0)
     + (comp.distributorShare ?? 0)
     + (comp.superDistributorShare ?? 0)
+    + (comp.aggregatorShare ?? 0)
     + (comp.platformShare ?? 0)
+}
+
+// Flip a component between "split among parties" and "pay to a single
+// receiver" — see isIncomeComponent above for which components this
+// applies to. Clears the fields that don't apply to the new mode so a
+// stale value can't leak into the saved payload.
+const onToggleSingleReceiver = (comp, checked) => {
+  comp.__singleReceiver = checked
+  if (checked) {
+    comp.merchantShare = null
+    comp.distributorShare = null
+    comp.superDistributorShare = null
+    comp.aggregatorShare = null
+    comp.platformShare = null
+  } else {
+    comp.receiver = ''
+    comp.merchantShare = 0
+    comp.distributorShare = 0
+    comp.superDistributorShare = 0
+    comp.aggregatorShare = 0
+    comp.platformShare = 0
+  }
+}
+
+// Not every auto-populated template includes every component (e.g. UPI's
+// has no BANK_SHARE) — lets the aggregator add any ComponentType manually,
+// then edit its Charge Type/Value/Min/Max like any other component.
+// Defaults to FIXED ₹0 so it's a no-op until set.
+const addComponent = () => {
+  if (!newComponentType.value) return
+  if (cfgForm.components.some((c) => c.name === newComponentType.value)) return
+  cfgForm.components.push({
+    name: newComponentType.value, chargeType: 'FIXED', value: 0,
+    minValue: null, maxValue: null,
+    appliesOn: 'TRANSACTION',
+    merchantShare: null, distributorShare: null,
+    superDistributorShare: null, aggregatorShare: null, platformShare: null,
+    receiver: cfgDefaultReceiverByType[newComponentType.value] || '',
+    __singleReceiver: false,
+  })
+  newComponentType.value = ''
+}
+
+const removeComponent = (idx) => {
+  cfgForm.components.splice(idx, 1)
 }
 
 // ── Modal open/close ──────────────────────────────────────────────
 const openAddConfig = () => {
   Object.assign(cfgForm, defaultCfgForm())
+  cfgModal.mode = 'add'
+  cfgModal.editId = null
+  newComponentType.value = ''
+  cfgModal.open = true
+}
+
+// Populate from the REAL existing config (not a template) — id/
+// commissionConfigId are stripped from each component so updateCommission's
+// replace-all-components create gets fresh rows, not a request to re-create
+// specific existing ids.
+const openEditConfig = (cfg) => {
+  Object.assign(cfgForm, {
+    paymentMethod: cfg.paymentMethod,
+    provider: cfg.provider,
+    txnType: cfg.txnType,
+    minAmount: cfg.minAmount,
+    maxAmount: cfg.maxAmount,
+    minGmv: cfg.minGmv ?? null,
+    maxGmv: cfg.maxGmv ?? null,
+    isDefault: cfg.isDefault,
+    components: (cfg.components || []).map((c) => {
+      const { id, commissionConfigId, ...rest } = c
+      const hasShares = ['merchantShare', 'distributorShare', 'superDistributorShare', 'aggregatorShare', 'platformShare']
+        .some((f) => rest[f] != null && Number(rest[f]) > 0)
+      return { ...rest, __singleReceiver: !!rest.receiver && !hasShares }
+    }),
+  })
+  cfgModal.mode = 'edit'
+  cfgModal.editId = cfg.id
+  newComponentType.value = ''
   cfgModal.open = true
 }
 
 const closeCfgModal = () => {
   cfgModal.open = false
+}
+
+const deleteConfig = (cfg) => {
+  openConfirmModal(
+    'Disable Commission Config',
+    'This config will stop applying to new transactions but stays in history for audit purposes.',
+    'Disable',
+    async () => {
+      const res = await disableCommissionConfig(cfg.id)
+      const ok = res?.statusCode === '00' || res?.id
+      showSnack(ok ? 'Config disabled' : (res?.message || 'Failed to disable'), ok ? 'success' : 'error')
+      if (ok) getVendor(props.vendorId)
+    }
+  )
 }
 
 const saveCfg = async () => {
@@ -2113,8 +2476,16 @@ const saveCfg = async () => {
     showSnack('No components generated — check your selection', 'error')
     return
   }
-  // Validate shares sum to 100 for components that have shares
+  // Validate: single-receiver income components need a receiver selected;
+  // split-mode components with shares must total 100%.
   for (const comp of cfgForm.components) {
+    if (isIncomeComponent(comp) && comp.__singleReceiver) {
+      if (!comp.receiver) {
+        showSnack(`${comp.name}: select a receiver for the single-recipient component`, 'error')
+        return
+      }
+      continue
+    }
     if (comp.merchantShare != null) {
       autoplatformShare(comp) // sync platformShare
       const total = shareTotal(comp)
@@ -2136,14 +2507,24 @@ const saveCfg = async () => {
       txnType: cfgForm.txnType,
       minAmount: cfgForm.minAmount,
       maxAmount: cfgForm.maxAmount,
+      minGmv: cfgForm.paymentMethod === 'AEPS' ? (cfgForm.minGmv ?? null) : null,
+      maxGmv: cfgForm.paymentMethod === 'AEPS' ? (cfgForm.maxGmv ?? null) : null,
       active: true,
       isDefault: cfgForm.isDefault,
-      components: cfgForm.components,
+      // Strip the UI-only __singleReceiver flag before sending
+      // Strip the UI-only __singleReceiver flag and normalize the "None"
+      // option ('') to null — Prisma's CommissionReceiver enum rejects ''.
+      components: cfgForm.components.map(({ __singleReceiver, ...c }) => ({
+        ...c,
+        receiver: c.receiver || null,
+        dependsOn: c.dependsOn || null,
+      })),
     }
 
-    const res = await createCommissionConfig(payload)
+    const res = cfgModal.mode === 'edit'
+      ? await updateCommissionConfig(cfgModal.editId, payload)
+      : await createCommissionConfig(payload)
     const ok = res?.statusCode === '00' || res?.id
-
 
     showSnack(ok ? 'Config saved successfully' : (res?.message || 'Failed to save'), ok ? 'success' : 'error')
     if (ok) {
