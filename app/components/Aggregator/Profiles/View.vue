@@ -1296,7 +1296,7 @@ const genderLabel = (g) => g === 'M' ? 'Male' : g === 'F' ? 'Female' : g === 'O'
 const mstatusBadge      = (s) => { if (!s) return 'pill--amber'; if (['APPROVED','VERIFIED','ACTIVE'].includes(s)) return 'pill--emerald'; if (['REJECTED','FAILED','BLOCKED','SUSPENDED'].includes(s)) return 'pill--red'; return 'pill--amber'; };
 const mstatusBadgeClass = (s) => mstatusBadge(s);
 const docStatusPill = (s) => { if (s==='VERIFIED') return 'pill--emerald'; if (s==='REJECTED') return 'pill--red'; if (s==='SUBMITTED') return 'pill--sky'; return 'pill--amber'; };
-const cardStatusPill = (s) => { if (s==='ACTIVE') return 'pill--emerald'; if (['BLOCKED','EXPIRED','CANCELLED'].includes(s)) return 'pill--red'; return 'pill--amber'; };
+const cardStatusPill = (s) => { if (s==='ACTIVE') return 'pill--emerald'; if (s==='AVAILABIL') return 'pill--sky'; if (['BLOCKED','EXPIRED','CANCELLED'].includes(s)) return 'pill--red'; return 'pill--amber'; };
 
 // AVAILABIL is a fixed typo in the DB enum — display-only correction, the raw value is still sent/filtered on.
 const CARD_STATUS_LABELS = { AVAILABIL: 'AVAILABLE' };
