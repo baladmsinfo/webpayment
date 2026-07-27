@@ -89,6 +89,7 @@
               <th class="th-sno">#</th>
               <th>Transaction ID</th>
               <th class="th-hide-sm">Method</th>
+              <th class="th-hide-md">Beneficiary / Ref</th>
               <th>Amount</th>
               <th>Status</th>
               <th class="th-hide-md">Date</th>
@@ -115,6 +116,14 @@
                 <span class="chip chip-blue">{{ item.paymentMethod }}</span>
               </td>
 
+              <td class="th-hide-md">
+                <template v-if="item.paymentMethod === 'DMT' && item.dmtDetail">
+                  <p class="dmt-ben-name">{{ item.dmtDetail.beneficiaryName || '—' }}</p>
+                  <p class="dmt-ben-sub">{{ item.dmtDetail.bankName || item.dmtDetail.rrn || '—' }}</p>
+                </template>
+                <span v-else class="cell-dash">—</span>
+              </td>
+
               <td>
                 <span class="amount-val">₹{{ Number(item.amount).toLocaleString('en-IN') }}</span>
               </td>
@@ -137,7 +146,7 @@
             </tr>
 
             <tr v-if="displayedTransactions.length === 0">
-              <td colspan="7" class="empty-row">
+              <td colspan="8" class="empty-row">
                 <div class="empty-state">
                   <div class="empty-icon-wrap">
                     <span class="mdi mdi-swap-horizontal-bold"></span>
@@ -384,6 +393,10 @@ onMounted(() => { loadTransactions(); });
 .txn-method-sub { font-size: 10px; color: #94a3b8; margin-top: 2px; }
 
 .amount-val { font-size: 13px; font-weight: 700; color: #0f172a; font-family: 'DM Mono', monospace; }
+
+.dmt-ben-name { font-size: 12px; font-weight: 600; color: #334155; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dmt-ben-sub { font-size: 10.5px; color: #94a3b8; margin-top: 2px; font-family: 'DM Mono', monospace; }
+.cell-dash { color: #cbd5e1; }
 
 .chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 9999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
 .chip-green  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
