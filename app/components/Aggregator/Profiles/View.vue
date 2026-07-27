@@ -375,31 +375,81 @@
 
       <!-- ════ TAB: CARDS ════ -->
       <section v-show="activeTab === 'cards'" class="tab-section">
-        <div class="card" v-if="profile.cards?.length">
+        <div class="card">
           <div class="card-header">
             <div class="card-icon-dot" style="background:rgba(217,119,6,.1);color:#d97706"><span class="mdi mdi-credit-card-outline"></span></div>
             <h3 class="card-title">Cards</h3>
-            <span class="ml-auto"><span class="pill pill--sm pill--slate">{{ profile.cards.length }} record(s)</span></span>
+            <span class="ml-auto"><span class="pill pill--sm pill--slate">{{ cardsPagination.total }} record(s)</span></span>
           </div>
-          <div class="table-scroll">
+
+          <!-- Filter / Search bar -->
+          <div class="cards-filter-bar">
+            <div class="cf-field cf-field--search">
+              <span class="mdi mdi-magnify cf-search-icon"></span>
+              <input
+                class="cf-input cf-input--search"
+                v-model="cardFilters.search"
+                placeholder="Search by card ref ID, holder name or PAN…"
+              />
+            </div>
+            <select class="cf-select" v-model="cardFilters.status" @change="applyCardFilters">
+              <option value="">All Status</option>
+              <option v-for="s in CARD_STATUSES" :key="s" :value="s">{{ statusLabel(s) }}</option>
+            </select>
+            <select class="cf-select" v-model="cardFilters.type" @change="applyCardFilters">
+              <option value="">All Types</option>
+              <option v-for="t in CARD_TYPES" :key="t" :value="t">{{ t }}</option>
+            </select>
+            <select class="cf-select" v-model="cardFilters.network" @change="applyCardFilters">
+              <option value="">All Networks</option>
+              <option v-for="n in CARD_NETWORKS" :key="n" :value="n">{{ n }}</option>
+            </select>
+            <input type="date" class="cf-input cf-input--date" v-model="cardFilters.dateFrom" @change="applyCardFilters" title="Created from" />
+            <input type="date" class="cf-input cf-input--date" v-model="cardFilters.dateTo" @change="applyCardFilters" title="Created to" />
+            <button class="cf-reset-btn" title="Reset filters" @click="resetCardFilters">
+              <span class="mdi mdi-filter-remove-outline"></span>
+            </button>
+          </div>
+
+          <div v-if="cardsLoading" class="w-loading-row">Loading cards…</div>
+          <div class="table-scroll" v-else-if="cards.length">
             <table class="data-table">
-              <thead><tr><th>Holder</th><th>Masked PAN</th><th>Type</th><th>Network</th><th>Expiry</th><th>Status</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Card Ref ID</th><th>Holder</th><th>Masked PAN</th><th>Type</th><th>Network</th><th>Expiry</th><th>Status</th><th>Created</th><th></th>
+                </tr>
+              </thead>
               <tbody>
-                <tr v-for="c in profile.cards" :key="c.id">
+                <tr v-for="c in cards" :key="c.id">
+                  <td class="mono">{{ c.cardRefId || '—' }}</td>
                   <td>{{ c.cardHolderName }}</td>
                   <td class="mono">{{ c.maskedPan }}</td>
                   <td>{{ c.type }}</td>
                   <td>{{ c.network }}</td>
                   <td class="mono">{{ String(c.expiryMonth).padStart(2,'0') }}/{{ c.expiryYear }}</td>
-                  <td><span :class="['pill pill--sm', cardStatusPill(c.status)]">{{ c.status }}</span></td>
+                  <td><span :class="['pill pill--sm', cardStatusPill(c.status)]">{{ statusLabel(c.status) }}</span></td>
+                  <td>{{ fmtDate(c.createdAt) }}</td>
+                  <td>
+                    <button class="icon-close" title="Edit card" @click="openEditCard(c)"><span class="mdi mdi-pencil-outline"></span></button>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
-        <div class="empty-state" v-else>
-          <div class="empty-icon-wrap"><span class="mdi mdi-credit-card-off-outline"></span></div>
-          <p class="empty-title">No cards issued</p>
+          <div class="empty-state" v-else>
+            <div class="empty-icon-wrap"><span class="mdi mdi-credit-card-off-outline"></span></div>
+            <p class="empty-title">No cards found</p>
+          </div>
+
+          <div class="cards-pagination" v-if="cardsPagination.totalPages > 1">
+            <button class="cf-page-btn" :disabled="cardsPagination.page <= 1" @click="goToCardPage(cardsPagination.page - 1)">
+              <span class="mdi mdi-chevron-left"></span>
+            </button>
+            <span class="cf-page-info">Page {{ cardsPagination.page }} of {{ cardsPagination.totalPages }}</span>
+            <button class="cf-page-btn" :disabled="cardsPagination.page >= cardsPagination.totalPages" @click="goToCardPage(cardsPagination.page + 1)">
+              <span class="mdi mdi-chevron-right"></span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -563,83 +613,89 @@
             <div class="dialog-body">
               <div class="term-form-error" v-if="commissionModal.error">{{ commissionModal.error }}</div>
 
-              <div class="term-form-grid">
-                <div class="term-field">
-                  <label>Level</label>
-                  <select class="term-select" v-model="commissionModal.form.level" :disabled="commissionModal.mode === 'edit'">
-                    <option v-for="opt in COMMISSION_LEVELS" :key="opt" :value="opt">{{ opt }}</option>
+              <!-- CREATE: guided preset picker — only the approved commission templates -->
+              <template v-if="commissionModal.mode === 'create'">
+                <div class="term-field" style="margin-bottom:14px">
+                  <label>Commission Type</label>
+                  <select class="term-select" v-model="commissionModal.presetKey" @change="applyPresetDefaults(commissionModal.presetKey)">
+                    <option v-for="p in COMMISSION_PRESETS" :key="p.key" :value="p.key">{{ p.label }}</option>
                   </select>
+                  <p class="preset-hint">{{ selectedPreset?.description }}</p>
                 </div>
-                <div class="term-field">
-                  <label>Payment Method</label>
-                  <select class="term-select" v-model="commissionModal.form.paymentMethod" :disabled="commissionModal.mode === 'edit'">
-                    <option v-for="opt in PAYMENT_METHODS" :key="opt" :value="opt">{{ opt }}</option>
-                  </select>
-                </div>
-                <div class="term-field">
-                  <label>Provider</label>
-                  <select class="term-select" v-model="commissionModal.form.provider" :disabled="commissionModal.mode === 'edit'">
-                    <option v-for="opt in PROVIDERS" :key="opt" :value="opt">{{ opt }}</option>
-                  </select>
-                </div>
-                <div class="term-field">
-                  <label>Txn Type</label>
-                  <select class="term-select" v-model="commissionModal.form.txnType" :disabled="commissionModal.mode === 'edit'">
-                    <option v-for="opt in TXN_TYPES" :key="opt" :value="opt">{{ opt }}</option>
-                  </select>
-                </div>
-                <div class="term-field">
-                  <label>Min Amount</label>
-                  <input class="term-input" type="number" min="0" v-model.number="commissionModal.form.minAmount" />
-                </div>
-                <div class="term-field">
-                  <label>Max Amount</label>
-                  <input class="term-input" type="number" min="0" v-model.number="commissionModal.form.maxAmount" />
-                </div>
-              </div>
 
-              <div class="comp-section-hdr">
-                <p class="dialog-section-lbl" style="margin:0">Components</p>
-                <button class="comp-add-btn" @click="addComponentRow"><span class="mdi mdi-plus"></span> Add Component</button>
-              </div>
+                <div class="preset-identity-row">
+                  <span class="pill pill--slate">Payment: {{ selectedPreset?.paymentMethod }}</span>
+                  <span class="pill pill--slate">Txn Type: {{ selectedPreset?.txnType }}</span>
+                  <span v-if="!selectedPreset?.providerOptions" class="pill pill--slate">Provider: {{ selectedPreset?.provider }}</span>
+                  <div v-else class="term-field preset-provider-field">
+                    <label>Provider</label>
+                    <select class="term-select" v-model="commissionModal.provider">
+                      <option v-for="opt in selectedPreset.providerOptions" :key="opt" :value="opt">{{ opt }}</option>
+                    </select>
+                  </div>
+                </div>
 
-              <div class="comp-row" v-for="(comp, i) in commissionModal.form.components" :key="i">
-                <div class="term-field">
-                  <label>Name</label>
-                  <select class="term-select" v-model="comp.name">
-                    <option v-for="opt in COMPONENT_TYPES" :key="opt" :value="opt">{{ opt }}</option>
-                  </select>
+                <div class="term-form-grid term-form-grid--2" style="margin-top:16px">
+                  <div class="term-field">
+                    <label>Min Amount</label>
+                    <input class="term-input" type="number" v-model.number="commissionModal.minAmount" :placeholder="`e.g. ${selectedPreset?.minAmountDefault}`" />
+                  </div>
+                  <div class="term-field">
+                    <label>Max Amount</label>
+                    <input class="term-input" type="number" v-model.number="commissionModal.maxAmount" :placeholder="`e.g. ${selectedPreset?.maxAmountDefault}`" />
+                  </div>
                 </div>
-                <div class="term-field">
-                  <label>Charge Type</label>
-                  <select class="term-select" v-model="comp.chargeType">
-                    <option v-for="opt in CHARGE_TYPES" :key="opt" :value="opt">{{ opt }}</option>
-                  </select>
+
+                <p class="dialog-section-lbl">Components</p>
+                <div class="comp-row comp-row--guided" v-for="(comp, i) in selectedPreset?.components" :key="comp.name">
+                  <div class="comp-guided-tags">
+                    <span class="pill pill--indigo">{{ comp.name }}</span>
+                    <span class="pill pill--slate">{{ comp.chargeType }}</span>
+                    <span class="pill pill--slate">Receiver: {{ comp.receiver }}</span>
+                    <span class="pill pill--slate">Applies On: {{ comp.appliesOn }}</span>
+                    <span v-if="comp.dependsOn" class="pill pill--slate">Per ₹1000</span>
+                  </div>
+                  <div class="term-field">
+                    <label>{{ comp.valueLabel }}</label>
+                    <input class="term-input" type="number" step="0.01" v-model.number="commissionModal.componentValues[i]" :placeholder="`e.g. ${comp.valueDefault}`" />
+                  </div>
                 </div>
-                <div class="term-field">
-                  <label>Value</label>
-                  <input class="term-input" type="number" step="0.01" v-model.number="comp.value" />
+              </template>
+
+              <!-- EDIT: identity is locked (matches the existing slab); only amounts/values can change -->
+              <template v-else>
+                <div class="preset-identity-row">
+                  <span class="pill pill--slate">Payment: {{ commissionModal.editIdentity?.paymentMethod }}</span>
+                  <span class="pill pill--slate">Provider: {{ commissionModal.editIdentity?.provider }}</span>
+                  <span class="pill pill--slate">Txn Type: {{ commissionModal.editIdentity?.txnType }}</span>
                 </div>
-                <div class="term-field">
-                  <label>Receiver</label>
-                  <select class="term-select" v-model="comp.receiver">
-                    <option v-for="opt in RECEIVERS" :key="opt" :value="opt">{{ opt }}</option>
-                  </select>
+
+                <div class="term-form-grid term-form-grid--2" style="margin-top:16px">
+                  <div class="term-field">
+                    <label>Min Amount</label>
+                    <input class="term-input" type="number" v-model.number="commissionModal.minAmount" />
+                  </div>
+                  <div class="term-field">
+                    <label>Max Amount</label>
+                    <input class="term-input" type="number" v-model.number="commissionModal.maxAmount" />
+                  </div>
                 </div>
-                <div class="term-field">
-                  <label>Applies On</label>
-                  <select class="term-select" v-model="comp.appliesOn">
-                    <option v-for="opt in CHARGE_EVENTS" :key="opt" :value="opt">{{ opt }}</option>
-                  </select>
+
+                <p class="dialog-section-lbl">Components</p>
+                <div class="comp-row comp-row--guided" v-for="(comp, i) in commissionModal.editComponents" :key="comp.name + i">
+                  <div class="comp-guided-tags">
+                    <span class="pill pill--indigo">{{ comp.name }}</span>
+                    <span class="pill pill--slate">{{ comp.chargeType }}</span>
+                    <span class="pill pill--slate">Receiver: {{ comp.receiver }}</span>
+                    <span class="pill pill--slate">Applies On: {{ comp.appliesOn }}</span>
+                    <span v-if="comp.dependsOn" class="pill pill--slate">Per ₹1000</span>
+                  </div>
+                  <div class="term-field">
+                    <label>Value</label>
+                    <input class="term-input" type="number" step="0.01" v-model.number="comp.value" />
+                  </div>
                 </div>
-                <div class="term-field">
-                  <label>Depends On <span style="font-weight:400;color:#94a3b8">(optional)</span></label>
-                  <input class="term-input" v-model="comp.dependsOn" placeholder="e.g. PER_1000" />
-                </div>
-                <button class="comp-remove-btn" title="Remove component" :disabled="commissionModal.form.components.length <= 1" @click="removeComponentRow(i)">
-                  <span class="mdi mdi-trash-can-outline"></span>
-                </button>
-              </div>
+              </template>
             </div>
 
             <div class="w-modal-footer">
@@ -685,6 +741,64 @@
         </div>
       </Transition>
 
+      <!-- ░░ EDIT CARD MODAL ░░ -->
+      <Transition name="dialog-fade">
+        <div v-if="cardModal.open" class="dialog-overlay" @click.self="closeCardModal">
+          <div class="dialog dialog--card">
+            <div class="dialog-hdr">
+              <div>
+                <p class="dialog-title">Edit Card</p>
+                <p class="dialog-sub mono">{{ cardModal.cardRefId || '—' }}</p>
+              </div>
+              <button class="icon-close" @click="closeCardModal" :disabled="cardModal.saving"><span class="mdi mdi-close"></span></button>
+            </div>
+
+            <div class="dialog-body">
+              <div class="term-form-error" v-if="cardModal.error">{{ cardModal.error }}</div>
+
+              <div class="term-form-grid term-form-grid--2">
+                <div class="term-field">
+                  <label>Card Holder Name</label>
+                  <input class="term-input" v-model="cardModal.form.cardHolderName" placeholder="e.g. JOHN DOE" />
+                </div>
+                <div class="term-field">
+                  <label>Masked PAN</label>
+                  <input class="term-input mono" v-model="cardModal.form.maskedPan" placeholder="e.g. 524164XXXXXX4587" />
+                </div>
+                <div class="term-field">
+                  <label>Status</label>
+                  <select class="term-select" v-model="cardModal.form.status">
+                    <option v-for="s in CARD_STATUSES" :key="s" :value="s">{{ statusLabel(s) }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="confirm-reason">
+                <label class="confirm-reason__label">
+                  Reason <span class="confirm-reason__opt">(optional)</span>
+                </label>
+                <textarea
+                  v-model="cardModal.reason"
+                  class="confirm-reason__input"
+                  rows="2"
+                  placeholder="e.g. Corrected holder name per updated KYC…"
+                  maxlength="300"
+                ></textarea>
+                <p class="confirm-reason__count">{{ cardModal.reason.length }}/300</p>
+              </div>
+            </div>
+
+            <div class="w-modal-footer">
+              <button class="w-btn-ghost" @click="closeCardModal" :disabled="cardModal.saving">Cancel</button>
+              <button class="w-btn-primary" :disabled="cardModal.saving" @click="saveCard">
+                <span v-if="cardModal.saving" class="mdi mdi-loading spin"></span>
+                {{ cardModal.saving ? 'Saving…' : 'Save Changes' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
       <!-- ░░ TOAST ░░ -->
       <Transition name="toast">
         <div v-if="toast.show" :class="['toast', `toast--${toast.type}`]">
@@ -706,14 +820,20 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from "vue";
+import { ref, reactive, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useWalletProfileApi } from "~/composables/apis/useWalletProfileApi";
 import { useWalletCommissionApi } from "~/composables/apis/useWalletCommissionApi";
 
 const props = defineProps({ profileId: String });
 const router = useRouter();
-const { getWalletProfileById, updateWalletProfileStatus, getWalletProfileActivity } = useWalletProfileApi();
+const {
+  getWalletProfileById,
+  updateWalletProfileStatus,
+  getWalletProfileActivity,
+  getWalletProfileCards,
+  updateWalletProfileCard,
+} = useWalletProfileApi();
 const { getWalletCommissions, createWalletCommission, updateWalletCommission, disableWalletCommission } = useWalletCommissionApi();
 
 const profile    = reactive({});
@@ -738,7 +858,129 @@ const fetchActivity = async () => {
 
 watch(activeTab, (tab) => {
   if (tab === 'activity' && !activity.value.length) fetchActivity();
+  if (tab === 'cards' && !cards.value.length) fetchCards();
 });
+
+// ── Cards (list / filter / search / edit) ───────────────────────────
+const CARD_STATUSES = ['ACTIVE', 'BLOCKED', 'HOTLISTED', 'EXPIRED', 'INACTIVE', 'AVAILABIL', 'PENDING'];
+const CARD_TYPES    = ['DEBIT', 'CREDIT', 'PREPAID', 'CDM'];
+const CARD_NETWORKS = ['VISA', 'MASTERCARD', 'RUPAY', 'AMEX', 'DINERS'];
+
+const cards        = ref([]);
+const cardsLoading = ref(false);
+const cardsPagination = reactive({ page: 1, limit: 10, total: 0, totalPages: 0 });
+const cardFilters  = reactive({ search: '', status: '', type: '', network: '', dateFrom: '', dateTo: '' });
+
+let cardSearchTimer = null;
+
+const fetchCards = async (page = cardsPagination.page) => {
+  cardsLoading.value = true;
+  try {
+    const res = await getWalletProfileCards(props.profileId, {
+      page,
+      limit: cardsPagination.limit,
+      search: cardFilters.search,
+      status: cardFilters.status,
+      type: cardFilters.type,
+      network: cardFilters.network,
+      dateFrom: cardFilters.dateFrom,
+      dateTo: cardFilters.dateTo,
+    });
+    if (res?.statusCode === '00') {
+      cards.value = res.data || [];
+      Object.assign(cardsPagination, res.pagination || {});
+    }
+  } catch (e) {
+    console.error('Failed to fetch cards:', e);
+  } finally {
+    cardsLoading.value = false;
+  }
+};
+
+const applyCardFilters = () => fetchCards(1);
+
+const resetCardFilters = () => {
+  cardFilters.search = '';
+  cardFilters.status = '';
+  cardFilters.type = '';
+  cardFilters.network = '';
+  cardFilters.dateFrom = '';
+  cardFilters.dateTo = '';
+  fetchCards(1);
+};
+
+const goToCardPage = (page) => {
+  if (page < 1 || page > cardsPagination.totalPages) return;
+  fetchCards(page);
+};
+
+watch(() => cardFilters.search, () => {
+  clearTimeout(cardSearchTimer);
+  cardSearchTimer = setTimeout(() => fetchCards(1), 400);
+});
+
+const cardModal = reactive({
+  open: false,
+  saving: false,
+  error: '',
+  cardId: null,
+  cardRefId: '',
+  reason: '',
+  form: { cardHolderName: '', maskedPan: '', status: 'ACTIVE' },
+});
+
+const openEditCard = (c) => {
+  cardModal.cardId = c.id;
+  cardModal.cardRefId = c.cardRefId || '';
+  cardModal.error = '';
+  cardModal.reason = '';
+  cardModal.form = {
+    cardHolderName: c.cardHolderName || '',
+    maskedPan: c.maskedPan || '',
+    status: c.status || 'ACTIVE',
+  };
+  cardModal.open = true;
+};
+
+const closeCardModal = () => {
+  if (cardModal.saving) return;
+  cardModal.open = false;
+};
+
+const saveCard = async () => {
+  cardModal.error = '';
+
+  if (!cardModal.form.cardHolderName?.trim()) {
+    cardModal.error = 'Card holder name is required';
+    return;
+  }
+  if (!cardModal.form.maskedPan?.trim()) {
+    cardModal.error = 'Masked PAN is required';
+    return;
+  }
+
+  cardModal.saving = true;
+  try {
+    const res = await updateWalletProfileCard(props.profileId, cardModal.cardId, {
+      cardHolderName: cardModal.form.cardHolderName.trim(),
+      maskedPan: cardModal.form.maskedPan.trim(),
+      status: cardModal.form.status,
+      reason: cardModal.reason || undefined,
+    });
+
+    if (res?.statusCode === '00') {
+      showToast(res.message || 'Card updated successfully', 'success');
+      cardModal.open = false;
+      await fetchCards();
+    } else {
+      cardModal.error = res?.message || 'Failed to update card';
+    }
+  } catch (err) {
+    cardModal.error = err?.response?.data?.message || err?.message || 'Something went wrong';
+  } finally {
+    cardModal.saving = false;
+  }
+};
 
 // ── Toast ──────────────────────────────────────────────────────────
 const toast = reactive({ show: false, type: 'success', message: '' });
@@ -818,14 +1060,56 @@ const openDoc     = (doc) => { selectedDoc.value = doc; docDialog.value = true; 
 const openPreview = (url) => { previewUrl.value = url; imgPreview.value = true; };
 
 // ── Commissions (wallet-commission) ─────────────────────────────────
-const PAYMENT_METHODS  = ['UPI','CARD','NETBANKING','CASH','WALLET','AEPS','DMT','ALL','IMPS','NEFT','RTGS'];
-const PROVIDERS        = ['ISG','MOS','WORLD','BUCKSBOX','AXIS','NSDL','FINO','CANARA'];
-const TXN_TYPES        = ['CASH_WITHDRAWAL','BALANCE_ENQUIRY','MINI_STATEMENT','CASH_DEPOSIT','VALIDATION','DMT','PUS','PURCHASE','PAYIN','ADD_MONEY','TOPUP','TRANSFER','CARD_MAINTENANCE_FEE','NONE'];
-const COMPONENT_TYPES  = ['INTERCHANGE','CUSTOMER_FEE','GST','BANK_SHARE','BANK_COMMISSION','MERCHANT_COMMISSION','DISTRIBUTOR_COMMISSION','SUPER_DISTRIBUTOR_COMMISSION','AGGREGATOR_COMMISSION','PLATFORM_COMMISSION','PROCESSING_FEE','VENDOR_SHARE','CARD_ISSUANCE_FEE','CARD_MAINTENANCE_FEE'];
-const CHARGE_TYPES      = ['FIXED','PERCENTAGE','HYBRID'];
-const CHARGE_EVENTS     = ['TRANSACTION','VALIDATION','REGISTRATION'];
-const RECEIVERS         = ['MERCHANT','DISTRIBUTOR','SUPER_DISTRIBUTOR','VENDOR','AGGREGATOR','BANK','BENEFICIARY','PLATFORM','GOVERNMENT','BC_NETWORK'];
-const COMMISSION_LEVELS = ['SUPER_DISTRIBUTOR','DISTRIBUTOR','MERCHANT','PLATFORM'];
+// Only these guided commission templates may be created for a profile — this keeps
+// aggregators from mis-wiring arbitrary paymentMethod/provider/txnType/component combos.
+const COMMISSION_PRESETS = [
+  {
+    key: 'CARD_ISSUANCE_FEE',
+    label: 'Card Issuance Fee',
+    description: 'One-time fee charged when a new card is issued.',
+    paymentMethod: 'CARD',
+    provider: 'AXIS',
+    providerOptions: null,
+    txnType: 'PURCHASE',
+    minAmountDefault: 0,
+    maxAmountDefault: 100000,
+    components: [
+      { name: 'CARD_ISSUANCE_FEE', chargeType: 'FIXED', receiver: 'PLATFORM', appliesOn: 'REGISTRATION', dependsOn: null, valueDefault: 100, valueLabel: 'Issuance Fee (₹)' },
+    ],
+  },
+  {
+    key: 'CARD_MAINTENANCE_FEE',
+    label: 'Card Maintenance Fee',
+    description: 'Recurring fee for maintaining an already-issued card.',
+    paymentMethod: 'CARD',
+    provider: 'AXIS',
+    providerOptions: null,
+    txnType: 'CARD_MAINTENANCE_FEE',
+    minAmountDefault: 0,
+    maxAmountDefault: 100000,
+    components: [
+      { name: 'CARD_MAINTENANCE_FEE', chargeType: 'FIXED', receiver: 'PLATFORM', appliesOn: 'VALIDATION', dependsOn: null, valueDefault: 35, valueLabel: 'Maintenance Fee (₹)' },
+    ],
+  },
+  {
+    key: 'WALLET_ADD_MONEY',
+    label: 'Wallet Add Money',
+    description: 'Processing fee plus vendor/platform revenue share when money is added to the wallet.',
+    paymentMethod: 'WALLET',
+    provider: 'WALLET',
+    providerOptions: ['WALLET', 'AXIS'],
+    txnType: 'ADD_MONEY',
+    minAmountDefault: 1,
+    maxAmountDefault: 1000000,
+    components: [
+      { name: 'PROCESSING_FEE', chargeType: 'FIXED', receiver: 'PLATFORM', appliesOn: 'TRANSACTION', dependsOn: 'PER_1000', valueDefault: 3, valueLabel: 'Processing Fee (₹ per ₹1000)' },
+      { name: 'VENDOR_SHARE', chargeType: 'PERCENTAGE', receiver: 'VENDOR', appliesOn: 'TRANSACTION', dependsOn: null, valueDefault: 5, valueLabel: 'Vendor Share (%)' },
+      { name: 'PLATFORM_COMMISSION', chargeType: 'PERCENTAGE', receiver: 'PLATFORM', appliesOn: 'TRANSACTION', dependsOn: null, valueDefault: 1, valueLabel: 'Platform Commission (%)' },
+    ],
+  },
+];
+
+const numOr = (val, fallback) => (val === null || val === '' || val === undefined || isNaN(val)) ? fallback : Number(val);
 
 const commissionsLoading = ref(false);
 
@@ -841,38 +1125,39 @@ const fetchCommissions = async () => {
   }
 };
 
-const emptyComponent = () => ({ name: 'PLATFORM_COMMISSION', chargeType: 'FIXED', value: 0, dependsOn: '', receiver: 'PLATFORM', appliesOn: 'TRANSACTION' });
-
 const commissionModal = reactive({
   open: false,
   mode: 'create', // 'create' | 'edit'
   editingId: null,
   saving: false,
   error: '',
-  form: {
-    level: 'PLATFORM',
-    paymentMethod: 'CARD',
-    provider: 'AXIS',
-    txnType: 'PURCHASE',
-    minAmount: 0,
-    maxAmount: 100000,
-    components: [emptyComponent()],
-  },
+  // create mode
+  presetKey: COMMISSION_PRESETS[0].key,
+  provider: COMMISSION_PRESETS[0].provider,
+  componentValues: COMMISSION_PRESETS[0].components.map(() => null),
+  // shared + edit mode
+  minAmount: null,
+  maxAmount: null,
+  editIdentity: null,
+  editComponents: [],
 });
+
+const selectedPreset = computed(() => COMMISSION_PRESETS.find(p => p.key === commissionModal.presetKey) || null);
+
+const applyPresetDefaults = (key) => {
+  const preset = COMMISSION_PRESETS.find(p => p.key === key) || COMMISSION_PRESETS[0];
+  commissionModal.presetKey = preset.key;
+  commissionModal.provider = preset.provider;
+  commissionModal.minAmount = null;
+  commissionModal.maxAmount = null;
+  commissionModal.componentValues = preset.components.map(() => null);
+};
 
 const openCreateCommission = () => {
   commissionModal.mode = 'create';
   commissionModal.editingId = null;
   commissionModal.error = '';
-  commissionModal.form = {
-    level: 'PLATFORM',
-    paymentMethod: 'CARD',
-    provider: 'AXIS',
-    txnType: 'PURCHASE',
-    minAmount: 0,
-    maxAmount: 100000,
-    components: [emptyComponent()],
-  };
+  applyPresetDefaults(COMMISSION_PRESETS[0].key);
   commissionModal.open = true;
 };
 
@@ -880,22 +1165,17 @@ const openEditCommission = (c) => {
   commissionModal.mode = 'edit';
   commissionModal.editingId = c.id;
   commissionModal.error = '';
-  commissionModal.form = {
-    level: c.level || 'PLATFORM',
-    paymentMethod: c.paymentMethod,
-    provider: c.provider,
-    txnType: c.txnType,
-    minAmount: Number(c.minAmount),
-    maxAmount: Number(c.maxAmount),
-    components: (c.components?.length ? c.components : [emptyComponent()]).map(cm => ({
-      name: cm.name,
-      chargeType: cm.chargeType,
-      value: Number(cm.value),
-      dependsOn: cm.dependsOn || '',
-      receiver: cm.receiver || 'PLATFORM',
-      appliesOn: cm.appliesOn || 'TRANSACTION',
-    })),
-  };
+  commissionModal.editIdentity = { paymentMethod: c.paymentMethod, provider: c.provider, txnType: c.txnType };
+  commissionModal.minAmount = Number(c.minAmount);
+  commissionModal.maxAmount = Number(c.maxAmount);
+  commissionModal.editComponents = (c.components || []).map(cm => ({
+    name: cm.name,
+    chargeType: cm.chargeType,
+    receiver: cm.receiver || 'PLATFORM',
+    appliesOn: cm.appliesOn || 'TRANSACTION',
+    dependsOn: cm.dependsOn || null,
+    value: Number(cm.value),
+  }));
   commissionModal.open = true;
 };
 
@@ -904,55 +1184,59 @@ const closeCommissionModal = () => {
   commissionModal.open = false;
 };
 
-const addComponentRow    = () => commissionModal.form.components.push(emptyComponent());
-const removeComponentRow = (i) => {
-  if (commissionModal.form.components.length <= 1) return;
-  commissionModal.form.components.splice(i, 1);
-};
-
 const saveCommission = async () => {
   commissionModal.error = '';
 
-  const f = commissionModal.form;
-  if (Number(f.minAmount) > Number(f.maxAmount)) {
-    commissionModal.error = 'Min amount cannot exceed max amount';
-    return;
-  }
-  if (!f.components.length) {
-    commissionModal.error = 'At least one component is required';
-    return;
+  let payload;
+
+  if (commissionModal.mode === 'create') {
+    const preset = selectedPreset.value;
+    if (!preset) { commissionModal.error = 'Please choose a commission type'; return; }
+
+    const minAmount = numOr(commissionModal.minAmount, preset.minAmountDefault);
+    const maxAmount = numOr(commissionModal.maxAmount, preset.maxAmountDefault);
+    if (minAmount > maxAmount) { commissionModal.error = 'Min amount cannot exceed max amount'; return; }
+
+    payload = {
+      walletprofileId: props.profileId,
+      paymentMethod: preset.paymentMethod,
+      provider: preset.providerOptions ? commissionModal.provider : preset.provider,
+      txnType: preset.txnType,
+      minAmount,
+      maxAmount,
+      components: preset.components.map((comp, i) => ({
+        name: comp.name,
+        chargeType: comp.chargeType,
+        value: numOr(commissionModal.componentValues[i], comp.valueDefault),
+        receiver: comp.receiver,
+        appliesOn: comp.appliesOn,
+        ...(comp.dependsOn ? { dependsOn: comp.dependsOn } : {}),
+      })),
+    };
+  } else {
+    const minAmount = Number(commissionModal.minAmount);
+    const maxAmount = Number(commissionModal.maxAmount);
+    if (minAmount > maxAmount) { commissionModal.error = 'Min amount cannot exceed max amount'; return; }
+
+    payload = {
+      minAmount,
+      maxAmount,
+      components: commissionModal.editComponents.map(cm => ({
+        name: cm.name,
+        chargeType: cm.chargeType,
+        value: Number(cm.value),
+        receiver: cm.receiver,
+        appliesOn: cm.appliesOn,
+        ...(cm.dependsOn ? { dependsOn: cm.dependsOn } : {}),
+      })),
+    };
   }
 
   commissionModal.saving = true;
   try {
-    const componentsPayload = f.components.map(c => ({
-      name: c.name,
-      chargeType: c.chargeType,
-      value: Number(c.value),
-      dependsOn: c.dependsOn || undefined,
-      receiver: c.receiver,
-      appliesOn: c.appliesOn,
-    }));
-
-    let res;
-    if (commissionModal.mode === 'create') {
-      res = await createWalletCommission({
-        walletprofileId: props.profileId,
-        level: f.level,
-        paymentMethod: f.paymentMethod,
-        provider: f.provider,
-        txnType: f.txnType,
-        minAmount: Number(f.minAmount),
-        maxAmount: Number(f.maxAmount),
-        components: componentsPayload,
-      });
-    } else {
-      res = await updateWalletCommission(commissionModal.editingId, {
-        minAmount: Number(f.minAmount),
-        maxAmount: Number(f.maxAmount),
-        components: componentsPayload,
-      });
-    }
+    const res = commissionModal.mode === 'create'
+      ? await createWalletCommission(payload)
+      : await updateWalletCommission(commissionModal.editingId, payload);
 
     if (res?.success) {
       showToast(commissionModal.mode === 'create' ? 'Commission slab created' : 'Commission slab updated', 'success');
@@ -1013,6 +1297,10 @@ const mstatusBadge      = (s) => { if (!s) return 'pill--amber'; if (['APPROVED'
 const mstatusBadgeClass = (s) => mstatusBadge(s);
 const docStatusPill = (s) => { if (s==='VERIFIED') return 'pill--emerald'; if (s==='REJECTED') return 'pill--red'; if (s==='SUBMITTED') return 'pill--sky'; return 'pill--amber'; };
 const cardStatusPill = (s) => { if (s==='ACTIVE') return 'pill--emerald'; if (['BLOCKED','EXPIRED','CANCELLED'].includes(s)) return 'pill--red'; return 'pill--amber'; };
+
+// AVAILABIL is a fixed typo in the DB enum — display-only correction, the raw value is still sent/filtered on.
+const CARD_STATUS_LABELS = { AVAILABIL: 'AVAILABLE' };
+const statusLabel = (s) => CARD_STATUS_LABELS[s] || s;
 
 onMounted(async () => {
   try {
@@ -1264,14 +1552,14 @@ onMounted(async () => {
 .term-select:focus, .term-input:focus { border-color: #1142d4; box-shadow: 0 0 0 3px rgba(17,66,212,.08); }
 .term-select:disabled, .term-input:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
 
-.comp-section-hdr { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 10px; }
-.comp-add-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border: 1px dashed #1142d4; border-radius: 8px; background: rgba(17,66,212,.05); color: #1142d4; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; }
-.comp-add-btn:hover { background: rgba(17,66,212,.1); }
-.comp-row { display: grid; grid-template-columns: repeat(6, 1fr) auto; gap: 10px; align-items: end; padding: 12px; border: 1px solid #f1f5f9; border-radius: 10px; background: #fafafa; margin-bottom: 10px; }
-.comp-remove-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 1px solid #fca5a5; border-radius: 8px; background: #fee2e2; color: #991b1b; cursor: pointer; flex-shrink: 0; transition: background .15s; }
-.comp-remove-btn:hover:not(:disabled) { background: #fca5a5; }
-.comp-remove-btn:disabled { opacity: .4; cursor: not-allowed; }
-@media (max-width: 760px) { .term-form-grid { grid-template-columns: repeat(2, 1fr); } .comp-row { grid-template-columns: repeat(2, 1fr); } }
+.comp-row { padding: 12px; border: 1px solid #f1f5f9; border-radius: 10px; background: #fafafa; margin-bottom: 10px; }
+.comp-row--guided { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.comp-guided-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.comp-row--guided .term-field { min-width: 170px; }
+.preset-hint { font-size: 11.5px; color: #64748b; margin-top: 6px; line-height: 1.5; }
+.preset-identity-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.preset-provider-field { min-width: 150px; }
+@media (max-width: 760px) { .term-form-grid { grid-template-columns: repeat(2, 1fr); } }
 
 /* ── Modal footer / buttons (shared by commission + wallet-style modals) ── */
 .w-modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 16px 20px; border-top: 1px solid #f1f5f9; flex-shrink: 0; }
@@ -1281,4 +1569,29 @@ onMounted(async () => {
 .w-btn-primary { display: flex; align-items: center; gap: 6px; padding: 9px 20px; border: none; border-radius: 9px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; background: #1142d4; color: #fff; transition: background .15s; }
 .w-btn-primary:hover:not(:disabled) { background: #0e35a8; }
 .w-btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ── Cards filter bar ── */
+.cards-filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 18px; border-bottom: 1px solid #f1f5f9; background: #fafafa; }
+.cf-field { position: relative; display: flex; align-items: center; }
+.cf-field--search { flex: 1 1 240px; min-width: 200px; }
+.cf-search-icon { position: absolute; left: 10px; font-size: 15px; color: #94a3b8; pointer-events: none; }
+.cf-input, .cf-select { border: 1px solid #e2e8f0; border-radius: 9px; padding: 8px 11px; font-size: 12px; font-family: inherit; color: #0f172a; outline: none; background: #fff; transition: border .15s; }
+.cf-input--search { width: 100%; padding-left: 30px; }
+.cf-input--date { color: #475569; min-width: 132px; }
+.cf-select { min-width: 118px; cursor: pointer; }
+.cf-input:focus, .cf-select:focus { border-color: #1142d4; box-shadow: 0 0 0 3px rgba(17,66,212,.08); }
+.cf-reset-btn { width: 33px; height: 33px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; border-radius: 9px; background: #fff; color: #64748b; cursor: pointer; font-size: 15px; transition: all .15s; }
+.cf-reset-btn:hover { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+@media (max-width: 760px) { .cards-filter-bar { flex-direction: column; align-items: stretch; } .cf-field--search { flex: 1 1 auto; } }
+
+/* ── Cards pagination ── */
+.cards-pagination { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px 18px; border-top: 1px solid #f1f5f9; }
+.cf-page-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #475569; cursor: pointer; font-size: 16px; transition: all .15s; }
+.cf-page-btn:hover:not(:disabled) { background: #f1f5f9; color: #0f172a; }
+.cf-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+.cf-page-info { font-size: 12px; font-weight: 600; color: #64748b; }
+
+/* ── Edit Card dialog ── */
+.dialog--card { max-width: 560px; }
+.term-form-grid--2 { grid-template-columns: repeat(2, 1fr); }
 </style>

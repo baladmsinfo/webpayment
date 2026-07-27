@@ -112,6 +112,7 @@ const menus = ref([
     children: [
       { title: "Profile", icon: "mdi-cog-outline", url: "/aggregator/settings" },
       { title: "Wallet",   icon: "mdi-wallet-outline", url: "/aggregator/wallet"},
+      { title: "Cards",   icon: "mdi-credit-card-multiple-outline", url: "/aggregator/cards"},
     ],
   },
 ]);
