@@ -101,10 +101,34 @@
               <div class="smc-row__actions">
                 <button
                   :class="['smc-btn', profile.status ? 'smc-btn--danger' : 'smc-btn--success']"
-                  @click="openConfirm(!profile.status)">
+                  @click="openConfirm('status', !profile.status)">
                   <svg v-if="profile.status" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                   <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                   {{ profile.status ? 'Deactivate' : 'Activate' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="smc-divider"></div>
+
+            <!-- Lifecycle Status -->
+            <div class="smc-row">
+              <div class="smc-row__info">
+                <p class="smc-row__label">Lifecycle Status</p>
+                <p class="smc-row__desc">Represents the profile's onboarding and compliance stage</p>
+                <div class="smc-row__current">
+                  Current:
+                  <span :class="['pill', mstatusBadgeClass(profile.mstatus)]">{{ profile.mstatus }}</span>
+                </div>
+              </div>
+              <div class="smc-row__actions smc-row__actions--wrap">
+                <button
+                  v-for="ms in mstatusOptions"
+                  :key="ms.value"
+                  :class="['smc-chip', profile.mstatus === ms.value ? 'smc-chip--active' : 'smc-chip--idle', `smc-chip--${ms.color}`]"
+                  :disabled="profile.mstatus === ms.value"
+                  @click="openConfirm('mstatus', ms.value)">
+                  {{ ms.label }}
                 </button>
               </div>
             </div>
@@ -549,6 +573,10 @@
                   <span class="ccs-val font-mono">{{ profile.code }}</span>
                 </div>
                 <div class="ccs-row">
+                  <span class="ccs-label">Field</span>
+                  <span class="ccs-val">{{ confirmDialog.fieldLabel }}</span>
+                </div>
+                <div class="ccs-row">
                   <span class="ccs-label">Current value</span>
                   <span class="ccs-val" v-html="confirmDialog.fromHtml"></span>
                 </div>
@@ -830,6 +858,7 @@ const router = useRouter();
 const {
   getWalletProfileById,
   updateWalletProfileStatus,
+  updateWalletProfileMstatus,
   getWalletProfileActivity,
   getWalletProfileCards,
   updateWalletProfileCard,
@@ -994,36 +1023,62 @@ const showToast = (message, type = 'success') => {
   toastTimer = setTimeout(() => { toast.show = false; }, 3500);
 };
 
-// ── Confirm dialog (Activate / Deactivate) ──────────────────────────
+// ── Confirm dialog (Active Status / Lifecycle Status) ────────────────
 const confirmDialog = reactive({
   open: false,
+  type: null, // 'status' | 'mstatus'
   newValue: null,
   reason: '',
   loading: false,
   severity: 'info',
   title: '',
   subtitle: '',
+  fieldLabel: '',
   fromHtml: '',
   toHtml: '',
   actionLabel: '',
 });
 
+const mstatusOptions = [
+  { value: 'PENDING',   label: 'Pending',   color: 'amber'   },
+  { value: 'SUBMITTED', label: 'Submitted', color: 'sky'     },
+  { value: 'ONBOARDED', label: 'Onboarded', color: 'indigo'  },
+  { value: 'VERIFIED',  label: 'Verified',  color: 'emerald' },
+  { value: 'BLOCKED',   label: 'Blocked',   color: 'red'     },
+];
+
 const pillHtml = (text, cls) => `<span class="pill pill--sm pill--${cls}">${text}</span>`;
 
-const openConfirm = (newValue) => {
+const mstatusToColor = (s) => mstatusOptions.find(o => o.value === s)?.color || 'amber';
+
+const openConfirm = (type, newValue) => {
+  confirmDialog.type = type;
   confirmDialog.newValue = newValue;
   confirmDialog.reason = '';
   confirmDialog.loading = false;
 
-  const activating = newValue === true;
-  confirmDialog.severity = activating ? 'info' : 'danger';
-  confirmDialog.title = activating ? 'Activate Profile' : 'Deactivate Profile';
-  confirmDialog.subtitle = activating
-    ? 'The profile will be able to transact immediately.'
-    : 'The profile will not be able to transact.';
-  confirmDialog.fromHtml = pillHtml(profile.status ? 'Active' : 'Inactive', profile.status ? 'emerald' : 'red');
-  confirmDialog.toHtml   = pillHtml(activating ? 'Active' : 'Inactive', activating ? 'emerald' : 'red');
-  confirmDialog.actionLabel = activating ? 'Activate' : 'Deactivate';
+  if (type === 'status') {
+    const activating = newValue === true;
+    confirmDialog.severity = activating ? 'info' : 'danger';
+    confirmDialog.title = activating ? 'Activate Profile' : 'Deactivate Profile';
+    confirmDialog.subtitle = activating
+      ? 'The profile will be able to transact immediately.'
+      : 'The profile will not be able to transact.';
+    confirmDialog.fieldLabel = 'Active Status';
+    confirmDialog.fromHtml = pillHtml(profile.status ? 'Active' : 'Inactive', profile.status ? 'emerald' : 'red');
+    confirmDialog.toHtml   = pillHtml(activating ? 'Active' : 'Inactive', activating ? 'emerald' : 'red');
+    confirmDialog.actionLabel = activating ? 'Activate' : 'Deactivate';
+  }
+
+  if (type === 'mstatus') {
+    confirmDialog.severity = newValue === 'BLOCKED' ? 'danger' : 'info';
+    confirmDialog.title = 'Change Lifecycle Status';
+    confirmDialog.subtitle = 'This updates the profile\'s onboarding / compliance stage.';
+    confirmDialog.fieldLabel = 'Lifecycle (mstatus)';
+    confirmDialog.fromHtml = pillHtml(profile.mstatus, mstatusToColor(profile.mstatus));
+    confirmDialog.toHtml   = pillHtml(newValue, mstatusToColor(newValue));
+    confirmDialog.actionLabel = 'Confirm Change';
+  }
 
   confirmDialog.open = true;
 };
@@ -1037,13 +1092,19 @@ const executeUpdate = async () => {
   if (confirmDialog.loading) return;
   confirmDialog.loading = true;
   try {
-    const res = await updateWalletProfileStatus(props.profileId, {
-      status: confirmDialog.newValue,
-      reason: confirmDialog.reason || undefined,
-    });
+    const res = confirmDialog.type === 'mstatus'
+      ? await updateWalletProfileMstatus(props.profileId, {
+          mstatus: confirmDialog.newValue,
+          reason: confirmDialog.reason || undefined,
+        })
+      : await updateWalletProfileStatus(props.profileId, {
+          status: confirmDialog.newValue,
+          reason: confirmDialog.reason || undefined,
+        });
 
     if (res?.statusCode === '00') {
-      profile.status = confirmDialog.newValue;
+      if (confirmDialog.type === 'mstatus') profile.mstatus = confirmDialog.newValue;
+      else profile.status = confirmDialog.newValue;
       showToast(res.message || 'Updated successfully', 'success');
       confirmDialog.open = false;
     } else {
@@ -1478,11 +1539,23 @@ onMounted(async () => {
 .smc-row__desc  { font-size: 11.5px; color: #64748b; margin-bottom: 8px; line-height: 1.5; }
 .smc-row__current { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b; font-weight: 600; }
 .smc-row__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.smc-row__actions--wrap { flex-wrap: wrap; }
+.smc-divider { height: 1px; background: #f1f5f9; margin: 0 18px; }
 .smc-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
 .smc-btn--success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
 .smc-btn--success:hover { background: #a7f3d0; }
 .smc-btn--danger  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 .smc-btn--danger:hover  { background: #fca5a5; }
+.smc-chip { padding: 6px 14px; border-radius: 9px; font-size: 11.5px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .15s; font-family: inherit; }
+.smc-chip:disabled { cursor: default; opacity: .7; }
+.smc-chip--idle    { background: #f1f5f9; color: #64748b; }
+.smc-chip--active  { box-shadow: 0 0 0 2px currentColor; }
+.smc-chip--amber   { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.smc-chip--emerald { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.smc-chip--sky     { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+.smc-chip--indigo  { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+.smc-chip--red     { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.smc-chip--slate   { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
 
 /* ── Confirm Dialog ── */
 .dialog--confirm { max-width: 480px; }

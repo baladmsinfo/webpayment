@@ -74,6 +74,19 @@ export function useWalletProfileApi() {
     }
   };
 
+  const updateWalletProfileMstatus = async (
+    id: string,
+    payload: { mstatus: "PENDING" | "BLOCKED" | "ONBOARDED" | "SUBMITTED" | "VERIFIED"; reason?: string }
+  ): Promise<ApiResponse> => {
+    try {
+      const res = await post(`/aggregator/wallet-profiles/${id}/mstatus`, payload);
+      return res.data;
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? "Failed to update profile lifecycle status";
+      return { statusCode: "99", message: msg };
+    }
+  };
+
   const getWalletProfileActivity = async (id: string) => {
     try {
       const res = await get(`/aggregator/wallet-profiles/${id}/activity`);
@@ -148,6 +161,7 @@ export function useWalletProfileApi() {
     getWalletProfiles,
     getWalletProfileById,
     updateWalletProfileStatus,
+    updateWalletProfileMstatus,
     getWalletProfileActivity,
     getWalletProfileCards,
     updateWalletProfileCard,
