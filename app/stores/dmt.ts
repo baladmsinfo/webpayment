@@ -352,7 +352,17 @@ export const useDmtStore = defineStore("dmt", {
       const d = res.data;
       const dailyLimit = Number(d.AviabledayLimit ?? d.dailyLimit ?? 25000);
       const remainingLimit = Number(d.AviableLimit ?? d.remainingLimit ?? dailyLimit);
-      const beneficiaryList: any[] = Array.isArray(d.beneficiarydetail) ? d.beneficiarydetail : [];
+      // NSDL's XML→JSON conversion collapses a single repeated element to a bare object
+      // instead of a one-item array — with exactly one beneficiary, beneficiarydetail
+      // comes through as { beneficiaryid, beneficiaryname, ... } rather than
+      // [{ beneficiaryid, ... }]. Array.isArray(...) alone silently dropped that case,
+      // so a remitter with exactly one beneficiary showed an empty list.
+      const rawBd = d.beneficiarydetail;
+      const beneficiaryList: any[] = Array.isArray(rawBd)
+        ? rawBd
+        : rawBd && typeof rawBd === "object" && (rawBd.beneficiaryid != null || rawBd.accountnumber != null)
+          ? [rawBd]
+          : [];
       console.debug("[DMT] parsed beneficiaryList:", beneficiaryList.length, beneficiaryList);
 
       this.remitter = {
