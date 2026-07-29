@@ -430,8 +430,12 @@ export const useDmtStore = defineStore("dmt", {
       if (res.statusCode !== "00") {
         return { ok: false, message: res.message || "Could not add beneficiary" };
       }
+      // paymentSystem's addBeneficiary nests the new id under data.beneficiarydetail.beneficiaryId
+      // (see dmt.txn.controller.js#addBeneficiary) — reading data.beneficiaryId directly always
+      // missed and silently fell back to the account number as the id.
+      const bd = res.data?.beneficiarydetail ?? res.data ?? {};
       const ben: DmtBeneficiary = {
-        id: String(res.data?.BeneficiaryId ?? res.data?.beneficiaryId ?? payload.receiver_account_no),
+        id: String(bd.beneficiaryId ?? bd.BeneficiaryId ?? payload.receiver_account_no),
         name: payload.receivername,
         mobile: payload.receivermobilenumber,
         accountNumber: payload.receiver_account_no,
