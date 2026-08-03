@@ -117,6 +117,19 @@ export function useIsgOnboardingApi() {
     }
   };
 
+  // Self-service: marks the caller's own merchant record as KYC-submitted
+  // (mstatus -> SUBMITTED) so the dashboard shows the "awaiting verification"
+  // banner instead of "submit documents". Scoped server-side to the caller's
+  // JWT merchantId — no payload needed.
+  const isgMarkKycSubmitted = async () => {
+    try {
+      const res = await post(`/merchant/kyc/submit`, {});
+      return res.data;
+    } catch (err: any) {
+      return err?.response?.data ?? { statusCode: "01", message: "Network error" };
+    }
+  };
+
   const isgVerifyGst = async (payload: {
     gstin: string;
     consent: string;
@@ -142,6 +155,7 @@ export function useIsgOnboardingApi() {
     complianceInit,
     isgVerifyAccount,
     isgSubmitOnboarding,
+    isgMarkKycSubmitted,
     isgVerifyGst,
   };
 }

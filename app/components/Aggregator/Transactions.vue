@@ -8,11 +8,23 @@
         <p class="page-sub">Monitor and filter all platform transactions</p>
       </div>
       <div class="header-actions">
+        <button class="btn-export" :disabled="exporting || !total" @click="exportToExcel">
+          <span class="mdi" :class="exporting ? 'mdi-loading spin' : 'mdi-file-excel-outline'"></span>
+          {{ exporting ? 'Exporting…' : 'Export to Excel' }}
+        </button>
         <button class="icon-btn" @click="refresh" :class="{ spinning: loading }">
           <span class="mdi mdi-refresh"></span>
         </button>
       </div>
     </div>
+
+    <!-- ── Toast ── -->
+    <transition name="toast-fade">
+      <div v-if="toast.show" class="toast" :class="toast.type">
+        <span class="mdi" :class="toast.type === 'error' ? 'mdi-alert-circle-outline' : 'mdi-check-circle-outline'"></span>
+        {{ toast.message }}
+      </div>
+    </transition>
 
     <!-- ── Stats Strip ── -->
     <div class="stats-strip">
@@ -310,9 +322,10 @@
 import { ref, computed, onMounted, watch, reactive } from "vue";
 import { useAggregatorApi } from "@/composables/apis/useAggregatorApi";
 import { useRouter } from "vue-router";
+import * as XLSX from "xlsx-js-style";
 
 const router = useRouter();
-const { getAllAggregatorTransactions, getMerchants } = useAggregatorApi();
+const { getAllAggregatorTransactions, exportAggregatorTransactions, getMerchants } = useAggregatorApi();
 
 definePageMeta({ layout: 'aggregatorlayer', middleware: 'auth' });
 
@@ -450,6 +463,136 @@ async function loadMerchants() {
 
 async function refresh() { await loadTransactions(); }
 
+/* ── Toast ── */
+const toast = reactive({ show: false, type: 'success', message: '' });
+let toastTimer: any = null;
+function showToast(message: string, type: 'success' | 'error' = 'success') {
+  clearTimeout(toastTimer);
+  toast.message = message; toast.type = type; toast.show = true;
+  toastTimer = setTimeout(() => { toast.show = false; }, 3500);
+}
+
+/* ── Export to Excel (all filtered records, with commission/settlement detail) ── */
+const exporting = ref(false);
+
+const fmtNum = (v: any) => (v === null || v === undefined || v === '') ? '' : Number(v);
+const fmtDateForSheet = (d: string) => d ? new Date(d).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+
+const EXPORT_HEADERS = [
+  'S.No', 'Transaction ID', 'Reference ID', 'TR Number', 'RRN', 'Gateway Ref',
+  'Payment Method', 'Txn Type', 'Provider', 'Status', 'Response Code', 'Reason',
+  'Merchant Name', 'Merchant MID', 'Merchant Mobile', 'KYC Status',
+  'Terminal ID', 'Terminal Type', 'Vendor',
+  'Gross Amount', 'Customer Fee', 'Processing Fee',
+  'Merchant Commission', 'Vendor Commission', 'Aggregator Commission', 'Bank Commission',
+  'GST Amount', 'Total Commission', 'Net Amount',
+  'Settlement Status', 'Settlement ID', 'Settlement UTR', 'Settlement Amount',
+  'Settlement Commission', 'Settlement GST', 'Net Settlement', 'Settled At', 'Settlement Remarks',
+  'Snapshot Gross Amount', 'Snapshot Fee', 'Snapshot GST', 'Snapshot Merchant Amount',
+  'Snapshot Vendor Amount', 'Snapshot Aggregator Amount', 'Snapshot Bank Amount',
+  'Snapshot Platform Profit', 'Snapshot Net Amount',
+  'GL Posted', 'Settlement Confirmed', 'Reconciled At',
+  'Created At', 'Updated At',
+];
+
+function txnToExportRow(t: any, idx: number) {
+  const s = t.settlement || {};
+  const cs = t.commissionSnapshot || {};
+  const rec = t.reconciliation || {};
+  return [
+    idx + 1, t.id || '', t.transactionid || '', t.tr || '', t.rrn || '', t.gatewayRefId || '',
+    t.paymentMethod || '', t.txnType || '', t.provider || '', t.status || '', t.responseCode ?? '', t.reason || '',
+    t.merchant?.legal_name || '', t.merchant?.mid || '', t.merchant?.mobile_no || '', t.merchant?.mstatus || '',
+    t.terminal?.tid || '', t.terminal?.type || '', t.vendor?.name || '',
+    fmtNum(t.amount), fmtNum(t.totalfee), fmtNum(t.processingFee),
+    fmtNum(t.merchantCommission), fmtNum(t.vendorCommission), fmtNum(t.aggregatorCommission), fmtNum(t.bankCommission),
+    fmtNum(t.gstAmount), fmtNum(t.totalCommission), fmtNum(t.netAmount),
+    s.status || t.settlementStatus || '', s.id || '', s.settlementRef || '', fmtNum(s.amount),
+    fmtNum(s.commission), fmtNum(s.gst), fmtNum(s.netSettlement), fmtDateForSheet(s.settledAt), s.remarks || '',
+    fmtNum(cs.grossAmount), fmtNum(cs.fee), fmtNum(cs.gstAmount), fmtNum(cs.merchantAmount),
+    fmtNum(cs.vendorAmount), fmtNum(cs.aggregatorAmount), fmtNum(cs.bankAmount),
+    fmtNum(cs.platformProfit), fmtNum(cs.netAmount),
+    rec.posted ? 'Yes' : 'No', rec.settled ? 'Yes' : 'No', fmtDateForSheet(rec.reconciledAt),
+    fmtDateForSheet(t.createdAt), fmtDateForSheet(t.updatedAt),
+  ];
+}
+
+const headerCell = (text: string) => ({
+  t: 's', v: text,
+  s: {
+    font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    fill: { fgColor: { rgb: '1142D4' } },
+    border: { top: { style: 'thin', color: { rgb: 'B7B7B7' } }, bottom: { style: 'thin', color: { rgb: 'B7B7B7' } }, left: { style: 'thin', color: { rgb: 'B7B7B7' } }, right: { style: 'thin', color: { rgb: 'B7B7B7' } } },
+  },
+});
+const dataCell = (value: any) => {
+  const isNum = typeof value === 'number';
+  return {
+    t: isNum ? 'n' : 's', v: value ?? '',
+    s: {
+      font: { sz: 9, color: { rgb: '1A1A1A' } },
+      alignment: { horizontal: isNum ? 'right' : 'left', vertical: 'center' },
+      border: { top: { style: 'thin', color: { rgb: 'E2E8F0' } }, bottom: { style: 'thin', color: { rgb: 'E2E8F0' } }, left: { style: 'thin', color: { rgb: 'E2E8F0' } }, right: { style: 'thin', color: { rgb: 'E2E8F0' } } },
+    },
+  };
+};
+const exportColWidth = (values: any[]) => Math.min(40, Math.max(10, Math.max(...values.map(v => String(v ?? '').length)) + 3));
+
+async function exportToExcel() {
+  if (exporting.value) return;
+  exporting.value = true;
+  try {
+    const res = await exportAggregatorTransactions({
+      fromDate:  normalizeDate(filters.value.fromDate),
+      toDate:    normalizeDate(filters.value.toDate, true),
+      merchantId: filters.value.merchantId,
+      transactionMethod: props.transactionType,
+      status: filterStatus.value || undefined,
+      search: search.value || undefined,
+    });
+
+    const rows = res.data || [];
+    if (!rows.length) {
+      showToast('No transactions match the current filters', 'error');
+      return;
+    }
+
+    const dataRows = rows.map((t: any, idx: number) => txnToExportRow(t, idx));
+
+    const ws: any = {};
+    EXPORT_HEADERS.forEach((h, c) => { ws[XLSX.utils.encode_cell({ r: 0, c })] = headerCell(h); });
+    dataRows.forEach((row: any[], r: number) => {
+      row.forEach((val, c) => { ws[XLSX.utils.encode_cell({ r: r + 1, c })] = dataCell(val); });
+    });
+
+    ws['!ref']  = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: dataRows.length, c: EXPORT_HEADERS.length - 1 } });
+    ws['!cols'] = EXPORT_HEADERS.map((h, c) => ({ wch: exportColWidth([h, ...dataRows.map((r: any[]) => r[c])]) }));
+    ws['!rows'] = [{ hpt: 26 }, ...dataRows.map(() => ({ hpt: 18 }))];
+    ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob  = new Blob([wbout], { type: 'application/octet-stream' });
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `aggregator-transactions-${stamp}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    const note = res.meta?.truncated ? ` (first ${res.meta.returned} of ${res.meta.total} shown — refine filters to export the rest)` : '';
+    showToast(`Exported ${dataRows.length} transaction${dataRows.length === 1 ? '' : 's'} to Excel${note}`);
+  } catch (err: any) {
+    showToast(err?.response?.data?.message || 'Failed to export transactions', 'error');
+  } finally {
+    exporting.value = false;
+  }
+}
+
 function applyFilters() { page.value = 1; loadTransactions(); }
 function clearFilters() {
   filters.value = { fromDate: null, toDate: null, merchantId: null };
@@ -493,6 +636,31 @@ onMounted(() => { loadTransactions(); loadMerchants(); });
 .icon-btn:hover { background: #f1f5f9; color: #1142d4; }
 .icon-btn.spinning .mdi { animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.btn-export {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 16px; height: 36px; border-radius: 9px;
+  background: #d1fae5; border: 1px solid #a7f3d0; color: #065f46;
+  font-size: 12px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+  cursor: pointer; transition: all .13s;
+}
+.btn-export:hover:not(:disabled) { background: #a7f3d0; }
+.btn-export:disabled { opacity: .5; cursor: not-allowed; }
+.btn-export .mdi { font-size: 15px; }
+.btn-export .mdi.spin { animation: spin .8s linear infinite; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; top: 20px; right: 20px; z-index: 999;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  box-shadow: 0 8px 24px rgba(0,0,0,.14);
+}
+.toast.success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.toast.error   { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+.toast-fade-enter-active, .toast-fade-leave-active { transition: opacity .2s, transform .2s; }
+.toast-fade-enter-from, .toast-fade-leave-to { opacity: 0; transform: translateY(-8px); }
 
 /* ── Stats Strip ── */
 .stats-strip { display: flex; gap: 8px; flex-wrap: wrap; }
