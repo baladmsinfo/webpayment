@@ -352,7 +352,17 @@ export const useDmtStore = defineStore("dmt", {
       const d = res.data;
       const dailyLimit = Number(d.AviabledayLimit ?? d.dailyLimit ?? 25000);
       const remainingLimit = Number(d.AviableLimit ?? d.remainingLimit ?? dailyLimit);
-      const beneficiaryList: any[] = Array.isArray(d.beneficiarydetail) ? d.beneficiarydetail : [];
+      // NSDL's XML→JSON conversion collapses a single repeated element to a bare object
+      // instead of a one-item array — with exactly one beneficiary, beneficiarydetail
+      // comes through as { beneficiaryid, beneficiaryname, ... } rather than
+      // [{ beneficiaryid, ... }]. Array.isArray(...) alone silently dropped that case,
+      // so a remitter with exactly one beneficiary showed an empty list.
+      const rawBd = d.beneficiarydetail;
+      const beneficiaryList: any[] = Array.isArray(rawBd)
+        ? rawBd
+        : rawBd && typeof rawBd === "object" && (rawBd.beneficiaryid != null || rawBd.accountnumber != null)
+          ? [rawBd]
+          : [];
       console.debug("[DMT] parsed beneficiaryList:", beneficiaryList.length, beneficiaryList);
 
       this.remitter = {
@@ -430,8 +440,12 @@ export const useDmtStore = defineStore("dmt", {
       if (res.statusCode !== "00") {
         return { ok: false, message: res.message || "Could not add beneficiary" };
       }
+      // paymentSystem's addBeneficiary nests the new id under data.beneficiarydetail.beneficiaryId
+      // (see dmt.txn.controller.js#addBeneficiary) — reading data.beneficiaryId directly always
+      // missed and silently fell back to the account number as the id.
+      const bd = res.data?.beneficiarydetail ?? res.data ?? {};
       const ben: DmtBeneficiary = {
-        id: String(res.data?.BeneficiaryId ?? res.data?.beneficiaryId ?? payload.receiver_account_no),
+        id: String(bd.beneficiaryId ?? bd.BeneficiaryId ?? payload.receiver_account_no),
         name: payload.receivername,
         mobile: payload.receivermobilenumber,
         accountNumber: payload.receiver_account_no,

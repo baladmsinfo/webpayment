@@ -73,10 +73,11 @@ const toDelete = ref(null);
 
 onMounted(async () => {
   if (!store.remitter.senderId) { router.replace("/merchant/dmt/remitter"); return; }
-  // Defensive re-fetch: if the remitter was loaded but the beneficiary list came back
-  // empty (stale cache, direct navigation, or a prior mapping bug), retry once here so
-  // the page is self-sufficient rather than silently trusting the remitter step's fetch.
-  if (!store.beneficiaries.length) await refresh();
+  // Always re-fetch from the backend (remitter/details, sourced live from the bank) on
+  // arrival — rather than trusting whatever's in local state — so a beneficiary just
+  // added on the previous page is confirmed against the bank's own record, and the
+  // list is correct on any direct navigation too.
+  await refresh();
 });
 
 const refresh = async () => {
