@@ -68,6 +68,10 @@ export function useDmtTxnApi() {
     branch_contact?: string;
   }) => handle("beneficiary/add", () => post(`/dmt/txn/v1/beneficiary/add`, payload));
 
+  /** POST /dmt/txn/v1/beneficiary/delete — { senderId, receiver_account_no, receiverIfscCode } */
+  const beneficiaryDelete = (payload: { senderId: string; receiver_account_no: string; receiverIfscCode: string }) =>
+    handle("beneficiary/delete", () => post(`/dmt/txn/v1/beneficiary/delete`, payload));
+
   /** POST /dmt/txn/v1/transaction/otp — { senderId, amount, receiver_account_no, receiverIfscCode } */
   const transactionOtp = (payload: {
     senderId: string;
@@ -110,6 +114,7 @@ export function useDmtTxnApi() {
     beneficiaryAccountVerification,
     beneficiaryGet,
     beneficiaryAdd,
+    beneficiaryDelete,
     transactionOtp,
     transactionInstant,
     transactionCharges,

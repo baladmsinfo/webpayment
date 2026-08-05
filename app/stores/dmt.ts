@@ -468,6 +468,30 @@ export const useDmtStore = defineStore("dmt", {
       this.beneficiaries = this.beneficiaries.filter((b) => b.id !== id);
     },
 
+    /** Calls paymentSystem's /beneficiary/delete (bank-side removal) before dropping
+     *  the beneficiary from local state — mirrors addBeneficiary's bank-first pattern
+     *  so the UI never shows a beneficiary as removed unless NSDL confirmed it. */
+    async deleteBeneficiary(id: string) {
+      const ben = this.beneficiaries.find((b) => b.id === id);
+      if (!ben) return { ok: false, message: "Beneficiary not found" };
+
+      const { beneficiaryDelete } = useDmtTxnApi();
+      const res = await beneficiaryDelete({
+        senderId: this.remitter.senderId,
+        receiver_account_no: ben.accountNumber,
+        receiverIfscCode: ben.ifsc,
+      });
+
+      if (res.statusCode !== "00") {
+        return { ok: false, message: res.message || "Could not delete beneficiary" };
+      }
+
+      this.removeBeneficiary(id);
+      this.remitter.beneficiaryCount = Math.max(0, this.remitter.beneficiaryCount - 1);
+      if (this.selectedBeneficiary?.id === id) this.selectedBeneficiary = null;
+      return { ok: true };
+    },
+
     // ───────────────────────── Transfer ─────────────────────────
     async fetchCharges(amount: number) {
       this.amount = amount;
