@@ -132,6 +132,11 @@
                         <button class="signup-link" @click.prevent="router.push('/register')">Create an account</button>
                     </p>
 
+                    <p class="signup-row">
+                        New distributor?
+                        <button class="signup-link" @click.prevent="router.push('/register/vendor')">Create Distributor</button>
+                    </p>
+
                 </div>
 
                 <!-- Trust badges -->

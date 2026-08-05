@@ -215,6 +215,31 @@ export function useUsersApi() {
     }
   }
 
+  // Public self-service vendor (distributor) registration.
+  // Creates the vendor account and — unlike merchant `registor` — logs the
+  // caller in immediately, because the rest of the onboarding wizard
+  // (business type, document upload, submit) needs an authenticated request.
+  const registerVendor = async (payload) => {
+    try {
+      const res = await post("/vendor-register", payload);
+
+      if (res.data?.statusCode === "00" && res.data?.token) {
+        auth.setUser(res.data.user, res.data.token);
+
+        const authToken = useCookie("authToken", {
+          maxAge: 60 * 60 * 24 * 7,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
+        authToken.value = res.data.token;
+      }
+
+      return res.data;
+    } catch (err) {
+      return err?.response?.data;
+    }
+  };
+
   const fetchVendor = async (payload) => {
     try {
       const res = await get("/fetch-vendor", {
@@ -338,5 +363,5 @@ export function useUsersApi() {
     }
   };
 
-  return { SendOtp, getRole, logout, updateSessionDevice, updateSessionLocation, getSessionInfo, changeDefaultPassword, getWalletMe, getAllMerchantTransactions, getMerchantTransactionById, getAllTransactionsUnderVendor, addVendor, fetchVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
+  return { SendOtp, getRole, logout, updateSessionDevice, updateSessionLocation, getSessionInfo, changeDefaultPassword, getWalletMe, getAllMerchantTransactions, getMerchantTransactionById, getAllTransactionsUnderVendor, addVendor, fetchVendor, registerVendor, getTransactionsByMerchantId, resetPassword, loginAdmin, setPassword, forgotPassword, verifyOtp, getAggregator, fetchMerchant, fetchAccount, fetchTerminals, login, getProfile, registor };
 }
