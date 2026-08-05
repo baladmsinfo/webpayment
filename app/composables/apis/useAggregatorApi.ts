@@ -161,6 +161,37 @@ export function useAggregatorApi() {
         return { data: [], meta: {} };
     };
 
+    const exportAggregatorTransactions = async ({
+        status,
+        paymentMethod,
+        fromDate,
+        toDate,
+        merchantId,
+        transactionMethod,
+        search,
+    }: any = {}) => {
+        const query = new URLSearchParams({
+            ...(status && { status }),
+            ...(paymentMethod && { paymentMethod }),
+            ...(fromDate && { fromDate }),
+            ...(toDate && { toDate }),
+            ...(merchantId && { merchantId }),
+            ...(transactionMethod && { transactionMethod }),
+            ...(search && { search }),
+        }).toString();
+
+        const res = await get(`/aggregator/transaction/aggregator/export?${query}`);
+
+        if (res.data.statusCode === "00") {
+            return {
+                data: res.data.data,
+                meta: res.data.meta,
+            };
+        }
+
+        return { data: [], meta: {} };
+    };
+
 
     const getTransactionById = async (id: string) => {
         const res = await get(`/aggregator/transaction/${id}`);
@@ -251,6 +282,7 @@ export function useAggregatorApi() {
         getPaymentMethodSummary,
         getTransactionStatusSummary,
         getAllAggregatorTransactions,
+        exportAggregatorTransactions,
         getTransactions,
         getMerchants,
         getVendors,

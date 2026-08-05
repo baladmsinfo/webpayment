@@ -373,7 +373,17 @@
                 <h3 class="card-title">{{ svc.service }}</h3>
                 <span class="interface-chip">{{ svc.interface }}</span>
               </div>
-              <span class="ml-auto"><span :class="['pill', kycStatusPill(svc.status)]">{{ svc.status || 'PENDING' }}</span></span>
+              <span class="ml-auto svc-header-actions">
+                <button
+                  v-if="canOnboardIsgUpi(svc)"
+                  class="svc-onboard-btn"
+                  :disabled="onboardingSvcId === svc.id"
+                  @click="submitIsgOnboarding(svc)">
+                  <span class="mdi" :class="onboardingSvcId === svc.id ? 'mdi-loading spin' : 'mdi-rocket-launch-outline'"></span>
+                  {{ onboardingSvcId === svc.id ? 'Submitting…' : 'Onboard' }}
+                </button>
+                <span :class="['pill', kycStatusPill(svc.status)]">{{ svc.status || 'PENDING' }}</span>
+              </span>
             </div>
             <div class="svc-flags-row">
               <div class="svc-flag-item"><span class="svc-flag-label">Risk Level</span><span :class="['pill pill--sm', riskPill(svc.riskLevel)]">{{ svc.riskLevel || '—' }}</span></div>
@@ -1136,6 +1146,7 @@ import { useUsersApi } from "~/composables/apis/useUsersApi";
 import { useMerchantUpdateApi } from "~/composables/apis/useMerchantUpdateApi";
 import { useTerminalApi } from "~/composables/apis/useTerminalApi";
 import { useApi } from "~/composables/apis/useApi";
+import { useIsgOnboardingApi } from "~/composables/apis/Useisgonboardingapi";
 import { useAuthStore } from "~/stores/auth";
 
 const props = defineProps({ merchantId: String });
@@ -1144,6 +1155,7 @@ const { getMerchantById } = useAggregatorApi();
 const { getTransactionsByMerchantId } = useUsersApi();
 const { updateMerchantStatus, updateMerchantMstatus, updateMerchantRiskflag } = useMerchantUpdateApi();
 const { createTerminal, updateTerminal, updateTerminalStatus, deleteTerminal } = useTerminalApi();
+const { isgSubmitOnboarding } = useIsgOnboardingApi();
 const auth = useAuthStore();
 const canManageTerminals = computed(() => (auth.user?.role || 'aggregator') === 'aggregator');
 
@@ -1596,6 +1608,28 @@ const genderLabel = (g) => g === 'M' ? 'Male' : g === 'F' ? 'Female' : g === 'O'
 const mstatusBadge      = (s) => { if (!s) return 'pill--amber'; if (['APPROVED','VERIFIED','ACTIVE'].includes(s)) return 'pill--emerald'; if (['REJECTED','FAILED','BLOCKED'].includes(s)) return 'pill--red'; return 'pill--amber'; };
 const mstatusBadgeClass = (s) => mstatusBadge(s);
 const kycStatusPill = (s) => { if (!s || s === 'PENDING') return 'pill--amber'; if (['VERIFIED','APPROVED'].includes(s)) return 'pill--emerald'; if (['REJECTED','FAILED','SUSPENDED'].includes(s)) return 'pill--red'; if (['PROCESSING','UNDER_REVIEW','SUBMITTED'].includes(s)) return 'pill--sky'; return 'pill--amber'; };
+
+// Onboard action — only surfaced for the ISG/UPI service KYC while it's still PENDING
+const canOnboardIsgUpi = (svc) => (!svc.status || svc.status === 'PENDING') && svc.interface === 'ISG' && svc.service === 'UPI';
+
+const onboardingSvcId = ref(null);
+const submitIsgOnboarding = async (svc) => {
+  if (onboardingSvcId.value) return;
+  onboardingSvcId.value = svc.id;
+  try {
+    const res = await isgSubmitOnboarding({ merchantId: props.merchantId });
+    if (res?.statusCode === '00') {
+      showToast(res.message || 'ISG onboarding submitted successfully!');
+      await refreshMerchant();
+    } else {
+      showToast(res?.message || 'Submission failed. Please retry.', 'error');
+    }
+  } catch {
+    showToast('Something went wrong. Please try again.', 'error');
+  } finally {
+    onboardingSvcId.value = null;
+  }
+};
 const riskPill  = (s) => { if (!s) return 'pill--slate'; if (s === 'LOW') return 'pill--emerald'; if (s === 'MEDIUM') return 'pill--amber'; if (s === 'HIGH') return 'pill--red'; return 'pill--slate'; };
 const docStatusPill = (s) => { if (s==='VERIFIED') return 'pill--emerald'; if (s==='REJECTED') return 'pill--red'; if (s==='SUBMITTED') return 'pill--sky'; return 'pill--amber'; };
 const txnPill   = (s) => { if (['PAID','SUCCESS'].includes(s)) return 'pill--emerald'; if (['FAILED','CANCELLED'].includes(s)) return 'pill--red'; return 'pill--amber'; };
@@ -1707,6 +1741,10 @@ onMounted(async () => {
 /* ── KYC Service Cards ── */
 .svc-icon-badge { width: 34px; height: 34px; border-radius: 9px; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; }
 .interface-chip { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #e0e7ff; color: #4338ca; text-transform: uppercase; letter-spacing: .4px; white-space: nowrap; }
+.svc-header-actions { display: flex; align-items: center; gap: 10px; }
+.svc-onboard-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: none; background: #1142d4; color: #fff; cursor: pointer; transition: background .15s ease; }
+.svc-onboard-btn:hover { background: #0d34a8; }
+.svc-onboard-btn:disabled { background: #94a3b8; cursor: not-allowed; }
 .svc-flags-row  { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 12px 18px; border-bottom: 1px solid #f1f5f9; background: #fafafa; }
 .svc-flag-item  { display: flex; align-items: center; gap: 6px; }
 .svc-flag-label { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }

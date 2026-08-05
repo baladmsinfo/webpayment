@@ -683,6 +683,7 @@ const {
   isgVerifyPan,
   isgVerifyAccount,
   isgSubmitOnboarding,
+  isgMarkKycSubmitted,
   setVerifyOtp,
 } = useIsgOnboardingApi();
 
@@ -1060,7 +1061,8 @@ async function handleStep6Submit() {
   submitting.value = true;
   processingMsg.value = "Submitting ISG onboarding...";
   try {
-    const res = await isgSubmitOnboarding({ merchantId: merchantProfile.value?.id });
+    // const res = await isgSubmitOnboarding({ merchantId: merchantProfile.value?.id });
+    const res = await isgMarkKycSubmitted();
     if (res?.statusCode === "00") {
       submitResult.value = res?.data || null;
       showToast(res?.message || "ISG onboarding submitted successfully!");

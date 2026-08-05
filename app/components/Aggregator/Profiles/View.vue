@@ -1168,6 +1168,22 @@ const COMMISSION_PRESETS = [
       { name: 'PLATFORM_COMMISSION', chargeType: 'PERCENTAGE', receiver: 'PLATFORM', appliesOn: 'TRANSACTION', dependsOn: null, valueDefault: 1, valueLabel: 'Platform Commission (%)' },
     ],
   },
+  {
+    key: 'WALLET_WITHDRAWAL',
+    label: 'Wallet Withdrawal / Payout',
+    description: 'Processing fee plus vendor/platform revenue share when money is withdrawn or paid out from the wallet.',
+    paymentMethod: 'WALLET',
+    provider: 'WALLET',
+    providerOptions: ['WALLET', 'AXIS'],
+    txnType: 'TRANSFER',
+    minAmountDefault: 1,
+    maxAmountDefault: 1000000,
+    components: [
+      { name: 'PROCESSING_FEE', chargeType: 'FIXED', receiver: 'PLATFORM', appliesOn: 'TRANSACTION', dependsOn: 'PER_1000', valueDefault: 3, valueLabel: 'Processing Fee (₹ per ₹1000)' },
+      { name: 'VENDOR_SHARE', chargeType: 'PERCENTAGE', receiver: 'VENDOR', appliesOn: 'TRANSACTION', dependsOn: null, valueDefault: 5, valueLabel: 'Vendor Share (%)' },
+      { name: 'PLATFORM_COMMISSION', chargeType: 'PERCENTAGE', receiver: 'PLATFORM', appliesOn: 'TRANSACTION', dependsOn: null, valueDefault: 1, valueLabel: 'Platform Commission (%)' },
+    ],
+  },
 ];
 
 const numOr = (val, fallback) => (val === null || val === '' || val === undefined || isNaN(val)) ? fallback : Number(val);

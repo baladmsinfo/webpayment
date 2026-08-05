@@ -4,7 +4,8 @@
 
     <main class="admin-main" :class="{ 'admin-main-shifted': drawerOpen && !isMobile }">
       <div class="admin-main-inner">
-        <MerchantKycNotificationCard v-if="showKycBanner" />
+        <MerchantKycNotificationCard v-if="showKycPendingBanner" />
+        <MerchantKycVerificationPendingCard v-if="showKycSubmittedBanner" />
         <slot />
       </div>
     </main>
@@ -32,9 +33,10 @@ const auth = useAuthStore();
 const route = useRoute();
 const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
 const { verifiedServices, hasAEPS, hasDMT, hasWallet, loadMerchantServices } = useMerchantServices();
-const { isKycComplete, loadKycStatus } = useKycStatus();
+const { isKycPending, isKycSubmitted, loadKycStatus } = useKycStatus();
 
-const showKycBanner = computed(() => !isKycComplete.value && route.path !== "/merchant/onboarding/isg");
+const showKycPendingBanner   = computed(() => isKycPending.value   && route.path !== "/merchant/onboarding/isg");
+const showKycSubmittedBanner = computed(() => isKycSubmitted.value && route.path !== "/merchant/onboarding/isg");
 
 const Title = ref();
 

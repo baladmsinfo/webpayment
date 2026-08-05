@@ -1,17 +1,14 @@
 <template>
-  <v-container fluid>
-    <Onboarding :merchant-id="merchantId" />
-  </v-container>
+  <AggregatorMerchantsOnboarding :merchant-id="merchantId" />
 </template>
 
 <script setup>
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
+import AggregatorMerchantsOnboarding from "~/components/Aggregator/Merchants/Onboarding.vue";
+
+definePageMeta({ layout: 'aggregatorlayer', middleware: 'auth' });
 
 const route = useRoute();
 const merchantId = computed(() => route.params.id);
-
-// onMounted(() => {
-//   console.log("Merchant ID from route:", merchantId.value);
-// });
 </script>
