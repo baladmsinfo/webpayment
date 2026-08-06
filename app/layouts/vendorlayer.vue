@@ -4,6 +4,8 @@
 
     <main class="admin-main" :class="{ 'admin-main-shifted': drawerOpen && !isMobile }">
       <div class="admin-main-inner">
+        <VendorKycNotificationCard v-if="showKycPendingBanner" />
+        <VendorKycVerificationPendingCard v-if="showKycSubmittedBanner" />
         <slot />
       </div>
     </main>
@@ -19,14 +21,21 @@
 
 <script setup>
 import { ref, computed, provide, onMounted, onBeforeUnmount } from "vue"
+import { useRoute } from "vue-router"
 import { useVendorLinkedServiceApi } from '~/composables/apis/useVendorLinkedServiceApi'
 import { useAuthStore } from "@/stores/auth";
 import { useVendorApi } from "@/composables/apis/useVendorApi";
 import { useIdleTimer } from "~/composables/useIdleTimer";
+import { useVendorKycStatus } from "~/composables/useVendorKycStatus";
 
 const { getVendor } = useVendorApi();
 const auth = useAuthStore();
+const route = useRoute();
 const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
+const { isKycPending, isKycSubmitted, loadKycStatus } = useVendorKycStatus();
+
+const showKycPendingBanner   = computed(() => isKycPending.value   && route.path !== "/vendor/onboarding/self");
+const showKycSubmittedBanner = computed(() => isKycSubmitted.value && route.path !== "/vendor/onboarding/self");
 
 const Title = ref();
 
@@ -46,12 +55,6 @@ const menus = ref([
     title: "Dashboard",
     icon: "mdi-view-dashboard-outline",
     url: "/vendor/dashboard",
-    open: false,
-  },
-  {
-    title: "Wallet",
-    icon: "mdi-wallet-outline",
-    url: "/vendor/wallet",
     open: false,
   },
   {
@@ -89,6 +92,11 @@ const menus = ref([
         url: "/vendor/settings",
       },
       {
+        title: "wallet",
+        icon: "mdi-wallet-outline",
+        url: "/vendor/wallet",
+      },
+      {
         title: "Account Details",
         icon: "mdi-card-account-details-outline",
         url: "/vendor/account",
@@ -117,6 +125,8 @@ onMounted(async () => {
   }
   
   Title.value = auth.vendor?.name || "Bucksbox";
+
+  await loadKycStatus();
 
   try {
     const res = await getMyLinkedServices()

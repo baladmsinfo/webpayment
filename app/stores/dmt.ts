@@ -196,7 +196,17 @@ export const useDmtStore = defineStore("dmt", {
         };
         return "found" as const;
       }
-      if (res.statusCode === "01" || res.statusCode === "404") {
+      // NSDL's real GETCUSTONBOARDDTLS "not found" response is passed through
+      // as-is by build_response_message() (statusCode = raw NSDL responsecode,
+      // not normalized) — confirmed live: { statusCode: "99", message: "Failed.
+      // No Customer found", data: { respcode: "99", response: "Failed. No
+      // Customer found" } }. "99" is also NSDL's generic catch-all failure code
+      // for other errors, so only treat it as "not found" when the message
+      // text confirms it — anything else falls through to the real error path.
+      const notFoundMessage = /no\s*customer\s*found|customer\s*not\s*found/i.test(
+        res.message || res.data?.response || ""
+      );
+      if (res.statusCode === "01" || res.statusCode === "404" || (res.statusCode === "99" && notFoundMessage)) {
         this.customer = { ...emptyCustomer(), mobile };
         return "not-found" as const;
       }
@@ -212,7 +222,14 @@ export const useDmtStore = defineStore("dmt", {
         this.lastError = res.message || "Registration failed";
         return { ok: false, message: this.lastError };
       }
-      const referenceid = res.data?.referenceid ?? res.data?.referenceId;
+      // Onboarding()'s actual response (confirmed live) puts requestId, otp_status,
+      // and otp_reqid at the TOP level, not under data — and there is no
+      // res.data.referenceid at all. requestId is enc_const_data.requestreferenceno
+      // on the backend, the same value it uses internally for the auto-fired
+      // request_otp call, and the same one every later step (validate_otp,
+      // verify_UID, updatebiodetail, submit, statusCheck) expects as `referenceid`.
+      const referenceid = res.requestId != null ? String(res.requestId) : (res.data?.referenceid ?? res.data?.referenceId);
+      this.otpReqId = res.otp_reqid ?? res.data?.otp_reqid ?? null;
       this.customer = {
         ...emptyCustomer(),
         referenceid,
@@ -223,11 +240,24 @@ export const useDmtStore = defineStore("dmt", {
         state: payload.state,
       };
 
-      // Kick off mobile OTP straight away so the OTP screen has a live otpreqid + timer.
-      const otpRes = await customerRequestOtp(referenceid);
-      if (otpRes.statusCode === "00") {
-        this.otpReqId = otpRes.data?.otpreqid ?? otpRes.data?.otpReqId ?? null;
+      if (!referenceid) {
+        this.lastError = "Registration succeeded but no reference id was returned";
+        return { ok: false, message: this.lastError };
       }
+
+      // Onboarding() auto-fires request_otp server-side — res.otp_status reflects
+      // whether that succeeded. If it failed, resend explicitly rather than
+      // sending the user to an OTP screen with no live otpReqId.
+      if (res.otp_status === false) {
+        const otpRes = await customerRequestOtp(referenceid);
+        if (otpRes.statusCode === "00") {
+          this.otpReqId = otpRes.data?.otpreqid ?? otpRes.data?.otpReqId ?? this.otpReqId;
+        } else {
+          this.lastError = otpRes.message || "Registered, but could not send OTP";
+          return { ok: false, message: this.lastError };
+        }
+      }
+
       return { ok: true, otpRequired: true };
     },
 
@@ -273,7 +303,12 @@ export const useDmtStore = defineStore("dmt", {
       if (!this.customer.referenceid || !this.customer.aadhaarRaw) {
         return { ok: false, message: "Verify Aadhaar before capturing biometrics" };
       }
-      const { customerUpdateBiodetail, customerSubmit } = useDmtCustomerApi();
+      // updatebiodetail already chains NSDL confirmation + statusCheck server-side
+      // on success (see dmt.customer.controller.js#update_biodetail) and returns
+      // that combined result — a separate customerSubmit() call here would
+      // re-confirm the same referenceid a second time, risking NSDL rejecting
+      // the duplicate and failing an onboarding that had already succeeded.
+      const { customerUpdateBiodetail } = useDmtCustomerApi();
       const res = await customerUpdateBiodetail({
         PidData: pidData,
         aadhaarno: this.customer.aadhaarRaw,
@@ -282,7 +317,6 @@ export const useDmtStore = defineStore("dmt", {
       if (res.statusCode !== "00") {
         return { ok: false, message: res.message || "Biometric verification failed" };
       }
-      await customerSubmit();
       this.customer.kycVerified = true;
       this.customer.aadhaarRaw = null; // purge the raw number now that KYC is complete
       return { ok: true };
@@ -296,7 +330,7 @@ export const useDmtStore = defineStore("dmt", {
       let res = await remitterDetails(mobile);
       console.debug("[DMT] remitter/details raw response for", mobile, res);
 
-      if (res.statusCode !== "00" || !res.data) {
+      if (res.statusCode == "400") {
         console.debug("[DMT] remitter/details failed, auto-registering:", res.statusCode, res.message);
         const regRes = await remitterRegister(mobile);
         if (regRes.statusCode !== "00") {
@@ -318,7 +352,17 @@ export const useDmtStore = defineStore("dmt", {
       const d = res.data;
       const dailyLimit = Number(d.AviabledayLimit ?? d.dailyLimit ?? 25000);
       const remainingLimit = Number(d.AviableLimit ?? d.remainingLimit ?? dailyLimit);
-      const beneficiaryList: any[] = Array.isArray(d.beneficiarydetail) ? d.beneficiarydetail : [];
+      // NSDL's XML→JSON conversion collapses a single repeated element to a bare object
+      // instead of a one-item array — with exactly one beneficiary, beneficiarydetail
+      // comes through as { beneficiaryid, beneficiaryname, ... } rather than
+      // [{ beneficiaryid, ... }]. Array.isArray(...) alone silently dropped that case,
+      // so a remitter with exactly one beneficiary showed an empty list.
+      const rawBd = d.beneficiarydetail;
+      const beneficiaryList: any[] = Array.isArray(rawBd)
+        ? rawBd
+        : rawBd && typeof rawBd === "object" && (rawBd.beneficiaryid != null || rawBd.accountnumber != null)
+          ? [rawBd]
+          : [];
       console.debug("[DMT] parsed beneficiaryList:", beneficiaryList.length, beneficiaryList);
 
       this.remitter = {
@@ -352,8 +396,8 @@ export const useDmtStore = defineStore("dmt", {
 
     // ───────────────────────── Beneficiaries ─────────────────────────
     async verifyBeneficiaryAccount(payload: {
-      accountnumber: string;
-      ifsccode: string;
+      receiver_account_no: string;
+      receiverIfscCode: string;
       receivername: string;
       receivermobilenumber: string;
       receiveremailid?: string;
@@ -396,8 +440,12 @@ export const useDmtStore = defineStore("dmt", {
       if (res.statusCode !== "00") {
         return { ok: false, message: res.message || "Could not add beneficiary" };
       }
+      // paymentSystem's addBeneficiary nests the new id under data.beneficiarydetail.beneficiaryId
+      // (see dmt.txn.controller.js#addBeneficiary) — reading data.beneficiaryId directly always
+      // missed and silently fell back to the account number as the id.
+      const bd = res.data?.beneficiarydetail ?? res.data ?? {};
       const ben: DmtBeneficiary = {
-        id: String(res.data?.BeneficiaryId ?? res.data?.beneficiaryId ?? payload.receiver_account_no),
+        id: String(bd.beneficiaryId ?? bd.BeneficiaryId ?? payload.receiver_account_no),
         name: payload.receivername,
         mobile: payload.receivermobilenumber,
         accountNumber: payload.receiver_account_no,
@@ -420,6 +468,30 @@ export const useDmtStore = defineStore("dmt", {
       this.beneficiaries = this.beneficiaries.filter((b) => b.id !== id);
     },
 
+    /** Calls paymentSystem's /beneficiary/delete (bank-side removal) before dropping
+     *  the beneficiary from local state — mirrors addBeneficiary's bank-first pattern
+     *  so the UI never shows a beneficiary as removed unless NSDL confirmed it. */
+    async deleteBeneficiary(id: string) {
+      const ben = this.beneficiaries.find((b) => b.id === id);
+      if (!ben) return { ok: false, message: "Beneficiary not found" };
+
+      const { beneficiaryDelete } = useDmtTxnApi();
+      const res = await beneficiaryDelete({
+        senderId: this.remitter.senderId,
+        receiver_account_no: ben.accountNumber,
+        receiverIfscCode: ben.ifsc,
+      });
+
+      if (res.statusCode !== "00") {
+        return { ok: false, message: res.message || "Could not delete beneficiary" };
+      }
+
+      this.removeBeneficiary(id);
+      this.remitter.beneficiaryCount = Math.max(0, this.remitter.beneficiaryCount - 1);
+      if (this.selectedBeneficiary?.id === id) this.selectedBeneficiary = null;
+      return { ok: true };
+    },
+
     // ───────────────────────── Transfer ─────────────────────────
     async fetchCharges(amount: number) {
       this.amount = amount;
@@ -433,12 +505,12 @@ export const useDmtStore = defineStore("dmt", {
         const charge = Number(res.data.charge ?? res.data.txnCharge ?? 0);
         const gst = Number(res.data.gst ?? res.data.gstAmount ?? +(charge * 0.18).toFixed(2));
         const commission = Number(res.data.commission ?? res.data.merchantCommission ?? 0);
-        this.charges = { charge, gst, commission, totalDebit: +(amount + charge + gst).toFixed(2) };
+        this.charges = { charge, gst, commission, totalDebit: amount };
       } else {
         // Fallback slab so the screen still functions if charges/quote is unavailable.
         const charge = 15;
         const gst = +(charge * 0.18).toFixed(2);
-        this.charges = { charge, gst, commission: +(charge * 0.4).toFixed(2), totalDebit: +(amount + charge + gst).toFixed(2) };
+        this.charges = { charge, gst, commission: +(charge * 0.4).toFixed(2), totalDebit: amount };
       }
     },
 
@@ -484,6 +556,14 @@ export const useDmtStore = defineStore("dmt", {
           account_holder_name: this.selectedBeneficiary.name,
           receiverMobilenumber: this.selectedBeneficiary.mobile,
         });
+
+        // A pre-flight validation/server error (bad field, insufficient balance, wallet
+        // inactive, etc.) is rejected before NSDL is ever called and carries no `data` —
+        // it must stop here and surface the message, not fall through as an ambiguous
+        // PENDING transaction that the requery poller can never resolve.
+        if (res.statusCode !== "00" && !res.data) {
+          return { ok: false, message: res.message || "Transfer could not be processed" };
+        }
 
         const status = mapTxnStatus(res);
         const txn: DmtTransaction = {

@@ -100,6 +100,33 @@ export function useAggregatorApi() {
         }
     };
 
+    const updateVendorStatus = async (id: string, payload: { status: boolean; reason?: string }) => {
+        try {
+            const res = await post(`/aggregator/vendor/${id}/status`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor status" };
+        }
+    };
+
+    const updateVendorMstatus = async (id: string, payload: { mstatus: string; reason?: string }) => {
+        try {
+            const res = await post(`/aggregator/vendor/${id}/mstatus`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor status" };
+        }
+    };
+
+    const updateVendorRiskflag = async (id: string, payload: { riskflag: number; reason?: string }) => {
+        try {
+            const res = await post(`/aggregator/vendor/${id}/riskflag`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor risk flag" };
+        }
+    };
+
     const getAllAggregatorTransactions = async ({
         page = 1,
         limit = 20,
@@ -123,6 +150,37 @@ export function useAggregatorApi() {
 
 
         const res = await get(`/aggregator/transaction/aggregator/all?${query}`);
+
+        if (res.data.statusCode === "00") {
+            return {
+                data: res.data.data,
+                meta: res.data.meta,
+            };
+        }
+
+        return { data: [], meta: {} };
+    };
+
+    const exportAggregatorTransactions = async ({
+        status,
+        paymentMethod,
+        fromDate,
+        toDate,
+        merchantId,
+        transactionMethod,
+        search,
+    }: any = {}) => {
+        const query = new URLSearchParams({
+            ...(status && { status }),
+            ...(paymentMethod && { paymentMethod }),
+            ...(fromDate && { fromDate }),
+            ...(toDate && { toDate }),
+            ...(merchantId && { merchantId }),
+            ...(transactionMethod && { transactionMethod }),
+            ...(search && { search }),
+        }).toString();
+
+        const res = await get(`/aggregator/transaction/aggregator/export?${query}`);
 
         if (res.data.statusCode === "00") {
             return {
@@ -224,12 +282,16 @@ export function useAggregatorApi() {
         getPaymentMethodSummary,
         getTransactionStatusSummary,
         getAllAggregatorTransactions,
+        exportAggregatorTransactions,
         getTransactions,
         getMerchants,
         getVendors,
         getPendingVendors,
         getMerchantById,
         getVendorById,
+        updateVendorStatus,
+        updateVendorMstatus,
+        updateVendorRiskflag,
         getTransactionById,
         getDashboardAnalytics,
         getReportDmtSummary,

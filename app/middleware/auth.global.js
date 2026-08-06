@@ -2,7 +2,7 @@
 import { useAuthStore } from "@/stores/auth";
 import { useUsersApi } from "@/composables/apis/useUsersApi";
 
-const publicPaths = ["/", "/forgotpassword", "/setpassword"];
+const publicPaths = ["/", "/forgotpassword", "/setpassword", "/register", "/register/vendor"];
 
 const protectedNeutralPaths = ["/change-default-pass"];
 

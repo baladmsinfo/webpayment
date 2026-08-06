@@ -4,6 +4,8 @@
 
     <main class="admin-main" :class="{ 'admin-main-shifted': drawerOpen && !isMobile }">
       <div class="admin-main-inner">
+        <MerchantKycNotificationCard v-if="showKycPendingBanner" />
+        <MerchantKycVerificationPendingCard v-if="showKycSubmittedBanner" />
         <slot />
       </div>
     </main>
@@ -19,17 +21,24 @@
 
 <script setup>
 import { ref, computed, provide, watch, onMounted, onBeforeUnmount } from "vue"
+import { useRoute } from "vue-router"
 import { useUsersApi } from "~/composables/apis/useUsersApi"
 import { useAuthStore } from "@/stores/auth";
 import { useIdleTimer } from "~/composables/useIdleTimer";
+import { useMerchantServices } from "~/composables/useMerchantServices";
+import { useKycStatus } from "~/composables/useKycStatus";
 
 const { getProfile } = useUsersApi();
 const auth = useAuthStore();
+const route = useRoute();
 const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
+const { verifiedServices, hasAEPS, hasDMT, hasWallet, loadMerchantServices } = useMerchantServices();
+const { isKycPending, isKycSubmitted, loadKycStatus } = useKycStatus();
+
+const showKycPendingBanner   = computed(() => isKycPending.value   && route.path !== "/merchant/onboarding/isg");
+const showKycSubmittedBanner = computed(() => isKycSubmitted.value && route.path !== "/merchant/onboarding/isg");
 
 const Title = ref();
-
-const { fetchMerchant } = useUsersApi()
 
 /* ── DRAWER STATE — shared with MerchantNavbar via provide ── */
 const drawerOpen = ref(false)
@@ -50,12 +59,6 @@ const menus = ref([
     title: "Dashboard",
     icon: "mdi-view-dashboard-outline",
     url: "/merchant/dashboard",
-    open: false,
-  },
-  {
-    title: "Wallet",
-    icon: "mdi-wallet-outline",
-    url: "/merchant/wallet",
     open: false,
   },
   {
@@ -109,6 +112,11 @@ const menus = ref([
         icon: "mdi-card-account-details-outline",
         url: "/merchant/account",
       },
+      {
+        title: "Wallet",
+        icon: "mdi-wallet-outline",
+        url: "/merchant/wallet",
+      },
     ]
   },
 ])
@@ -122,8 +130,6 @@ const serviceIconMap = {
   POS:  "mdi-point-of-sale",
 }
 
-// Services with their own purpose-built history page (richer than the generic
-// per-service ledger at /merchant/payments/:service) route there instead.
 const serviceHistoryOverride = {
   DMT: "/merchant/dmt/history",
 }
@@ -143,28 +149,32 @@ onMounted(async () => {
   
   Title.value = auth.merchant?.legal_name || auth.merchant?.data?.legal_name || "Bucksbox";
 
-  try {
-    const res = await fetchMerchant()
-    const services = (res?.data?.services ?? []).filter(s => s.status === "VERIFIED")
+  await loadMerchantServices()
+  await loadKycStatus()
 
-    const txMenu = menus.value.find(m => m.title === "Transactions")
+  const services = verifiedServices.value
+  const txMenu = menus.value.find(m => m.title === "Transactions")
 
-    if (!services.length) {
-      menus.value = menus.value.filter(m => m.title !== "Transactions")
-      return
-    }
-
-    if (txMenu) {
-      const uniqueServices = [...new Set(services.map(s => s.service))]
-      txMenu.children = uniqueServices.map((svc) => ({
-        title: `${svc} Transactions`,
-        icon:  serviceIconMap[svc] ?? "mdi-clipboard-list-outline",
-        url:   serviceHistoryOverride[svc] ?? `/merchant/payments/${svc.toLowerCase()}`,
-      }))
-    }
-  } catch (e) {
-    console.error("Failed to fetch merchant services:", e)
+  if (txMenu && services.length) {
+    const uniqueServices = [...new Set(services.map(s => s.service))]
+    txMenu.children = uniqueServices.map((svc) => ({
+      title: `${svc} Transactions`,
+      icon:  serviceIconMap[svc] ?? "mdi-clipboard-list-outline",
+      url:   serviceHistoryOverride[svc] ?? `/merchant/payments/${svc.toLowerCase()}`,
+    }))
   }
+
+  const settingsMenu = menus.value.find(m => m.title === "Settings")
+  if (settingsMenu?.children && !hasWallet.value) {
+    settingsMenu.children = settingsMenu.children.filter(c => c.title !== "Wallet")
+  }
+
+  menus.value = menus.value.filter((m) => {
+    if (m.title === "Transactions")    return services.length > 0
+    if (m.title === "Money Transfer")  return hasDMT.value
+    if (m.title === "AEPS Services")   return hasAEPS.value
+    return true
+  })
 })
 
 onBeforeUnmount(() => window.removeEventListener("resize", onResize))

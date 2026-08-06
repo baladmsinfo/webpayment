@@ -46,8 +46,8 @@
         <p class="del-title">Delete beneficiary?</p>
         <p class="del-sub">Remove <b>{{ toDelete?.name }}</b> from this customer's beneficiary list. This can't be undone.</p>
         <div class="d-flex ga-2 mt-4">
-          <v-btn variant="tonal" block @click="deleteDialog = false">Cancel</v-btn>
-          <v-btn :color="BX.error" variant="flat" block @click="confirmDelete">Delete</v-btn>
+          <v-btn variant="tonal" block :disabled="deleting" @click="deleteDialog = false">Cancel</v-btn>
+          <v-btn :color="BX.error" variant="flat" block :loading="deleting" @click="confirmDelete">Delete</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -73,10 +73,11 @@ const toDelete = ref(null);
 
 onMounted(async () => {
   if (!store.remitter.senderId) { router.replace("/merchant/dmt/remitter"); return; }
-  // Defensive re-fetch: if the remitter was loaded but the beneficiary list came back
-  // empty (stale cache, direct navigation, or a prior mapping bug), retry once here so
-  // the page is self-sufficient rather than silently trusting the remitter step's fetch.
-  if (!store.beneficiaries.length) await refresh();
+  // Always re-fetch from the backend (remitter/details, sourced live from the bank) on
+  // arrival — rather than trusting whatever's in local state — so a beneficiary just
+  // added on the previous page is confirmed against the bank's own record, and the
+  // list is correct on any direct navigation too.
+  await refresh();
 });
 
 const refresh = async () => {
@@ -105,13 +106,22 @@ const onEdit = (ben) => {
 
 const onDeleteRequest = (ben) => { toDelete.value = ben; deleteDialog.value = true; };
 
-const confirmDelete = () => {
-  // NSDL's documented DMT operation set has no beneficiary-delete endpoint yet —
-  // this removes it from the agent's local list only. Wire a real call here once
-  // paymentSystem exposes one.
-  store.removeBeneficiary(toDelete.value.id);
-  notify(`${toDelete.value.name} removed from beneficiary list`, "success");
-  deleteDialog.value = false;
+const deleting = ref(false);
+
+const confirmDelete = async () => {
+  if (deleting.value || !toDelete.value) return;
+  deleting.value = true;
+  try {
+    const res = await store.deleteBeneficiary(toDelete.value.id);
+    if (res.ok) {
+      notify(`${toDelete.value.name} removed from beneficiary list`, "success");
+      deleteDialog.value = false;
+    } else {
+      notify(res.message || "Could not delete beneficiary", "error");
+    }
+  } finally {
+    deleting.value = false;
+  }
 };
 </script>
 

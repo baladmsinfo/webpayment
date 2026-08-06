@@ -107,7 +107,7 @@
             </div>
             <div class="info-row" v-if="txn.merchantId"><span class="info-key">Merchant ID</span><span class="info-val mono">{{ txn.merchantId }}</span></div>
             <div class="info-row" v-if="txn.merchant?.mobile_no"><span class="info-key">Mobile</span><span class="info-val mono">{{ txn.merchant.mobile_no }}</span></div>
-            <div class="info-row" v-if="txn.merchant?.interface"><span class="info-key">Interface</span><span class="info-val">{{ txn.merchant.interface }}</span></div>
+            <!-- <div class="info-row" v-if="txn.merchant?.interface"><span class="info-key">Interface</span><span class="info-val">{{ txn.merchant.interface }}</span></div> -->
             <div class="info-row" v-if="txn.merchant?.mstatus">
               <span class="info-key">KYC Status</span>
               <span class="chip" :class="kycChip(txn.merchant.mstatus)"><span class="chip-dot"></span>{{ txn.merchant.mstatus }}</span>

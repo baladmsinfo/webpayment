@@ -25,9 +25,9 @@ export function useDmtTxnApi() {
     }
   };
 
-  /** POST /dmt/txn/v1/remitter/register — { mobilenumber } */
-  const remitterRegister = (mobilenumber: string) =>
-    handle("remitter/register", () => post(`/dmt/txn/v1/remitter/register`, { mobilenumber }));
+  /** POST /dmt/txn/v1/remitter/register — { sender_mobilenumber } (senderId also accepted upstream) */
+  const remitterRegister = (sender_mobilenumber: string) =>
+    handle("remitter/register", () => post(`/dmt/txn/v1/remitter/register`, { sender_mobilenumber }));
 
   /** POST /dmt/txn/v1/remitter/details — { sender_mobilenumber } (senderId also accepted upstream) */
   const remitterDetails = (sender_mobilenumber: string) =>
@@ -36,11 +36,15 @@ export function useDmtTxnApi() {
   /**
    * POST /dmt/txn/v1/beneficiary/accountVerification
    * Penny-drop style verification before a beneficiary is added.
+   * Field names match dmt.txn.controller.js#accountVerification's request
+   * body exactly (receiver_account_no/receiverIfscCode, same convention as
+   * beneficiaryAdd below) — this previously sent accountnumber/ifsccode,
+   * which the backend never read, so every verification call failed.
    */
   const beneficiaryAccountVerification = (payload: {
     sender_mobilenumber: string;
-    accountnumber: string;
-    ifsccode: string;
+    receiver_account_no: string;
+    receiverIfscCode: string;
     receivername: string;
     receivermobilenumber: string;
     receiveremailid?: string;
@@ -63,6 +67,10 @@ export function useDmtTxnApi() {
     state?: string;
     branch_contact?: string;
   }) => handle("beneficiary/add", () => post(`/dmt/txn/v1/beneficiary/add`, payload));
+
+  /** POST /dmt/txn/v1/beneficiary/delete — { senderId, receiver_account_no, receiverIfscCode } */
+  const beneficiaryDelete = (payload: { senderId: string; receiver_account_no: string; receiverIfscCode: string }) =>
+    handle("beneficiary/delete", () => post(`/dmt/txn/v1/beneficiary/delete`, payload));
 
   /** POST /dmt/txn/v1/transaction/otp — { senderId, amount, receiver_account_no, receiverIfscCode } */
   const transactionOtp = (payload: {
@@ -106,6 +114,7 @@ export function useDmtTxnApi() {
     beneficiaryAccountVerification,
     beneficiaryGet,
     beneficiaryAdd,
+    beneficiaryDelete,
     transactionOtp,
     transactionInstant,
     transactionCharges,

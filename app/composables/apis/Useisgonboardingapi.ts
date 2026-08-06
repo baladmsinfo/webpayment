@@ -22,11 +22,32 @@ export function useIsgOnboardingApi() {
       return err?.response?.data ?? { statusCode: "01", message: "Network error" };
     }
   };
+
+  const setVerifyOtp = async (merchantId: string) => {
+    try {
+      const res = await post(`/onboarding/upi/isg/set-verify-otp`, { merchantId });
+      return res;
+    } catch (err: any) {
+      return err?.response?.data ?? { statusCode: "01", message: "Network error" };
+    }
+  };
   // ─────────────────────────────────────────────────────────────
 
   const isgGetMerchantForOnboarding = async (id: string) => {
     try {
       const res = await get(`/onboarding/merchants/onboarding/${id}`);
+      return res.data;
+    } catch (err: any) {
+      return err?.response?.data ?? { statusCode: "01", message: "Network error" };
+    }
+  };
+
+  // Self-service variant — resolves the merchant from the caller's own JWT
+  // (no id param), same endpoint paymentapp's mobile app uses for merchant
+  // self-registration onboarding.
+  const isgGetOwnMerchantForOnboarding = async () => {
+    try {
+      const res = await get(`/onboarding/merchants/onboarding`);
       return res.data;
     } catch (err: any) {
       return err?.response?.data ?? { statusCode: "01", message: "Network error" };
@@ -96,6 +117,19 @@ export function useIsgOnboardingApi() {
     }
   };
 
+  // Self-service: marks the caller's own merchant record as KYC-submitted
+  // (mstatus -> SUBMITTED) so the dashboard shows the "awaiting verification"
+  // banner instead of "submit documents". Scoped server-side to the caller's
+  // JWT merchantId — no payload needed.
+  const isgMarkKycSubmitted = async () => {
+    try {
+      const res = await post(`/merchant/kyc/submit`, {});
+      return res.data;
+    } catch (err: any) {
+      return err?.response?.data ?? { statusCode: "01", message: "Network error" };
+    }
+  };
+
   const isgVerifyGst = async (payload: {
     gstin: string;
     consent: string;
@@ -113,12 +147,15 @@ export function useIsgOnboardingApi() {
   return {
     isgSendOtp,
     isgVerifyOtp,
+    setVerifyOtp,
     isgGetMerchantForOnboarding,
+    isgGetOwnMerchantForOnboarding,
     isgVerifyPan,
     uploadDoc,
     complianceInit,
     isgVerifyAccount,
     isgSubmitOnboarding,
+    isgMarkKycSubmitted,
     isgVerifyGst,
   };
 }

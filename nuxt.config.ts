@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       API_ENDPOINT: process.env.NUXT_PUBLIC_API_URL,
+      BRAND_NAME: process.env.NUXT_PUBLIC_BRAND_NAME,
     },
   },
 

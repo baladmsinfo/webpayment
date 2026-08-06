@@ -127,6 +127,16 @@
                         {{ loading ? 'Signing in…' : 'Sign In' }}
                     </button>
 
+                    <p class="signup-row">
+                        New merchant?
+                        <button class="signup-link" @click.prevent="router.push('/register')">Create an account</button>
+                    </p>
+
+                    <p class="signup-row">
+                        New distributor?
+                        <button class="signup-link" @click.prevent="router.push('/register/vendor')">Create Distributor</button>
+                    </p>
+
                 </div>
 
                 <!-- Trust badges -->
@@ -267,13 +277,13 @@ async function onSubmit() {
         show: true,
         message: 'No user found for our services. Please contact support.',
       };
+      loading.value = false;
     }
   } catch (e) {
     alert.value = {
       show: true,
       message: e?.data?.message || 'Invalid credentials. Please try again.',
     };
-  } finally {
     loading.value = false;
   }
 }
@@ -621,6 +631,29 @@ async function onSubmit() {
 }
 
 .forgot-link:hover {
+    opacity: .75;
+}
+
+.signup-row {
+    text-align: center;
+    font-size: 12.5px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.signup-link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #1142d4;
+    font-family: 'DM Sans', sans-serif;
+    padding: 0;
+    margin-left: 4px;
+}
+
+.signup-link:hover {
     opacity: .75;
 }
 

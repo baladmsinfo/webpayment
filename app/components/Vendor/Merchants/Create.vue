@@ -12,6 +12,21 @@
             <div class="form-scroll">
                 <div class="form-inner">
 
+                    <!-- ── VENDOR NOT APPROVED / INACTIVE ── -->
+                    <div v-if="!vendorStatusLoading && !vendorApproved" class="form-section vendor-block-notice">
+                        <v-icon size="22" color="#b45309">mdi-alert-circle-outline</v-icon>
+                        <div>
+                            <p class="vendor-block-notice__title">Vendor approval required</p>
+                            <p class="vendor-block-notice__desc">
+                                Your vendor account lifecycle status is currently
+                                <strong>{{ auth.vendor?.mstatus || 'PENDING' }}</strong>
+                                and your account is
+                                <strong>{{ auth.vendor?.status ? 'Active' : 'Inactive' }}</strong>.
+                                Merchant creation is only available once your vendor account is Active and Approved.
+                            </p>
+                        </div>
+                    </div>
+
                     <v-form ref="merchantForm" v-model="validForm">
 
                         <!-- ── MERCHANT PROFILE ── -->
@@ -428,7 +443,8 @@
                                 <button type="button" class="btn-secondary" @click="router.back()">
                                     Cancel
                                 </button>
-                                <button type="button" class="btn-primary" :disabled="!confirmDetails || submitting"
+                                <button type="button" class="btn-primary"
+                                    :disabled="!confirmDetails || submitting || !vendorApproved"
                                     @click="submitMerchant">
                                     <span v-if="submitting">Submitting...</span>
                                     <template v-else>
@@ -484,12 +500,19 @@ import { useOnboardingStore } from "@/stores/onboading";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import { useFileUpload } from "@/composables/apis/useUploader";
+import { useAuthStore } from "@/stores/auth";
+import { useVendorApi } from "@/composables/apis/useVendorApi";
 
 const { MCCSearch, businessTurnOver, businessType, pincodeSearch, createMerchant } = useOnboadingApi();
+const { getVendor } = useVendorApi();
 
 const Onboarding = useOnboardingStore();
 const { turnOverList, businessTypeList } = storeToRefs(Onboarding);
 const router = useRouter();
+const auth = useAuthStore();
+
+const vendorStatusLoading = ref(true);
+const vendorApproved = computed(() => auth.vendor?.mstatus === "APPROVED" && auth.vendor?.status === true);
 
 const snackbar = reactive({ show: false, message: "", color: "success" });
 const businessSnackbar = reactive({ show: false });
@@ -711,6 +734,13 @@ const vpinSearch = async (query) => {
 
 // Submit
 async function submitMerchant() {
+    if (!vendorApproved.value) {
+        snackbar.message = "Your vendor account must be Active and Approved before you can create merchants";
+        snackbar.color = "error";
+        snackbar.show = true;
+        return;
+    }
+
     submitting.value = true;
 
     if (mcc.value) {
@@ -848,6 +878,14 @@ onMounted(async () => {
         await businessType();
     } catch (err) { console.error("Failed to load business types:", err); }
 });
+
+onMounted(async () => {
+    vendorStatusLoading.value = true;
+    try {
+        await getVendor();
+    } catch (err) { console.error("Failed to load vendor status:", err); }
+    finally { vendorStatusLoading.value = false; }
+});
 </script>
 
 
@@ -922,6 +960,27 @@ onMounted(async () => {
 .form-scroll::-webkit-scrollbar-thumb {
     background: #b8cfe0;
     border-radius: 10px;
+}
+
+.vendor-block-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: #fffbeb;
+    border-color: #fde68a;
+}
+
+.vendor-block-notice__title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #92400e;
+    margin-bottom: 0.25rem;
+}
+
+.vendor-block-notice__desc {
+    font-size: 0.8125rem;
+    color: #78350f;
+    line-height: 1.5;
 }
 
 /* Full width — no artificial max-width cap */

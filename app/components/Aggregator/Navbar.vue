@@ -25,7 +25,7 @@
           <!-- <div class="brand-dot">
             <span class="mdi mdi-shield-crown-outline"></span>
           </div> -->
-          <span class="brand-label">Bucksbox</span>
+          <span class="brand-label">{{ brandName }}</span>
         </div>
       </div>
 
@@ -146,6 +146,9 @@ const { getAggregator } = useAggregatorApi();
 const { logout: apiLogout } = useUsersApi();
 
 const auth = useAuthStore();
+
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
 
 const props = defineProps({
   title:  { type: String,  default: "BUCKSBOX" },

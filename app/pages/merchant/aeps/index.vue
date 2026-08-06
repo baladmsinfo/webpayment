@@ -2,7 +2,21 @@
   <MerchantDmtShell title="AEPS Services" subtitle="Aadhaar-enabled banking for your customers" :show-back="false" back-to="/merchant/dashboard">
     <MerchantDmtWalletStrip class="mb-4" />
 
-    <div class="qa-grid">
+    <div v-if="aepsStore.authChecking && !aepsStore.authChecked" class="auth-gate-loading">
+      <v-progress-circular indeterminate size="28" width="3" :color="BX.primary" />
+    </div>
+
+    <v-card v-else-if="aepsStore.authChecked && !aepsStore.authenticated" rounded="lg" elevation="0" class="pa-4 auth-gate-card">
+      <div class="auth-gate-icon"><v-icon size="26" color="white">mdi-shield-lock-outline</v-icon></div>
+      <p class="auth-gate-title">Complete Agent Authentication</p>
+      <p class="auth-gate-sub">Authenticate this terminal with your Aadhaar fingerprint once to unlock Cash Withdrawal, Balance Enquiry, Mini Statement and Aadhaar Pay. Valid for 24 hours.</p>
+      <v-btn block size="large" rounded="lg" :color="BX.primary" class="cta-btn mt-2" @click="router.push('/merchant/aeps/agent-auth')">
+        <v-icon start size="18">mdi-fingerprint</v-icon>
+        Authenticate Now
+      </v-btn>
+    </v-card>
+
+    <div v-else class="qa-grid">
       <button class="qa-item" @click="router.push('/merchant/aeps/cash-withdrawal')">
         <div class="qa-icon" style="background:rgba(17,66,212,.1);color:#1142d4"><v-icon size="24">mdi-cash-multiple</v-icon></div>
         <span>Cash Withdrawal</span>
@@ -53,6 +67,7 @@
 </template>
 
 <script setup>
+import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAepsStore } from "~/stores/aeps";
 import { useDmtFormat } from "~/composables/useDmtFormat";
@@ -63,6 +78,8 @@ definePageMeta({ layout: "mlayer", middleware: "auth" });
 const router = useRouter();
 const aepsStore = useAepsStore();
 const { formatDateTime, formatCurrencyShort } = useDmtFormat();
+
+onMounted(() => { aepsStore.checkAuthStatus(); });
 
 const typeLabel = { WITHDRAWAL: "Cash Withdrawal", BALANCE: "Balance Enquiry", MINISTATEMENT: "Mini Statement", AADHAAR_PAY: "Aadhaar Pay" };
 
@@ -75,6 +92,14 @@ const statusMeta = (status) => ({
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;800&family=DM+Mono:wght@600;700&display=swap');
+.auth-gate-loading { display: flex; justify-content: center; padding: 40px 0; }
+
+.auth-gate-card { border: 1px solid #e6eaf1 !important; box-shadow: 0 1px 6px rgba(15,23,42,.05) !important; text-align: center; font-family: 'DM Sans', sans-serif; }
+.auth-gate-icon { width: 52px; height: 52px; margin: 4px auto 12px; border-radius: 14px; background: #1142d4; display: flex; align-items: center; justify-content: center; }
+.auth-gate-title { font-size: 15px; font-weight: 800; color: #0f172a; }
+.auth-gate-sub { font-size: 12.5px; color: #64748b; margin-top: 6px; line-height: 1.5; }
+.cta-btn { text-transform: none; font-weight: 800; font-size: 15px; box-shadow: 0 8px 22px rgba(17,66,212,.28); }
+
 .qa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 6px; }
 .qa-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; background: none; border: none; }
 .qa-item:disabled { opacity: .5; cursor: not-allowed; }

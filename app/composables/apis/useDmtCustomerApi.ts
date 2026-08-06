@@ -60,11 +60,13 @@ export function useDmtCustomerApi() {
   const customerUpdateBiodetail = (payload: { PidData: string; aadhaarno: string; referenceid: string }) =>
     handle("updatebiodetail", () => post(`/dmt/customer/updatebiodetail`, payload));
 
-  /** POST /dmt/customer/submit — finalizes onboarding, no body fields documented */
-  const customerSubmit = () => handle("submit", () => post(`/dmt/customer/submit`, {}));
+  /** POST /dmt/customer/submit — { referenceid } — finalizes onboarding (NSDL confirmation) */
+  const customerSubmit = (referenceid: string) =>
+    handle("submit", () => post(`/dmt/customer/submit`, { referenceid }));
 
-  /** GET /dmt/customer/statusCheck */
-  const customerStatusCheck = () => handle("statusCheck", () => get(`/dmt/customer/statusCheck`));
+  /** GET /dmt/customer/statusCheck?referenceid=... */
+  const customerStatusCheck = (referenceid: string) =>
+    handle("statusCheck", () => get(`/dmt/customer/statusCheck`, { params: { referenceid } }));
 
   return {
     customerGetDetail,

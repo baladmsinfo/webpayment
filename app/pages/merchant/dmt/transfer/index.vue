@@ -50,10 +50,6 @@
     </v-card>
 
     <v-card rounded="lg" elevation="0" class="pa-4 fee-card mb-4">
-      <div class="fee-row"><span>Transaction Charge</span><b>{{ formatCurrency(store.charges.charge) }}</b></div>
-      <div class="fee-row"><span>GST (18%)</span><b>{{ formatCurrency(store.charges.gst) }}</b></div>
-      <div class="fee-row"><span>Commission Earned</span><b :style="{ color: BX.success2 }">{{ formatCurrency(store.charges.commission) }}</b></div>
-      <v-divider class="my-2" />
       <div class="fee-total">
         <span class="lbl">Total Debit</span>
         <span class="val">{{ formatCurrency(store.charges.totalDebit) }}</span>

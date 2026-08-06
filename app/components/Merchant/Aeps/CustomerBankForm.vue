@@ -18,15 +18,16 @@
       />
     </div>
 
-    <div class="field">
+    <div class="field" v-if="withBank">
       <label class="field-label">Select Bank</label>
       <v-select
         v-model="bankIin"
         variant="outlined"
         density="comfortable"
-        :items="AEPS_BANKS"
-        item-title="name"
+        :items="aepsStore.banks"
+        item-title="bankName"
         item-value="iin"
+        :loading="aepsStore.banksLoading"
         placeholder="Choose issuing bank"
       />
     </div>
@@ -54,16 +55,22 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { AEPS_BANKS, bankNameByIin } from "~/utils/aepsBanks";
+import { ref, onMounted } from "vue";
+import { useAepsStore } from "~/stores/aeps";
 import { BX } from "~/utils/dmtTheme";
 
 const props = defineProps({
   withAmount: { type: Boolean, default: false },
   amountLabel: { type: String, default: "Amount" },
   maxAmount: { type: Number, default: 0 }, // wallet balance ceiling — 0 disables the check
+  withBank: { type: Boolean, default: true }, // reqAuth (agent-auth.vue) sends a fixed IIN server-side — no bank to pick
 });
 const emit = defineEmits(["continue"]);
+
+const aepsStore = useAepsStore();
+onMounted(() => { if (props.withBank) aepsStore.fetchBanks(); });
+
+const bankNameByIin = (iin) => aepsStore.banks.find((b) => b.iin === iin)?.bankName ?? "";
 
 const customerName = ref("");
 const aadhaar = ref("");
@@ -80,7 +87,7 @@ const onContinue = () => {
 
   if (!customerName.value.trim()) { errorMsg.value = "Enter the customer's name"; return; }
   if (!/^\d{12}$/.test(aadhaar.value)) { aadhaarError.value = "Enter a valid 12-digit Aadhaar number"; return; }
-  if (!bankIin.value) { errorMsg.value = "Select the customer's bank"; return; }
+  if (props.withBank && !bankIin.value) { errorMsg.value = "Select the customer's bank"; return; }
 
   let amount = 0;
   if (props.withAmount) {

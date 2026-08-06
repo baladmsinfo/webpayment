@@ -75,6 +75,9 @@ export function useApi() {
   const put = (url: string, data: any, config = {}) =>
     instance.put(url, data, config);
 
+  const patch = (url: string, data: any, config = {}) =>
+    instance.patch(url, data, config);
+
   const del = (url: string, config = {}) =>
     instance.delete(url, config);
 
@@ -82,6 +85,7 @@ export function useApi() {
     get,
     post,
     put,
+    patch,
     del,
   };
 }

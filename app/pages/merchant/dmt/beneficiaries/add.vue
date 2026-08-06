@@ -38,32 +38,17 @@
       </v-card>
 
       <v-btn
-        v-if="!verifiedHolder"
-        block
-        size="x-large"
-        rounded="lg"
-        variant="tonal"
-        :color="BX.primary"
-        class="cta-btn mb-2"
-        :disabled="!canVerify"
-        :loading="verifying"
-        @click="onVerifyAccount"
-      >
-        <v-icon start size="18">mdi-shield-search</v-icon>
-        Verify Account
-      </v-btn>
-
-      <v-btn
         block
         size="x-large"
         rounded="lg"
         :color="BX.primary"
         class="cta-btn"
-        :disabled="!verifiedHolder"
-        :loading="adding"
-        @click="onAddBeneficiary"
+        :disabled="!canVerify"
+        :loading="verifying || adding"
+        @click="onVerifyAndAdd"
       >
-        {{ isEdit ? 'Save Beneficiary' : 'Add Beneficiary' }}
+        <v-icon start size="18">mdi-shield-search</v-icon>
+        {{ isEdit ? 'Verify & Save Beneficiary' : 'Verify & Add Beneficiary' }}
       </v-btn>
     </v-card>
   </MerchantDmtShell>
@@ -119,45 +104,52 @@ const onIfscInput = () => {
 };
 const unlockVerify = () => { verifiedHolder.value = null; errorMsg.value = ""; };
 
-const onVerifyAccount = async () => {
+// Verification and bank-side registration are combined into a single action —
+// the bank registers the beneficiary as part of this step, so there is no
+// separate "Add Beneficiary" confirmation click. Verify first (penny-drop);
+// only once the bank confirms the holder do we register the beneficiary and
+// navigate to the list, which re-fetches from the backend to reflect the
+// bank's own record rather than trusting local state alone.
+const onVerifyAndAdd = async () => {
   errorMsg.value = "";
+
   verifying.value = true;
+  let verifyRes;
   try {
-    const res = await store.verifyBeneficiaryAccount({
-      accountnumber: form.receiver_account_no,
-      ifsccode: form.receiverIfscCode,
+    verifyRes = await store.verifyBeneficiaryAccount({
+      receiver_account_no: form.receiver_account_no,
+      receiverIfscCode: form.receiverIfscCode,
       receivername: form.receivername,
       receivermobilenumber: form.receivermobilenumber,
     });
-    if (res.ok) {
-      verifiedHolder.value = { name: res.holderName };
-      notify("Account verified", "success");
-    } else {
-      errorMsg.value = res.message;
-      notify(res.message, "error");
-    }
   } finally {
     verifying.value = false;
   }
-};
 
-const onAddBeneficiary = async () => {
+  if (!verifyRes.ok) {
+    errorMsg.value = verifyRes.message;
+    notify(verifyRes.message, "error");
+    return;
+  }
+  verifiedHolder.value = { name: verifyRes.holderName };
+
   adding.value = true;
   try {
-    const res = await store.addBeneficiary({
+    const addRes = await store.addBeneficiary({
       receivername: form.receivername,
       receivermobilenumber: form.receivermobilenumber,
       receiverIfscCode: form.receiverIfscCode,
       receiver_account_no: form.receiver_account_no,
       bankName: detectedBank.value,
     });
-    if (res.ok) {
-      if (isEdit.value) store.removeBeneficiary(String(route.query.editId));
-      notify("Beneficiary added successfully", "success");
-      router.push("/merchant/dmt/beneficiaries");
-    } else {
-      notify(res.message, "error");
+    if (!addRes.ok) {
+      errorMsg.value = addRes.message;
+      notify(addRes.message, "error");
+      return;
     }
+    if (isEdit.value) store.removeBeneficiary(String(route.query.editId));
+    notify("Beneficiary verified and added successfully", "success");
+    router.push("/merchant/dmt/beneficiaries");
   } finally {
     adding.value = false;
   }
