@@ -72,6 +72,12 @@ const menus = ref([
     children: [],
   },
   {
+    title: "AI Assistant",
+    icon: "mdi-robot-outline",
+    url: "/vendor/assistant",
+    open: false,
+  },
+  {
     title: "Settings",
     icon: "mdi-cog-outline",
     url: "/vendor/settings",

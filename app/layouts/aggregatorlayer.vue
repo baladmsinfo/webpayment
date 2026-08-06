@@ -106,6 +106,11 @@ const menus = ref([
     url: "/aggregator/reports",
   },
   {
+    title: "AI Assistant",
+    icon: "mdi-robot-outline",
+    url: "/aggregator/assistant",
+  },
+  {
     title: "Settings",
     icon: "mdi-cog-outline",
     url: "/aggregator/settings",
