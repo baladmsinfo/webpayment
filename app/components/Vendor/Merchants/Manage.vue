@@ -545,21 +545,25 @@
                         Onboarded
                       </span>
 
-                      <div v-else-if="svc.status !== 'PENDING'">
-                        <span class="pill--emerald ml-auto pill mr-5">
-                          {{ svc.status }}</span>
-
-                        <button class="svc-process-btn" disabled>
-                          Onboard
-                        </button>
-                      </div>
-
-                      <div v-else class="svc-inline-onboard">
+                      <!-- Onboard is only actionable when the merchant itself is still PENDING
+                           AND this service's KYC is still PENDING — a merchant that has already
+                           moved past PENDING shouldn't be re-onboardable from here even if a
+                           given service row happens to still read PENDING. -->
+                      <div v-else-if="merchantForm.mstatus === 'PENDING' && svc.status === 'PENDING'" class="svc-inline-onboard">
                         <span class="mr-5" :class="['ml-auto pill', statusPillClass(svc.status)]">{{ svc.status
                         }}</span>
 
                         <button class="svc-onboard-btn"
                           @click="onboardService(svc.service, svc.interface, { pan_status: svc.panStatus, otp_status: svc.otpStatus, aadhaar_status: svc.aadhaarStatus, bank_status: svc.bankStatus, gst_status: svc.gstStatus, store_img_status: svc.storeImgStatus })">
+                          Onboard
+                        </button>
+                      </div>
+
+                      <div v-else>
+                        <span class="ml-auto pill mr-5" :class="statusPillClass(svc.status)">
+                          {{ svc.status }}</span>
+
+                        <button class="svc-process-btn" disabled>
                           Onboard
                         </button>
                       </div>

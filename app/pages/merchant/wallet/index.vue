@@ -10,10 +10,10 @@
         <button class="btn-outline" @click="showHistory = true">
           <span class="mdi mdi-history"></span> History
         </button>
-        <button class="btn-primary" @click="showAddMoney = true">
+        <button class="btn-primary" :disabled="!walletActionsEnabled" @click="showAddMoney = true">
           <span class="mdi mdi-plus-circle-outline"></span> Add Money
         </button>
-        <button class="btn-danger" @click="openWithdraw">
+        <button class="btn-danger" :disabled="!walletActionsEnabled" @click="openWithdraw">
           <span class="mdi mdi-bank-transfer-out"></span> Withdraw
         </button>
       </div>
@@ -55,11 +55,11 @@
           </div>
 
           <div class="balance-actions">
-            <button class="bal-btn" :disabled="addMoneyLoading" @click="showAddMoney = true">
+            <button class="bal-btn" :disabled="!walletActionsEnabled || addMoneyLoading" @click="showAddMoney = true">
               <span class="mdi mdi-arrow-collapse-down"></span>
               Add Money
             </button>
-            <button class="bal-btn bal-btn-outline" :disabled="withdrawLoading" @click="openWithdraw">
+            <button class="bal-btn bal-btn-outline" :disabled="!walletActionsEnabled || withdrawLoading" @click="openWithdraw">
               <span class="mdi mdi-arrow-top-right"></span>
               Withdraw
             </button>
@@ -356,6 +356,9 @@ import { ref, computed, onMounted } from 'vue';
 import { useMerchantBalanceApi } from '~/composables/apis/useMerchantBalanceApi';
 
 definePageMeta({ layout: 'mlayer', middleware: 'auth' });
+
+// Add Money / Withdraw are temporarily disabled — flip to true to re-enable.
+const walletActionsEnabled = false;
 
 const {
   balanceData, historyData, historyMeta,

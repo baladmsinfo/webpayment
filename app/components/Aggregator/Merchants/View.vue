@@ -375,12 +375,11 @@
               </div>
               <span class="ml-auto svc-header-actions">
                 <button
-                  v-if="canOnboardIsgUpi(svc)"
+                  v-if="canOnboardService(svc)"
                   class="svc-onboard-btn"
-                  :disabled="onboardingSvcId === svc.id"
-                  @click="submitIsgOnboarding(svc)">
-                  <span class="mdi" :class="onboardingSvcId === svc.id ? 'mdi-loading spin' : 'mdi-rocket-launch-outline'"></span>
-                  {{ onboardingSvcId === svc.id ? 'Submitting…' : 'Onboard' }}
+                  @click="goToOnboardReview(svc)">
+                  <span class="mdi mdi-rocket-launch-outline"></span>
+                  Onboard
                 </button>
                 <span :class="['pill', kycStatusPill(svc.status)]">{{ svc.status || 'PENDING' }}</span>
               </span>
@@ -859,22 +858,52 @@
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span :class="['pill pill--sm', docStatusPill(selectedDoc?.doc_status)]">{{ selectedDoc?.doc_status }}</span>
+                <button class="icon-close icon-close--danger" title="Delete document" :disabled="deletingDoc" @click="deleteDocConfirming = true"><span class="mdi mdi-trash-can-outline"></span></button>
                 <button class="icon-close" @click="docDialog = false"><span class="mdi mdi-close"></span></button>
               </div>
             </div>
             <div class="dialog-body" v-if="selectedDoc">
+              <div class="doc-delete-confirm" v-if="deleteDocConfirming">
+                <span class="mdi mdi-alert-outline"></span>
+                <p>Delete this document and all its images? This cannot be undone.</p>
+                <div class="doc-delete-confirm__actions">
+                  <button class="btn-secondary" :disabled="deletingDoc" @click="deleteDocConfirming = false">Cancel</button>
+                  <button class="doc-delete-confirm__btn" :disabled="deletingDoc" @click="handleDeleteDocument">
+                    <span v-if="deletingDoc" class="doc-img-spinner"></span>
+                    <span v-else>Yes, delete</span>
+                  </button>
+                </div>
+              </div>
               <div class="info-grid info-grid--3" style="border:1px solid #f1f5f9;border-radius:10px;overflow:hidden;margin-bottom:16px;">
                 <div class="info-item"><label>Doc Number</label><p class="mono">{{ selectedDoc.doc_number || '—' }}</p></div>
                 <div class="info-item"><label>Verified By</label><p>{{ selectedDoc.doc_verified_by || '—' }}</p></div>
                 <div class="info-item"><label>Result</label><p><span :class="['pill pill--sm', selectedDoc.doc_verified_result ? 'pill--emerald' : 'pill--amber']">{{ selectedDoc.doc_verified_result ? 'Verified' : 'Pending' }}</span></p></div>
               </div>
-              <p class="dialog-section-lbl">Document Images</p>
+              <div class="dialog-section-lbl-row">
+                <p class="dialog-section-lbl">Document Images</p>
+                <button class="doc-reupload-add-btn" :disabled="reuploadBusy" @click="triggerReupload(null)">
+                  <span class="mdi mdi-tray-arrow-up"></span> Upload New
+                </button>
+              </div>
               <div class="doc-img-grid" v-if="selectedDoc.images?.length">
-                <img v-for="img in selectedDoc.images" :key="img.id" :src="img.url" class="doc-img-thumb" @click="openPreview(img.url)" />
+                <div class="doc-img-cell" v-for="img in selectedDoc.images" :key="img.id">
+                  <img v-if="!isPdfDoc(img)" :src="img.url" class="doc-img-thumb" @click="openDocImage(img)" />
+                  <div v-else class="doc-pdf-thumb" @click="openDocImage(img)">
+                    <span class="mdi mdi-file-pdf-box"></span>
+                    <span class="doc-pdf-label">View PDF</span>
+                  </div>
+                  <div class="doc-img-overlay">
+                    <button class="doc-img-reupload-btn" :disabled="reuploadBusy" @click="triggerReupload(img)">
+                      <span v-if="reuploadBusy && reuploadingImageId === img.id" class="doc-img-spinner"></span>
+                      <template v-else><span class="mdi mdi-camera-retake-outline"></span> Replace</template>
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="empty-state" v-else>
                 <p style="font-size:13px;color:#94a3b8">No images uploaded for this document</p>
               </div>
+              <input ref="reuploadInputRef" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none" @change="handleReuploadFile" />
             </div>
           </div>
         </div>
@@ -1142,20 +1171,20 @@
 import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
+import { useIsgOnboardingApi } from "~/composables/apis/Useisgonboardingapi";
 import { useUsersApi } from "~/composables/apis/useUsersApi";
 import { useMerchantUpdateApi } from "~/composables/apis/useMerchantUpdateApi";
 import { useTerminalApi } from "~/composables/apis/useTerminalApi";
 import { useApi } from "~/composables/apis/useApi";
-import { useIsgOnboardingApi } from "~/composables/apis/Useisgonboardingapi";
 import { useAuthStore } from "~/stores/auth";
 
 const props = defineProps({ merchantId: String });
 const router = useRouter();
 const { getMerchantById } = useAggregatorApi();
+const { uploadDoc, complianceInit, deleteComplianceImage, deleteComplianceDocument } = useIsgOnboardingApi();
 const { getTransactionsByMerchantId } = useUsersApi();
 const { updateMerchantStatus, updateMerchantMstatus, updateMerchantRiskflag } = useMerchantUpdateApi();
 const { createTerminal, updateTerminal, updateTerminalStatus, deleteTerminal } = useTerminalApi();
-const { isgSubmitOnboarding } = useIsgOnboardingApi();
 const auth = useAuthStore();
 const canManageTerminals = computed(() => (auth.user?.role || 'aggregator') === 'aggregator');
 
@@ -1437,6 +1466,93 @@ const refreshMerchant = async () => {
   }
 };
 
+// ── Document reupload (Documents tab) ─────────────────────────────
+// Replaces a single image on the currently open document: uploads the new
+// file (reusing the old image's filename/docid so it maps to the same
+// compliance slot, e.g. "55_Aadhar_Card_front"), re-attaches the full image
+// set via complianceInit (which also resets doc_status back to PENDING for
+// re-review), then deletes the stale image row. `triggerReupload(null)`
+// uploads a brand-new image into a doc that has none yet.
+const reuploadInputRef  = ref(null);
+const reuploadingImageId = ref(null);
+const reuploadBusy      = ref(false);
+
+const triggerReupload = (img) => {
+  reuploadingImageId.value = img?.id ?? null;
+  reuploadInputRef.value?.click();
+};
+
+const handleReuploadFile = async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  if (!file || !selectedDoc.value) return;
+
+  const oldImg = selectedDoc.value.images?.find(i => i.id === reuploadingImageId.value) || null;
+  reuploadBusy.value = true;
+  try {
+    const uploadRes = await uploadDoc(file, {
+      filename: oldImg?.filename,
+      docid: oldImg?.docid,
+      merchantId: props.merchantId,
+    });
+    const newId = uploadRes?.data?.data?.id || uploadRes?.data?.id;
+    if (!newId) {
+      showToast(uploadRes?.data?.error || uploadRes?.data?.message || 'Failed to upload image. Please retry.', 'error');
+      return;
+    }
+
+    const imageIds = (selectedDoc.value.images || []).map(i => (i.id === oldImg?.id ? newId : i.id));
+    if (!oldImg) imageIds.push(newId);
+
+    const initRes = await complianceInit({
+      doc_type: selectedDoc.value.doc_type,
+      doc_number: selectedDoc.value.doc_number,
+      images: imageIds,
+    }, props.merchantId);
+
+    if (initRes?.data?.statusCode !== '00' && initRes?.statusCode !== '00') {
+      showToast(initRes?.data?.message || initRes?.message || 'Failed to save document', 'error');
+      return;
+    }
+
+    if (oldImg) await deleteComplianceImage(oldImg.id, props.merchantId);
+
+    await refreshMerchant();
+    selectedDoc.value = merchant.documents?.find(d => d.id === selectedDoc.value?.id) || selectedDoc.value;
+    showToast('Document image updated successfully', 'success');
+  } catch (err) {
+    console.error('Reupload error:', err);
+    showToast('Error uploading image. Please retry.', 'error');
+  } finally {
+    reuploadBusy.value = false;
+    reuploadingImageId.value = null;
+  }
+};
+
+const deleteDocConfirming = ref(false);
+const deletingDoc = ref(false);
+
+const handleDeleteDocument = async () => {
+  if (!selectedDoc.value) return;
+  deletingDoc.value = true;
+  try {
+    const res = await deleteComplianceDocument(selectedDoc.value.id, props.merchantId);
+    if (res?.statusCode !== '00') {
+      showToast(res?.message || 'Failed to delete document. Please retry.', 'error');
+      return;
+    }
+    docDialog.value = false;
+    deleteDocConfirming.value = false;
+    await refreshMerchant();
+    showToast('Document deleted', 'success');
+  } catch (err) {
+    console.error('Delete document error:', err);
+    showToast('Error deleting document. Please retry.', 'error');
+  } finally {
+    deletingDoc.value = false;
+  }
+};
+
 // -- Three-dot action menu --
 const openTerminalMenuId = ref(null);
 const menuPos = reactive({ top: 0, left: 0 });
@@ -1609,33 +1725,30 @@ const mstatusBadge      = (s) => { if (!s) return 'pill--amber'; if (['APPROVED'
 const mstatusBadgeClass = (s) => mstatusBadge(s);
 const kycStatusPill = (s) => { if (!s || s === 'PENDING') return 'pill--amber'; if (['VERIFIED','APPROVED'].includes(s)) return 'pill--emerald'; if (['REJECTED','FAILED','SUSPENDED'].includes(s)) return 'pill--red'; if (['PROCESSING','UNDER_REVIEW','SUBMITTED'].includes(s)) return 'pill--sky'; return 'pill--amber'; };
 
-// Onboard action — only surfaced for the ISG/UPI service KYC while it's still PENDING
-const canOnboardIsgUpi = (svc) => (!svc.status || svc.status === 'PENDING') && svc.interface === 'ISG' && svc.service === 'UPI';
-
-const onboardingSvcId = ref(null);
-const submitIsgOnboarding = async (svc) => {
-  if (onboardingSvcId.value) return;
-  onboardingSvcId.value = svc.id;
-  try {
-    const res = await isgSubmitOnboarding({ merchantId: props.merchantId });
-    if (res?.statusCode === '00') {
-      showToast(res.message || 'ISG onboarding submitted successfully!');
-      await refreshMerchant();
-    } else {
-      showToast(res?.message || 'Submission failed. Please retry.', 'error');
-    }
-  } catch {
-    showToast('Something went wrong. Please try again.', 'error');
-  } finally {
-    onboardingSvcId.value = null;
-  }
+// Onboard action — surfaced for any service/interface row still PENDING.
+// Clicking it takes the aggregator to a dedicated review-and-confirm page
+// (rather than submitting inline) so they can check the merchant's full
+// info/documents before confirming this specific service.
+const canOnboardService = (svc) => !svc.status || svc.status === 'PENDING';
+const goToOnboardReview = (svc) => {
+  router.push(`/aggregator/merchants/onboarding/${props.merchantId}?svc=${svc.id}`);
 };
 const riskPill  = (s) => { if (!s) return 'pill--slate'; if (s === 'LOW') return 'pill--emerald'; if (s === 'MEDIUM') return 'pill--amber'; if (s === 'HIGH') return 'pill--red'; return 'pill--slate'; };
 const docStatusPill = (s) => { if (s==='VERIFIED') return 'pill--emerald'; if (s==='REJECTED') return 'pill--red'; if (s==='SUBMITTED') return 'pill--sky'; return 'pill--amber'; };
 const txnPill   = (s) => { if (['PAID','SUCCESS'].includes(s)) return 'pill--emerald'; if (['FAILED','CANCELLED'].includes(s)) return 'pill--red'; return 'pill--amber'; };
 
-const openDoc     = (doc) => { selectedDoc.value = doc; docDialog.value = true; };
+const openDoc     = (doc) => { selectedDoc.value = doc; docDialog.value = true; deleteDocConfirming.value = false; };
 const openPreview = (url) => { previewUrl.value = url; imgPreview.value = true; };
+
+const isPdfDoc = (img) => {
+  if (!img) return false;
+  if (img.mimetype) return img.mimetype === 'application/pdf';
+  return /\.pdf(\?|$)/i.test(img.url || img.filename || '');
+};
+const openDocImage = (img) => {
+  if (isPdfDoc(img)) window.open(img.url, '_blank', 'noopener');
+  else openPreview(img.url);
+};
 const buildDocItems = (svc) => [
   { key: 'pan',      label: 'PAN',         status: svc.panStatus,      verifiedAt: svc.panVerifiedAt,      reason: svc.panRejectionReason },
   { key: 'aadhaar',  label: 'Aadhaar',     status: svc.aadhaarStatus,  verifiedAt: svc.aadhaarVerifiedAt,  reason: svc.aadhaarRejectionReason },
@@ -1871,10 +1984,41 @@ onMounted(async () => {
 .dialog-section-lbl { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .07em; margin: 14px 0 8px; }
 .icon-close { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; cursor: pointer; color: #64748b; font-size: 16px; transition: all .15s; }
 .icon-close:hover { background: #f1f5f9; color: #0f172a; }
+.dialog-section-lbl-row { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 8px; }
+.dialog-section-lbl-row .dialog-section-lbl { margin: 0; }
+.doc-reupload-add-btn { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #1142d4; background: #eef2ff; border: 1px solid #e0e7ff; border-radius: 7px; padding: 5px 10px; cursor: pointer; transition: background .15s; }
+.doc-reupload-add-btn:hover { background: #e0e7ff; }
+.doc-reupload-add-btn:disabled { opacity: .6; cursor: not-allowed; }
+
 .doc-img-grid  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.doc-img-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; cursor: pointer; transition: opacity .13s; }
+.doc-img-cell  { position: relative; border-radius: 8px; overflow: hidden; }
+.doc-img-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; cursor: pointer; transition: opacity .13s; display: block; }
 .doc-img-thumb:hover { opacity: .82; }
+.doc-img-overlay { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding: 8px; opacity: 0; background: linear-gradient(to top, rgba(15,23,42,.55), transparent 60%); transition: opacity .15s; pointer-events: none; }
+.doc-img-cell:hover .doc-img-overlay { opacity: 1; pointer-events: auto; }
+.doc-img-reupload-btn { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #0f172a; background: #fff; border: none; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.doc-img-reupload-btn:disabled { opacity: .7; cursor: not-allowed; }
+.doc-img-spinner { width: 12px; height: 12px; border: 2px solid #e2e8f0; border-top-color: #1142d4; border-radius: 50%; animation: onb-doc-spin .7s linear infinite; display: inline-block; }
+@keyframes onb-doc-spin { to { transform: rotate(360deg); } }
 .img-preview   { width: 100%; max-height: 520px; object-fit: contain; border-radius: 8px; }
+
+.doc-pdf-thumb { width: 100%; aspect-ratio: 4/3; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: #fef2f2; border: 1px solid #fee2e2; transition: opacity .13s; }
+.doc-pdf-thumb:hover { opacity: .82; }
+.doc-pdf-thumb .mdi { font-size: 30px; color: #dc2626; }
+.doc-pdf-label { font-size: 11px; font-weight: 700; color: #b91c1c; }
+
+.icon-close--danger { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+.icon-close--danger:hover { background: #fee2e2; color: #b91c1c; }
+.icon-close--danger:disabled { opacity: .6; cursor: not-allowed; }
+
+.doc-delete-confirm { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin-bottom: 16px; border-radius: 10px; background: #fef2f2; border: 1px solid #fee2e2; }
+.doc-delete-confirm .mdi { font-size: 18px; color: #dc2626; flex-shrink: 0; }
+.doc-delete-confirm p { flex: 1; margin: 0; font-size: 13px; font-weight: 600; color: #991b1b; }
+.doc-delete-confirm__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.doc-delete-confirm__btn { display: flex; align-items: center; justify-content: center; min-width: 84px; font-size: 12px; font-weight: 700; color: #fff; background: #dc2626; border: none; border-radius: 7px; padding: 7px 12px; cursor: pointer; }
+.doc-delete-confirm__btn:hover { background: #b91c1c; }
+.doc-delete-confirm__btn:disabled { opacity: .7; cursor: not-allowed; }
+.doc-delete-confirm__btn .doc-img-spinner { border-color: rgba(255,255,255,.4); border-top-color: #fff; }
 .dialog-fade-enter-active, .dialog-fade-leave-active { transition: opacity .2s ease; }
 .dialog-fade-enter-from, .dialog-fade-leave-to { opacity: 0; }
 

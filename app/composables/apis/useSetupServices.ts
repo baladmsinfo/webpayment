@@ -104,6 +104,30 @@ export function useSetupServicesApi() {
     }
   };
 
+  // Links a vendor to (service, interface) pairs chosen during onboarding.
+  // Created inactive — an admin/aggregator activates them separately later.
+  const linkVendorServices = async (vendorId: string, services: { serviceId: string; interfaceId: string }[]) => {
+    try {
+      const res = await post(`/setups/services/vendor/${vendorId}/link-services`, { services });
+      return res.data;
+    } catch (error) {
+      console.error("Error linking vendor services:", error);
+      return null;
+    }
+  };
+
+  // Public, pre-auth-safe service+interface catalog (no apiKey / admin
+  // fields) — for the anonymous self-service vendor registration wizard.
+  const getPublicServiceCatalog = async () => {
+    try {
+      const res = await get(`/setups/services/public-catalog`);
+      return res.data;
+    } catch (error) {
+      console.error("Error fetching service catalog:", error);
+      return null;
+    }
+  };
+
   return {
     getAllServices,
     createService,
@@ -115,5 +139,7 @@ export function useSetupServicesApi() {
     deleteInterface,
     linkInterface,
     unlinkInterface,
+    linkVendorServices,
+    getPublicServiceCatalog,
   };
 }

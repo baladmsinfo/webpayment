@@ -128,13 +128,10 @@
                     </button>
 
                     <p class="signup-row">
-                        New merchant?
-                        <button class="signup-link" @click.prevent="router.push('/register')">Create an account</button>
-                    </p>
-
-                    <p class="signup-row">
-                        New distributor?
-                        <button class="signup-link" @click.prevent="router.push('/register/vendor')">Create Distributor</button>
+                        New here?
+                        <button class="signup-link" @click.prevent="router.push('/register')">Sign up as Merchant</button>
+                        <span class="signup-sep">·</span>
+                        <button class="signup-link" @click.prevent="router.push('/register/vendor')">Sign up as Partner</button>
                     </p>
 
                 </div>
@@ -655,6 +652,11 @@ async function onSubmit() {
 
 .signup-link:hover {
     opacity: .75;
+}
+
+.signup-sep {
+    color: #cbd5e1;
+    margin: 0 2px;
 }
 
 .input-wrap {

@@ -1028,6 +1028,7 @@ const {
   isgVerifyPan,
   isgVerifyAccount,
   isgSubmitOnboarding,
+  isgMarkKycSubmitted,
   uploadDoc,
   complianceInit,
 } = useIsgOnboardingApi();
@@ -1696,9 +1697,11 @@ async function handleStep6Submit() {
   submitting.value = true;
   processingMsg.value = "Submitting ISG onboarding...";
   try {
-    const res = await isgSubmitOnboarding({ merchantId: props.merchantId });
+    // const res = await isgSubmitOnboarding({ merchantId: props.merchantId });
+    const res = await isgMarkKycSubmitted(props.merchantId);
     if (res?.statusCode === "00" || res?.data?.statusCode === "00") {
-      submitResult.value = res?.data?.data || res?.data || null;
+      submitResult.value = res?.data?.data
+       || res?.data || null;
       showSnack(res?.message || res?.data?.message || "ISG onboarding submitted successfully!", "success");
       step.value = 7;
     } else {

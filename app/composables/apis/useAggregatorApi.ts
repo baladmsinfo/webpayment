@@ -127,6 +127,17 @@ export function useAggregatorApi() {
         }
     };
 
+    // Generic "Onboard" confirm for a merchant's service KYC row (any
+    // service/interface without its own dedicated onboarding integration).
+    const submitServiceKyc = async (serviceKycId: string) => {
+        try {
+            const res = await post(`/merchant/service-kyc/${serviceKycId}/submit`, {});
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to submit service KYC" };
+        }
+    };
+
     const getAllAggregatorTransactions = async ({
         page = 1,
         limit = 20,
@@ -292,6 +303,7 @@ export function useAggregatorApi() {
         updateVendorStatus,
         updateVendorMstatus,
         updateVendorRiskflag,
+        submitServiceKyc,
         getTransactionById,
         getDashboardAnalytics,
         getReportDmtSummary,

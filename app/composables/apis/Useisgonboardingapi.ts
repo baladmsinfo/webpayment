@@ -2,7 +2,7 @@
 import { useApi } from "./useApi";
 
 export function useIsgOnboardingApi() {
-  const { get, post } = useApi();
+  const { get, post, del } = useApi();
 
   // ── NEW: ISG OTP ──────────────────────────────────────────────
   const isgSendOtp = async (payload: { phone: string }) => {
@@ -90,6 +90,31 @@ export function useIsgOnboardingApi() {
     return res;
   };
 
+  // Deletes a previously uploaded compliance image — used before attaching
+  // a replacement so a reupload actually replaces rather than piling up.
+  const deleteComplianceImage = async (imageId: number | string, merchantId?: string) => {
+    try {
+      const res = await del(`/onboarding/compliance/images/${imageId}`, {
+        params: { merchantId },
+      });
+      return res.data;
+    } catch (err: any) {
+      return err?.response?.data ?? { statusCode: "01", message: "Network error" };
+    }
+  };
+
+  // Deletes an entire compliance document (and its attached images).
+  const deleteComplianceDocument = async (documentId: number | string, merchantId?: string) => {
+    try {
+      const res = await del(`/onboarding/compliance/documents/${documentId}`, {
+        params: { merchantId },
+      });
+      return res.data;
+    } catch (err: any) {
+      return err?.response?.data ?? { statusCode: "01", message: "Network error" };
+    }
+  };
+
   const isgVerifyAccount = async (payload: {
     accountHolderName: string;
     accountNumber: string;
@@ -117,13 +142,16 @@ export function useIsgOnboardingApi() {
     }
   };
 
-  // Self-service: marks the caller's own merchant record as KYC-submitted
-  // (mstatus -> SUBMITTED) so the dashboard shows the "awaiting verification"
-  // banner instead of "submit documents". Scoped server-side to the caller's
-  // JWT merchantId — no payload needed.
-  const isgMarkKycSubmitted = async () => {
+  // Marks a merchant record as KYC-submitted (mstatus -> SUBMITTED) so the
+  // dashboard shows the "awaiting verification" banner instead of "submit
+  // documents". For a merchant caller this is self-service — the backend
+  // resolves the target from the caller's own JWT and ignores merchantId.
+  // For a vendor caller (onboarding a merchant on their behalf), merchantId
+  // is required — the backend verifies that merchant actually belongs to
+  // that vendor before updating it.
+  const isgMarkKycSubmitted = async (merchantId?: string) => {
     try {
-      const res = await post(`/merchant/kyc/submit`, {});
+      const res = await post(`/merchant/kyc/submit`, merchantId ? { merchantId } : {});
       return res.data;
     } catch (err: any) {
       return err?.response?.data ?? { statusCode: "01", message: "Network error" };
@@ -153,6 +181,8 @@ export function useIsgOnboardingApi() {
     isgVerifyPan,
     uploadDoc,
     complianceInit,
+    deleteComplianceImage,
+    deleteComplianceDocument,
     isgVerifyAccount,
     isgSubmitOnboarding,
     isgMarkKycSubmitted,

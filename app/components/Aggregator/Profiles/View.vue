@@ -663,31 +663,51 @@
                   </div>
                 </div>
 
-                <div class="term-form-grid term-form-grid--2" style="margin-top:16px">
-                  <div class="term-field">
-                    <label>Min Amount</label>
-                    <input class="term-input" type="number" v-model.number="commissionModal.minAmount" :placeholder="`e.g. ${selectedPreset?.minAmountDefault}`" />
+                <!-- Tiered preset (e.g. Wallet Add Money) — amount ranges are fixed by
+                     business rule, so only the per-slab fee value is editable. -->
+                <template v-if="selectedPreset?.slabs">
+                  <p class="dialog-section-lbl">Commission Slabs</p>
+                  <div class="comp-row comp-row--guided" v-for="(slab, i) in selectedPreset.slabs" :key="slab.label">
+                    <div class="comp-guided-tags">
+                      <span class="pill pill--indigo">{{ slab.label }}</span>
+                      <span class="pill pill--slate">{{ slab.chargeType }}</span>
+                      <span class="pill pill--slate">Range: ₹{{ slab.minAmount }} – ₹{{ slab.maxAmount }}</span>
+                    </div>
+                    <div class="term-field">
+                      <label>{{ slab.valueLabel }}</label>
+                      <input class="term-input" type="number" step="0.01" v-model.number="commissionModal.tierValues[i]" :placeholder="`e.g. ${slab.valueDefault}`" />
+                    </div>
                   </div>
-                  <div class="term-field">
-                    <label>Max Amount</label>
-                    <input class="term-input" type="number" v-model.number="commissionModal.maxAmount" :placeholder="`e.g. ${selectedPreset?.maxAmountDefault}`" />
-                  </div>
-                </div>
+                </template>
 
-                <p class="dialog-section-lbl">Components</p>
-                <div class="comp-row comp-row--guided" v-for="(comp, i) in selectedPreset?.components" :key="comp.name">
-                  <div class="comp-guided-tags">
-                    <span class="pill pill--indigo">{{ comp.name }}</span>
-                    <span class="pill pill--slate">{{ comp.chargeType }}</span>
-                    <span class="pill pill--slate">Receiver: {{ comp.receiver }}</span>
-                    <span class="pill pill--slate">Applies On: {{ comp.appliesOn }}</span>
-                    <span v-if="comp.dependsOn" class="pill pill--slate">Per ₹1000</span>
+                <!-- Standard single-slab preset -->
+                <template v-else>
+                  <div class="term-form-grid term-form-grid--2" style="margin-top:16px">
+                    <div class="term-field">
+                      <label>Min Amount</label>
+                      <input class="term-input" type="number" v-model.number="commissionModal.minAmount" :placeholder="`e.g. ${selectedPreset?.minAmountDefault}`" />
+                    </div>
+                    <div class="term-field">
+                      <label>Max Amount</label>
+                      <input class="term-input" type="number" v-model.number="commissionModal.maxAmount" :placeholder="`e.g. ${selectedPreset?.maxAmountDefault}`" />
+                    </div>
                   </div>
-                  <div class="term-field">
-                    <label>{{ comp.valueLabel }}</label>
-                    <input class="term-input" type="number" step="0.01" v-model.number="commissionModal.componentValues[i]" :placeholder="`e.g. ${comp.valueDefault}`" />
+
+                  <p class="dialog-section-lbl">Components</p>
+                  <div class="comp-row comp-row--guided" v-for="(comp, i) in selectedPreset?.components" :key="comp.name">
+                    <div class="comp-guided-tags">
+                      <span class="pill pill--indigo">{{ comp.name }}</span>
+                      <span class="pill pill--slate">{{ comp.chargeType }}</span>
+                      <span class="pill pill--slate">Receiver: {{ comp.receiver }}</span>
+                      <span class="pill pill--slate">Applies On: {{ comp.appliesOn }}</span>
+                      <span v-if="comp.dependsOn" class="pill pill--slate">Per ₹1000</span>
+                    </div>
+                    <div class="term-field">
+                      <label>{{ comp.valueLabel }}</label>
+                      <input class="term-input" type="number" step="0.01" v-model.number="commissionModal.componentValues[i]" :placeholder="`e.g. ${comp.valueDefault}`" />
+                    </div>
                   </div>
-                </div>
+                </template>
               </template>
 
               <!-- EDIT: identity is locked (matches the existing slab); only amounts/values can change -->
@@ -730,7 +750,7 @@
               <button class="w-btn-ghost" @click="closeCommissionModal" :disabled="commissionModal.saving">Cancel</button>
               <button class="w-btn-primary" :disabled="commissionModal.saving" @click="saveCommission">
                 <span v-if="commissionModal.saving" class="mdi mdi-loading spin"></span>
-                {{ commissionModal.saving ? 'Saving…' : (commissionModal.mode === 'edit' ? 'Save Changes' : 'Create Slab') }}
+                {{ commissionModal.saving ? 'Saving…' : (commissionModal.mode === 'edit' ? 'Save Changes' : (selectedPreset?.slabs ? 'Create Slabs' : 'Create Slab')) }}
               </button>
             </div>
           </div>
@@ -1155,17 +1175,33 @@ const COMMISSION_PRESETS = [
   {
     key: 'WALLET_ADD_MONEY',
     label: 'Wallet Add Money',
-    description: 'Processing fee plus vendor/platform revenue share when money is added to the wallet.',
+    description: 'A single Processing Fee component, tiered by amount: fixed for transactions up to ₹1,000, percentage above that. Creates two linked commission slabs.',
     paymentMethod: 'WALLET',
     provider: 'WALLET',
     providerOptions: ['WALLET', 'AXIS'],
     txnType: 'ADD_MONEY',
-    minAmountDefault: 1,
-    maxAmountDefault: 1000000,
-    components: [
-      { name: 'PROCESSING_FEE', chargeType: 'FIXED', receiver: 'PLATFORM', appliesOn: 'TRANSACTION', dependsOn: 'PER_1000', valueDefault: 3, valueLabel: 'Processing Fee (₹ per ₹1000)' },
-      { name: 'VENDOR_SHARE', chargeType: 'PERCENTAGE', receiver: 'VENDOR', appliesOn: 'TRANSACTION', dependsOn: null, valueDefault: 5, valueLabel: 'Vendor Share (%)' },
-      { name: 'PLATFORM_COMMISSION', chargeType: 'PERCENTAGE', receiver: 'PLATFORM', appliesOn: 'TRANSACTION', dependsOn: null, valueDefault: 1, valueLabel: 'Platform Commission (%)' },
+    // Amount-tiered fee: the ₹1,000 breakpoint is a fixed business rule, not
+    // user-configurable — the engine picks whichever slab's minAmount/maxAmount
+    // range the transaction amount falls in (see wallet-charge-engine.js), so a
+    // single logical "processing fee" has to be modeled as two CommissionConfig
+    // rows, each with exactly one PROCESSING_FEE component.
+    slabs: [
+      {
+        label: 'Up to ₹1,000',
+        minAmount: 1,
+        maxAmount: 1000,
+        chargeType: 'FIXED',
+        valueDefault: 5,
+        valueLabel: 'Fixed Processing Fee (₹)',
+      },
+      {
+        label: 'Above ₹1,000',
+        minAmount: 1001,
+        maxAmount: 10000000,
+        chargeType: 'PERCENTAGE',
+        valueDefault: 1,
+        valueLabel: 'Percentage Processing Fee (%)',
+      },
     ],
   },
   {
@@ -1211,7 +1247,8 @@ const commissionModal = reactive({
   // create mode
   presetKey: COMMISSION_PRESETS[0].key,
   provider: COMMISSION_PRESETS[0].provider,
-  componentValues: COMMISSION_PRESETS[0].components.map(() => null),
+  componentValues: (COMMISSION_PRESETS[0].components || []).map(() => null),
+  tierValues: (COMMISSION_PRESETS[0].slabs || []).map(() => null),
   // shared + edit mode
   minAmount: null,
   maxAmount: null,
@@ -1227,7 +1264,8 @@ const applyPresetDefaults = (key) => {
   commissionModal.provider = preset.provider;
   commissionModal.minAmount = null;
   commissionModal.maxAmount = null;
-  commissionModal.componentValues = preset.components.map(() => null);
+  commissionModal.componentValues = (preset.components || []).map(() => null);
+  commissionModal.tierValues = (preset.slabs || []).map(() => null);
 };
 
 const openCreateCommission = () => {
@@ -1261,8 +1299,61 @@ const closeCommissionModal = () => {
   commissionModal.open = false;
 };
 
+// Tiered presets (e.g. Wallet Add Money) create one CommissionConfig row per
+// amount slab — the backend has no "fixed under X, percentage over X" single
+// row, so this fires the create call once per slab, sequentially.
+const saveTieredCommission = async (preset) => {
+  for (let i = 0; i < preset.slabs.length; i++) {
+    const slab = preset.slabs[i];
+    const payload = {
+      walletprofileId: props.profileId,
+      paymentMethod: preset.paymentMethod,
+      provider: preset.providerOptions ? commissionModal.provider : preset.provider,
+      txnType: preset.txnType,
+      minAmount: slab.minAmount,
+      maxAmount: slab.maxAmount,
+      components: [{
+        name: 'PROCESSING_FEE',
+        chargeType: slab.chargeType,
+        value: numOr(commissionModal.tierValues[i], slab.valueDefault),
+        receiver: 'PLATFORM',
+        appliesOn: 'TRANSACTION',
+      }],
+    };
+
+    const res = await createWalletCommission(payload);
+    if (!res?.success) {
+      commissionModal.error = `Failed to create the "${slab.label}" slab: ${res?.message || 'Unknown error'}`;
+      if (i > 0) {
+        commissionModal.error += ' The earlier slab was already created — check the table below before retrying.';
+      }
+      await fetchCommissions();
+      return false;
+    }
+  }
+  return true;
+};
+
 const saveCommission = async () => {
   commissionModal.error = '';
+
+  if (commissionModal.mode === 'create' && selectedPreset.value?.slabs) {
+    commissionModal.saving = true;
+    try {
+      const ok = await saveTieredCommission(selectedPreset.value);
+      if (ok) {
+        showToast('Wallet Add Money commission slabs created', 'success');
+        commissionModal.open = false;
+        await fetchCommissions();
+      }
+    } catch (err) {
+      commissionModal.error = err?.response?.data?.message || err?.message || 'Something went wrong';
+      await fetchCommissions();
+    } finally {
+      commissionModal.saving = false;
+    }
+    return;
+  }
 
   let payload;
 

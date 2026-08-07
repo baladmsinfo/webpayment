@@ -1,1938 +1,1054 @@
 <template>
-  <div class="vo-root">
+  <div class="register-root">
 
-    <!-- ── STICKY HEADER ── -->
-    <header class="vo-header">
-      <div class="vo-header__brand">
-        <div class="vo-header__icon">
-          <span class="mdi mdi-truck-outline"></span>
+    <!-- ── LEFT PANEL (desktop) ── -->
+    <div class="reg-left">
+      <div class="left-inner">
+        <div class="left-brand">
+          <span class="brand-name">BUCKSBOX</span>
         </div>
-        <div class="vo-header__text">
-          <h2 class="vo-header__title">Distributor Registration</h2>
-          <p class="vo-header__sub">{{ steps[step - 1]?.label }}</p>
+
+        <div class="left-copy">
+          <h2 class="left-headline">Become a<br />Bucksbox Partner</h2>
+          <p class="left-sub">
+            Register as a distributor to onboard merchants, track commissions and grow your network — all from a
+            single dashboard.
+          </p>
+        </div>
+
+        <div class="steps-recap">
+          <div v-for="(title, i) in stepTitles" :key="title" class="steps-recap-item"
+            :class="{ 'is-done': step > i + 1, 'is-active': step === i + 1 }">
+            <div class="steps-recap-dot">
+              <v-icon v-if="step > i + 1" size="13">mdi-check</v-icon>
+              <span v-else>{{ i + 1 }}</span>
+            </div>
+            <span class="steps-recap-label">{{ title }}</span>
+          </div>
+        </div>
+
+        <div class="feature-pills">
+          <div class="feature-pill"><span class="mdi mdi-account-group-outline"></span> Onboard Merchants</div>
+          <div class="feature-pill"><span class="mdi mdi-percent-outline"></span> Earn Commission</div>
+          <div class="feature-pill"><span class="mdi mdi-cash-fast"></span> Fast Payouts</div>
+          <div class="feature-pill"><span class="mdi mdi-headset"></span> Dedicated Support</div>
         </div>
       </div>
-      <div class="vo-header__right">
-        <div class="vo-header__step-badge">
-          <span class="mdi mdi-progress-check"></span>
-          Step {{ step }} / {{ steps.length }}
-        </div>
-      </div>
-    </header>
-
-    <!-- ── PROGRESS BAR (thin strip under header) ── -->
-    <div class="vo-progress-strip">
-      <div class="vo-progress-strip__fill" :style="{ width: ((step - 1) / (steps.length - 1) * 100) + '%' }"></div>
     </div>
 
-    <!-- ── MAIN CONTENT ── -->
-    <main class="vo-main">
-      <div class="vo-content">
+    <!-- ── RIGHT PANEL ── -->
+    <div class="reg-right">
+      <div class="reg-form-wrap">
 
-        <!-- ── STEPPER DOTS ── -->
-        <div class="vo-stepper-bar">
-          <div v-for="(s, i) in steps" :key="s.key" class="vo-stepper-item">
-            <div class="vo-stepper-node" :class="{
-              'vo-node--active': step === i + 1,
-              'vo-node--done': step > i + 1,
-              'vo-node--pending': step < i + 1
-            }">
-              <span v-if="step > i + 1" class="mdi mdi-check vo-node-icon"></span>
-              <span v-else class="mdi vo-node-icon" :class="s.icon"></span>
-            </div>
-            <span class="vo-stepper-label" :class="{ 'vo-stepper-label--active': step === i + 1 }">{{ s.short }}</span>
+        <!-- Mobile brand -->
+        <div class="mobile-brand">
+          <div class="brand-icon-solid"><span class="mdi mdi-account-tie-outline"></span></div>
+          <span class="brand-name brand-name-dark">BUCKSBOX</span>
+        </div>
+
+        <!-- Header -->
+        <div class="reg-head">
+          <button v-if="step > 1" class="back-btn" @click="prevStep">
+            <v-icon size="18">mdi-arrow-left</v-icon>
+          </button>
+          <div class="reg-head-text">
+            <p class="header-label">STEP {{ step }} OF {{ totalSteps }}</p>
+            <h1 class="header-title">{{ stepTitle }}</h1>
           </div>
-          <div class="vo-stepper-track">
-            <div class="vo-stepper-track__fill" :style="{ width: ((step - 1) / (steps.length - 1) * 100) + '%' }"></div>
+          <div class="step-dots">
+            <span v-for="s in totalSteps" :key="s" class="dot" :class="{ active: s <= step }" />
           </div>
         </div>
 
-        <!-- ── FORM CARD ── -->
-        <div class="vo-card">
+        <div class="progress-track">
+          <div class="progress-fill" :style="{ width: (step / totalSteps * 100) + '%' }" />
+        </div>
 
-          <!-- ════ STEP 1 — Business Details + Login ════ -->
-          <template v-if="step === 1">
-            <div class="vo-card__head">
-              <div class="vo-card-icon-wrap">
-                <span class="mdi mdi-domain"></span>
+        <!-- Scrollable body -->
+        <div class="reg-body">
+
+          <!-- ─────────── STEP 1: Business Details ─────────── -->
+          <div v-if="step === 1" class="step-pane">
+            <p class="step-desc">Set up your distributor identity, primary contact &amp; login password.</p>
+
+            <v-row dense>
+              <v-col cols="12">
+                <label class="field-label">DISTRIBUTOR / COMPANY NAME</label>
+                <v-text-field v-model.trim="form.name" placeholder="Enter distributor or company name"
+                  variant="outlined" density="comfortable" prepend-inner-icon="mdi-office-building-outline"
+                  class="reg-field" hide-details="auto" :error-messages="errors.name ? [errors.name] : []"
+                  @update:model-value="clearError('name')" />
+              </v-col>
+
+              <v-col cols="12" sm="6">
+                <label class="field-label">PRIMARY EMAIL</label>
+                <v-text-field v-model.trim="form.primary_email_id" placeholder="example@company.com"
+                  variant="outlined" density="comfortable" prepend-inner-icon="mdi-email-outline" class="reg-field"
+                  hide-details="auto" :error-messages="errors.primary_email_id ? [errors.primary_email_id] : []"
+                  @update:model-value="clearError('primary_email_id')" />
+              </v-col>
+
+              <v-col cols="12" sm="6">
+                <label class="field-label">PRIMARY MOBILE</label>
+                <v-text-field v-model="form.primary_mobile" placeholder="10-digit mobile" prefix="+91"
+                  variant="outlined" density="comfortable" prepend-inner-icon="mdi-phone-outline" class="reg-field"
+                  hide-details="auto" maxlength="10" :error-messages="errors.primary_mobile ? [errors.primary_mobile] : []"
+                  @update:model-value="clearError('primary_mobile')" />
+              </v-col>
+
+              <v-col cols="12" sm="6">
+                <label class="field-label">PASSWORD</label>
+                <v-text-field v-model="form.password" :type="showPassword ? 'text' : 'password'"
+                  placeholder="Min. 8 characters" variant="outlined" density="comfortable"
+                  prepend-inner-icon="mdi-lock-outline"
+                  :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+                  @click:append-inner="showPassword = !showPassword" class="reg-field" hide-details="auto"
+                  :error-messages="errors.password ? [errors.password] : []"
+                  @update:model-value="clearError('password')" />
+              </v-col>
+
+              <v-col cols="12" sm="6">
+                <label class="field-label">CONFIRM PASSWORD</label>
+                <v-text-field v-model="form.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'"
+                  placeholder="Re-enter password" variant="outlined" density="comfortable"
+                  prepend-inner-icon="mdi-lock-check-outline"
+                  :append-inner-icon="showConfirmPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+                  @click:append-inner="showConfirmPassword = !showConfirmPassword" class="reg-field" hide-details="auto"
+                  :error-messages="errors.confirmPassword ? [errors.confirmPassword] : []"
+                  @update:model-value="clearError('confirmPassword')" />
+              </v-col>
+            </v-row>
+
+            <!-- Password strength -->
+            <div v-if="form.password" class="strength-bar">
+              <div v-for="i in 4" :key="i" class="seg" :class="strengthClass(i)" />
+            </div>
+            <p v-if="form.password" class="strength-label">{{ strengthLabel }}</p>
+          </div>
+
+          <!-- ─────────── STEP 2: Official Address ─────────── -->
+          <div v-if="step === 2" class="step-pane">
+            <p class="step-desc">Registered office address for your distributor account.</p>
+
+            <v-row dense>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model.trim="form.official_address" placeholder="Door No / Office Address"
+                  variant="outlined" density="comfortable" class="reg-field" hide-details="auto"
+                  :error-messages="errors.official_address ? [errors.official_address] : []"
+                  @update:model-value="clearError('official_address')" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model.trim="form.address1" placeholder="Street Address Line 1" variant="outlined"
+                  density="comfortable" class="reg-field" hide-details="auto"
+                  :error-messages="errors.address1 ? [errors.address1] : []"
+                  @update:model-value="clearError('address1')" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model.trim="form.address2" placeholder="Street Address Line 2" variant="outlined"
+                  density="comfortable" class="reg-field" hide-details="auto"
+                  :error-messages="errors.address2 ? [errors.address2] : []"
+                  @update:model-value="clearError('address2')" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model.trim="form.address3" placeholder="Landmark (optional)" variant="outlined"
+                  density="comfortable" class="reg-field" hide-details="auto" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="form.phone" placeholder="Contact number (optional)" prefix="+91"
+                  variant="outlined" density="comfortable" class="reg-field" hide-details="auto" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-combobox v-model="opPincode" :items="opPincodeOptions" item-title="pincode" item-value="pincode"
+                  placeholder="Search pincode" variant="outlined" density="comfortable" return-object
+                  class="reg-field" hide-details="auto" @update:search="opPinSearch" />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field v-model.trim="form.pincode" placeholder="Pincode" variant="outlined"
+                  density="comfortable" disabled :error-messages="errors.pincode ? [errors.pincode] : []"
+                  class="reg-field reg-field--disabled" hide-details="auto" />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field v-model.trim="form.city" placeholder="City" variant="outlined" density="comfortable"
+                  disabled :error-messages="errors.city ? [errors.city] : []" class="reg-field reg-field--disabled"
+                  hide-details="auto" />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field v-model.trim="form.state" placeholder="State" variant="outlined" density="comfortable"
+                  disabled :error-messages="errors.state ? [errors.state] : []" class="reg-field reg-field--disabled"
+                  hide-details="auto" />
+              </v-col>
+            </v-row>
+          </div>
+
+          <!-- ─────────── STEP 3: Address Details ─────────── -->
+          <div v-if="step === 3" class="step-pane">
+            <p class="step-desc">Residential and visitor / shop address information.</p>
+
+            <!-- Residential toggle -->
+            <div class="address-toggle-card">
+              <div class="address-toggle-info">
+                <div class="address-toggle-icon-wrap"><v-icon size="19">mdi-home-outline</v-icon></div>
+                <div>
+                  <p class="address-toggle-title">Residential Address</p>
+                  <p class="address-toggle-sub">Same as official address?</p>
+                </div>
               </div>
-              <div>
-                <h2 class="vo-card__heading">Business Details</h2>
-                <p class="vo-card__desc">Enter your distributor identity, primary contact &amp; set a login password.</p>
-              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" v-model="sameAsOfficialResidential" @change="copyOfficialToResidential"
+                  class="toggle-input" />
+                <div class="toggle-track">
+                  <div class="toggle-thumb" />
+                </div>
+              </label>
             </div>
 
-            <div class="vo-card__body">
-              <div class="vo-grid vo-grid--3">
-                <div class="vo-field-wrap">
-                  <label class="vo-label">DISTRIBUTOR / COMPANY NAME</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-office-building-outline vo-input-icon"></span>
-                    <input v-model.trim="form.name" class="vo-input" placeholder="Enter distributor or company name" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">PRIMARY EMAIL</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-email-outline vo-input-icon"></span>
-                    <input v-model="form.primary_email_id" class="vo-input" placeholder="example@company.com" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">PRIMARY MOBILE</label>
-                  <div class="vo-input-box">
-                    <span class="vo-prefix">+91</span>
-                    <input v-model="form.primary_mobile" class="vo-input vo-input--prefix" placeholder="10-digit mobile" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">PASSWORD</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-lock-outline vo-input-icon"></span>
-                    <input v-model="form.password" :type="showPassword ? 'text' : 'password'" class="vo-input"
-                      placeholder="Min. 8 characters" />
-                    <button type="button" class="vo-input-eye" @click="showPassword = !showPassword" tabindex="-1">
-                      <span class="mdi" :class="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"></span>
-                    </button>
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">CONFIRM PASSWORD</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-lock-check-outline vo-input-icon"></span>
-                    <input v-model="form.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" class="vo-input"
-                      placeholder="Re-enter password" />
-                    <button type="button" class="vo-input-eye" @click="showConfirmPassword = !showConfirmPassword" tabindex="-1">
-                      <span class="mdi" :class="showConfirmPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"></span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
+            <v-row v-if="!sameAsOfficialResidential" dense class="mt-3">
+              <v-col cols="12" sm="6">
+                <v-text-field v-model.trim="form.residential_address" placeholder="Door No / Residential"
+                  variant="outlined" density="comfortable" class="reg-field" hide-details="auto"
+                  :error-messages="errors.residential_address ? [errors.residential_address] : []" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model.trim="form.res_address1" placeholder="Street Address 1" variant="outlined"
+                  density="comfortable" class="reg-field" hide-details="auto"
+                  :error-messages="errors.res_address1 ? [errors.res_address1] : []" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model.trim="form.res_address2" placeholder="Street Address 2" variant="outlined"
+                  density="comfortable" class="reg-field" hide-details="auto"
+                  :error-messages="errors.res_address2 ? [errors.res_address2] : []" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="form.res_mobile" placeholder="Residential mobile (optional)" prefix="+91"
+                  variant="outlined" density="comfortable" class="reg-field" hide-details="auto" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-combobox v-model="resPincode" :items="resPincodeOptions" item-title="pincode"
+                  item-value="pincode" placeholder="Search pincode" variant="outlined" density="comfortable"
+                  return-object class="reg-field" hide-details="auto" @update:search="resPinSearch" />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field v-model.trim="form.res_pincode" placeholder="Pincode" variant="outlined"
+                  density="comfortable" disabled class="reg-field reg-field--disabled" hide-details="auto"
+                  :error-messages="errors.res_pincode ? [errors.res_pincode] : []" />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field v-model.trim="form.res_city" placeholder="City" variant="outlined"
+                  density="comfortable" disabled class="reg-field reg-field--disabled" hide-details="auto"
+                  :error-messages="errors.res_city ? [errors.res_city] : []" />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field v-model.trim="form.res_state" placeholder="State" variant="outlined"
+                  density="comfortable" disabled class="reg-field reg-field--disabled" hide-details="auto"
+                  :error-messages="errors.res_state ? [errors.res_state] : []" />
+              </v-col>
+            </v-row>
 
-          <!-- ════ STEP 2 — Official Address ════ -->
-          <template v-else-if="step === 2">
-            <div class="vo-card__head">
-              <div class="vo-card-icon-wrap">
-                <span class="mdi mdi-map-marker-outline"></span>
-              </div>
-              <div>
-                <h2 class="vo-card__heading">Official Address</h2>
-                <p class="vo-card__desc">Registered office address for your distributor account.</p>
-              </div>
-            </div>
-
-            <div class="vo-card__body">
-              <div class="vo-grid vo-grid--4">
-                <div class="vo-field-wrap vo-span2">
-                  <label class="vo-label">DOOR NO / OFFICE ADDRESS</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-home-outline vo-input-icon"></span>
-                    <input v-model.trim="form.official_address" class="vo-input" placeholder="Door number or office address" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">STREET LINE 1</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-road-variant vo-input-icon"></span>
-                    <input v-model.trim="form.address1" class="vo-input" placeholder="Street address line 1" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">STREET LINE 2</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-road-variant vo-input-icon"></span>
-                    <input v-model.trim="form.address2" class="vo-input" placeholder="Street address line 2" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">LANDMARK</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-sign-direction vo-input-icon"></span>
-                    <input v-model.trim="form.address3" class="vo-input" placeholder="Landmark (optional)" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap vo-pincode-wrap">
-                  <label class="vo-label">SEARCH PINCODE</label>
-                  <div class="vo-input-box" :class="{ 'vo-input-box--focus': opPinFocus }">
-                    <span class="mdi mdi-map-search-outline vo-input-icon"></span>
-                    <input
-                      v-model="opPincodeQuery"
-                      class="vo-input"
-                      placeholder="Type area or pincode"
-                      autocomplete="off"
-                      @focus="opPinFocus = true; opPinOpen = true"
-                      @blur="setTimeout(() => { opPinFocus = false; opPinOpen = false }, 180)"
-                      @input="opinSearch(opPincodeQuery)"
-                    />
-                    <span v-if="loading && opPinFocus" class="mdi mdi-loading vo-input-spinner"></span>
-                  </div>
-                  <div v-if="opPinOpen && opincodeOptions.length" class="vo-pin-dropdown">
-                    <div
-                      v-for="opt in opincodeOptions"
-                      :key="opt.pincode"
-                      class="vo-pin-option"
-                      @mousedown.prevent="selectOpincode(opt)"
-                    >
-                      <span class="mdi mdi-map-marker-outline vo-pin-option__icon"></span>
-                      <div>
-                        <p class="vo-pin-option__code">{{ opt.pincode }}</p>
-                        <p class="vo-pin-option__sub">{{ opt.city }}, {{ opt.statename }}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-if="opPinOpen && !opincodeOptions.length && opPincodeQuery.length >= 2 && !loading" class="vo-pin-dropdown">
-                    <p class="vo-pin-empty">No results found</p>
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">PINCODE</label>
-                  <div class="vo-input-box vo-input-box--disabled">
-                    <span class="mdi mdi-pound vo-input-icon"></span>
-                    <input v-model.trim="form.pincode" class="vo-input" placeholder="Auto-filled" disabled />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">CITY</label>
-                  <div class="vo-input-box vo-input-box--disabled">
-                    <span class="mdi mdi-city-variant-outline vo-input-icon"></span>
-                    <input v-model.trim="form.city" class="vo-input" placeholder="Auto-filled" disabled />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">STATE</label>
-                  <div class="vo-input-box vo-input-box--disabled">
-                    <span class="mdi mdi-map-outline vo-input-icon"></span>
-                    <input v-model.trim="form.state" class="vo-input" placeholder="Auto-filled" disabled />
-                  </div>
+            <!-- Visitor toggle -->
+            <div class="address-toggle-card mt-4">
+              <div class="address-toggle-info">
+                <div class="address-toggle-icon-wrap"><v-icon size="19">mdi-storefront-outline</v-icon></div>
+                <div>
+                  <p class="address-toggle-title">Visitor / Shop Address</p>
+                  <p class="address-toggle-sub">Same as official address?</p>
                 </div>
               </div>
-            </div>
-          </template>
-
-          <!-- ════ STEP 3 — Residential & Visitor Address ════ -->
-          <template v-else-if="step === 3">
-            <div class="vo-card__head">
-              <div class="vo-card-icon-wrap">
-                <span class="mdi mdi-home-city-outline"></span>
-              </div>
-              <div>
-                <h2 class="vo-card__heading">Address Details</h2>
-                <p class="vo-card__desc">Residential and visitor / shop address information.</p>
-              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" v-model="sameAsOfficialVisitor" @change="copyOfficialToVisitor"
+                  class="toggle-input" />
+                <div class="toggle-track">
+                  <div class="toggle-thumb" />
+                </div>
+              </label>
             </div>
 
-            <div class="vo-card__body">
+            <v-row v-if="!sameAsOfficialVisitor" dense class="mt-3">
+              <v-col cols="12" sm="6">
+                <v-text-field v-model.trim="form.vister_address" placeholder="Door No / Visitor" variant="outlined"
+                  density="comfortable" class="reg-field" hide-details="auto"
+                  :error-messages="errors.vister_address ? [errors.vister_address] : []" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model.trim="form.v_address1" placeholder="Street Address 1" variant="outlined"
+                  density="comfortable" class="reg-field" hide-details="auto"
+                  :error-messages="errors.v_address1 ? [errors.v_address1] : []" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model.trim="form.v_address2" placeholder="Street Address 2" variant="outlined"
+                  density="comfortable" class="reg-field" hide-details="auto"
+                  :error-messages="errors.v_address2 ? [errors.v_address2] : []" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="form.v_mobile" placeholder="Visitor mobile (optional)" prefix="+91"
+                  variant="outlined" density="comfortable" class="reg-field" hide-details="auto" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-combobox v-model="vPincode" :items="vPincodeOptions" item-title="pincode" item-value="pincode"
+                  placeholder="Search pincode" variant="outlined" density="comfortable" return-object
+                  class="reg-field" hide-details="auto" @update:search="vPinSearch" />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field v-model.trim="form.v_pincode" placeholder="Pincode" variant="outlined"
+                  density="comfortable" disabled class="reg-field reg-field--disabled" hide-details="auto"
+                  :error-messages="errors.v_pincode ? [errors.v_pincode] : []" />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field v-model.trim="form.v_city" placeholder="City" variant="outlined" density="comfortable"
+                  disabled class="reg-field reg-field--disabled" hide-details="auto"
+                  :error-messages="errors.v_city ? [errors.v_city] : []" />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field v-model.trim="form.v_state" placeholder="State" variant="outlined"
+                  density="comfortable" disabled class="reg-field reg-field--disabled" hide-details="auto"
+                  :error-messages="errors.v_state ? [errors.v_state] : []" />
+              </v-col>
+            </v-row>
+          </div>
 
-              <!-- Sub-section label -->
-              <p class="vo-address-sub-title">RESIDENTIAL ADDRESS</p>
-
-              <!-- Toggle card -->
-              <div class="vo-toggle-card">
-                <div class="vo-toggle-info">
-                  <div class="vo-toggle-icon">
-                    <span class="mdi mdi-home-outline"></span>
-                  </div>
-                  <div>
-                    <p class="vo-toggle-title">Residential Address</p>
-                    <p class="vo-toggle-sub">Same as official address?</p>
-                  </div>
-                </div>
-                <label class="vo-switch">
-                  <input type="checkbox" v-model="sameAsOfficialResidential" @change="copyOfficialToResidential" class="vo-switch-input" />
-                  <div class="vo-switch-track">
-                    <div class="vo-switch-thumb"></div>
-                  </div>
-                </label>
-              </div>
-
-              <div v-if="!sameAsOfficialResidential" class="vo-grid vo-grid--4 vo-mt">
-                <div class="vo-field-wrap">
-                  <label class="vo-label">DOOR NO / RES ADDRESS</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-home-outline vo-input-icon"></span>
-                    <input v-model.trim="form.residential_address" class="vo-input" placeholder="Residential door no." />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">STREET LINE 1</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-road-variant vo-input-icon"></span>
-                    <input v-model.trim="form.res_address1" class="vo-input" placeholder="Street address 1" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">STREET LINE 2</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-road-variant vo-input-icon"></span>
-                    <input v-model.trim="form.res_address2" class="vo-input" placeholder="Street address 2" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">LANDMARK</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-sign-direction vo-input-icon"></span>
-                    <input v-model.trim="form.res_address3" class="vo-input" placeholder="Landmark (optional)" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap vo-pincode-wrap">
-                  <label class="vo-label">SEARCH PINCODE</label>
-                  <div class="vo-input-box" :class="{ 'vo-input-box--focus': resPinFocus }">
-                    <span class="mdi mdi-map-search-outline vo-input-icon"></span>
-                    <input
-                      v-model="resPincodeQuery"
-                      class="vo-input"
-                      placeholder="Type area or pincode"
-                      autocomplete="off"
-                      @focus="resPinFocus = true; resPinOpen = true"
-                      @blur="setTimeout(() => { resPinFocus = false; resPinOpen = false }, 180)"
-                      @input="respinSearch(resPincodeQuery)"
-                    />
-                    <span v-if="loading && resPinFocus" class="mdi mdi-loading vo-input-spinner"></span>
-                  </div>
-                  <div v-if="resPinOpen && respincodeOptions.length" class="vo-pin-dropdown">
-                    <div
-                      v-for="opt in respincodeOptions"
-                      :key="opt.pincode"
-                      class="vo-pin-option"
-                      @mousedown.prevent="selectResPincode(opt)"
-                    >
-                      <span class="mdi mdi-map-marker-outline vo-pin-option__icon"></span>
-                      <div>
-                        <p class="vo-pin-option__code">{{ opt.pincode }}</p>
-                        <p class="vo-pin-option__sub">{{ opt.city }}, {{ opt.statename }}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-if="resPinOpen && !respincodeOptions.length && resPincodeQuery.length >= 2 && !loading" class="vo-pin-dropdown">
-                    <p class="vo-pin-empty">No results found</p>
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">PINCODE</label>
-                  <div class="vo-input-box vo-input-box--disabled">
-                    <span class="mdi mdi-pound vo-input-icon"></span>
-                    <input v-model.trim="form.res_pincode" class="vo-input" placeholder="Auto-filled" disabled />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">CITY</label>
-                  <div class="vo-input-box vo-input-box--disabled">
-                    <span class="mdi mdi-city-variant-outline vo-input-icon"></span>
-                    <input v-model.trim="form.res_city" class="vo-input" placeholder="Auto-filled" disabled />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">STATE</label>
-                  <div class="vo-input-box vo-input-box--disabled">
-                    <span class="mdi mdi-map-outline vo-input-icon"></span>
-                    <input v-model.trim="form.res_state" class="vo-input" placeholder="Auto-filled" disabled />
-                  </div>
-                </div>
-              </div>
-
-              <div class="vo-section-divider"></div>
-
-              <p class="vo-address-sub-title">VISITOR / SHOP ADDRESS</p>
-
-              <!-- Toggle card visitor -->
-              <div class="vo-toggle-card">
-                <div class="vo-toggle-info">
-                  <div class="vo-toggle-icon">
-                    <span class="mdi mdi-storefront-outline"></span>
-                  </div>
-                  <div>
-                    <p class="vo-toggle-title">Visitor / Shop Address</p>
-                    <p class="vo-toggle-sub">Same as official address?</p>
-                  </div>
-                </div>
-                <label class="vo-switch">
-                  <input type="checkbox" v-model="sameAsOfficialVisitor" @change="copyOfficialToVisitor" class="vo-switch-input" />
-                  <div class="vo-switch-track">
-                    <div class="vo-switch-thumb"></div>
-                  </div>
-                </label>
-              </div>
-
-              <div v-if="!sameAsOfficialVisitor" class="vo-grid vo-grid--4 vo-mt">
-                <div class="vo-field-wrap">
-                  <label class="vo-label">DOOR NO / VISITOR ADDRESS</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-storefront-outline vo-input-icon"></span>
-                    <input v-model.trim="form.vister_address" class="vo-input" placeholder="Visitor/shop door no." />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">STREET LINE 1</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-road-variant vo-input-icon"></span>
-                    <input v-model.trim="form.v_address1" class="vo-input" placeholder="Street address 1" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">STREET LINE 2</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-road-variant vo-input-icon"></span>
-                    <input v-model.trim="form.v_address2" class="vo-input" placeholder="Street address 2" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">LANDMARK</label>
-                  <div class="vo-input-box">
-                    <span class="mdi mdi-sign-direction vo-input-icon"></span>
-                    <input v-model.trim="form.v_address3" class="vo-input" placeholder="Landmark (optional)" />
-                  </div>
-                </div>
-                <div class="vo-field-wrap vo-pincode-wrap">
-                  <label class="vo-label">SEARCH PINCODE</label>
-                  <div class="vo-input-box" :class="{ 'vo-input-box--focus': vPinFocus }">
-                    <span class="mdi mdi-map-search-outline vo-input-icon"></span>
-                    <input
-                      v-model="vPincodeQuery"
-                      class="vo-input"
-                      placeholder="Type area or pincode"
-                      autocomplete="off"
-                      @focus="vPinFocus = true; vPinOpen = true"
-                      @blur="setTimeout(() => { vPinFocus = false; vPinOpen = false }, 180)"
-                      @input="vpinSearch(vPincodeQuery)"
-                    />
-                    <span v-if="loading && vPinFocus" class="mdi mdi-loading vo-input-spinner"></span>
-                  </div>
-                  <div v-if="vPinOpen && vpincodeOptions.length" class="vo-pin-dropdown">
-                    <div
-                      v-for="opt in vpincodeOptions"
-                      :key="opt.pincode"
-                      class="vo-pin-option"
-                      @mousedown.prevent="selectVPincode(opt)"
-                    >
-                      <span class="mdi mdi-map-marker-outline vo-pin-option__icon"></span>
-                      <div>
-                        <p class="vo-pin-option__code">{{ opt.pincode }}</p>
-                        <p class="vo-pin-option__sub">{{ opt.city }}, {{ opt.statename }}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-if="vPinOpen && !vpincodeOptions.length && vPincodeQuery.length >= 2 && !loading" class="vo-pin-dropdown">
-                    <p class="vo-pin-empty">No results found</p>
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">PINCODE</label>
-                  <div class="vo-input-box vo-input-box--disabled">
-                    <span class="mdi mdi-pound vo-input-icon"></span>
-                    <input v-model.trim="form.v_pincode" class="vo-input" placeholder="Auto-filled" disabled />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">CITY</label>
-                  <div class="vo-input-box vo-input-box--disabled">
-                    <span class="mdi mdi-city-variant-outline vo-input-icon"></span>
-                    <input v-model.trim="form.v_city" class="vo-input" placeholder="Auto-filled" disabled />
-                  </div>
-                </div>
-                <div class="vo-field-wrap">
-                  <label class="vo-label">STATE</label>
-                  <div class="vo-input-box vo-input-box--disabled">
-                    <span class="mdi mdi-map-outline vo-input-icon"></span>
-                    <input v-model.trim="form.v_state" class="vo-input" placeholder="Auto-filled" disabled />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <!-- ── CARD FOOTER ACTIONS ── -->
-          <div class="vo-card-footer">
-            <p class="vo-footer-terms">
-              By continuing, you agree to our
-              <a href="#" class="vo-footer-link">Terms of Service</a>.
+          <!-- ─────────── STEP 4: Select Services ─────────── -->
+          <div v-if="step === 4" class="step-pane">
+            <p class="step-desc">
+              Choose the services you'll offer. A default provider is assigned automatically for each. Optional —
+              you can skip and add these later from your dashboard.
             </p>
-            <div class="vo-footer-actions">
-              <button v-if="step > 1" class="vo-btn-secondary" @click="prevStep">
-                <span class="mdi mdi-arrow-left"></span>
-                Back
-              </button>
-              <button class="vo-btn-primary" :disabled="loading" @click="next">
-                <span v-if="loading" class="vo-spinner"></span>
-                <template v-else-if="step === steps.length">
-                  Create Distributor Account
-                  <span class="mdi mdi-check"></span>
-                </template>
-                <template v-else>
-                  Continue
-                  <span class="mdi mdi-arrow-right"></span>
-                </template>
-              </button>
+
+            <div v-if="loadingServices" class="svc-loading">Loading available services…</div>
+
+            <div v-else-if="!serviceList.length" class="svc-empty">No services are available to select right now — you can skip this step.</div>
+
+            <div v-else class="svc-grid">
+              <div v-for="svc in serviceList" :key="svc.id" class="svc-card"
+                :class="{ 'svc-card--selected': serviceSelections[svc.id]?.selected }">
+                <div class="svc-card__head" @click="toggleService(svc)">
+                  <div class="svc-checkbox" :class="{ 'svc-checkbox--on': serviceSelections[svc.id]?.selected }">
+                    <v-icon v-if="serviceSelections[svc.id]?.selected" size="13">mdi-check</v-icon>
+                  </div>
+                  <v-icon size="18" color="#1142d4">{{ serviceIcon(svc.service) }}</v-icon>
+                  <span class="svc-card__name">{{ svc.service }}</span>
+                </div>
+
+                <!-- <div v-if="serviceSelections[svc.id]?.selected" class="svc-card__body">
+                  <span v-if="serviceSelections[svc.id]?.interfaceName" class="svc-provider-badge">
+                    Provider: {{ serviceSelections[svc.id].interfaceName }}
+                  </span>
+                  <p v-else class="svc-card__hint">No provider linked to this service yet.</p>
+                </div> -->
+              </div>
             </div>
+
+            <p v-if="selectedServiceCount" class="svc-summary">
+              {{ selectedServiceCount }} service{{ selectedServiceCount > 1 ? 's' : '' }} selected — these will be
+              linked to your account as pending until an admin activates them.
+            </p>
           </div>
+
         </div>
 
-        <!-- ── HELPER INFO CARDS ── -->
-        <div class="vo-info-row">
-          <div class="vo-info-card">
-            <div class="vo-info-card__icon">
-              <span class="mdi mdi-file-document-outline"></span>
-            </div>
-            <div>
-              <p class="vo-info-card__title">Documents Come Next</p>
-              <p class="vo-info-card__desc">After registering, you'll be prompted from your dashboard to select a business type and upload verification documents.</p>
-            </div>
-          </div>
-          <div class="vo-info-card">
-            <div class="vo-info-card__icon">
-              <span class="mdi mdi-shield-check-outline"></span>
-            </div>
-            <div>
-              <p class="vo-info-card__title">Secure Processing</p>
-              <p class="vo-info-card__desc">Your data is encrypted using industry-standard protocols.</p>
-            </div>
-          </div>
-        </div>
+        <!-- Footer actions -->
+        <div class="reg-footer">
+          <button class="btn-next" :disabled="submitting" @click="handleNext">
+            <span v-if="submitting" class="btn-spinner" />
+            <template v-else>
+              <span>{{ step === totalSteps ? 'Create Partner Account' : 'Continue' }}</span>
+              <v-icon size="18">mdi-arrow-right</v-icon>
+            </template>
+          </button>
 
-        <p class="vo-login-row">
-          Already registered?
-          <span class="vo-login-link" @click="router.push('/')">Log In</span>
-        </p>
+          <p v-if="step === 1" class="login-footer">
+            Already have an account?
+            <span class="login-link" @click="router.push('/')">Log In</span>
+          </p>
+        </div>
 
       </div>
-    </main>
+    </div>
 
     <!-- ── SNACKBAR ── -->
-    <transition name="snack">
-      <div v-if="snackbar.show" class="vo-snackbar" :class="'vo-snackbar--' + snackbar.color">
-        <span class="mdi" :class="snackbar.color === 'success' ? 'mdi-check-circle-outline' : 'mdi-alert-circle-outline'"></span>
-        <span>{{ snackbar.message }}</span>
-        <button class="vo-snackbar__close" @click="snackbar.show = false">
-          <span class="mdi mdi-close"></span>
-        </button>
+    <v-snackbar v-model="snackbar.show" :timeout="4000" location="top right" elevation="8" rounded="xl"
+      :color="snackbar.color">
+      <div class="d-flex align-center ga-3">
+        <v-icon size="22" color="white">
+          {{ snackbar.color === 'success' ? 'mdi-check-circle-outline' : 'mdi-alert-circle-outline' }}
+        </v-icon>
+        <div class="text-body-2 font-weight-medium">{{ snackbar.message }}</div>
       </div>
-    </transition>
-
-    <!-- ── PROCESSING OVERLAY ── -->
-    <transition name="fade">
-      <div v-if="submitting" class="vo-overlay">
-        <div class="vo-overlay__card">
-          <div class="vo-overlay__spinner"></div>
-          <p class="vo-overlay__title">Processing your registration</p>
-          <p class="vo-overlay__sub">Please wait, do not close this page</p>
-        </div>
-      </div>
-    </transition>
+    </v-snackbar>
 
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, computed, watch, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useOnboadingApi } from "@/composables/apis/useOnboadingApi";
 import { useUsersApi } from "@/composables/apis/useUsersApi";
-import { useRouter } from "vue-router";
+import { useSetupServicesApi } from "~/composables/apis/useSetupServices";
 
+const router = useRouter();
 const { pincodeSearch } = useOnboadingApi();
 const { registerVendor } = useUsersApi();
-const router = useRouter();
+const { getPublicServiceCatalog } = useSetupServicesApi();
 
-// ── State ──────────────────────────────────────────────────────────
+// ── Step control ──
 const step = ref(1);
-const loading = ref(false);
+const totalSteps = 4;
 const submitting = ref(false);
-const sameAsOfficialResidential = ref(false);
-const sameAsOfficialVisitor = ref(false);
-const snackbar = reactive({ show: false, message: "", color: "success" });
+
+const stepTitles = ["Business Details", "Official Address", "Address Details", "Select Services"];
+const stepTitle = computed(() => stepTitles[step.value - 1]);
+
+// ── Services selection ──
+const serviceList = ref([]);
+const loadingServices = ref(false);
+const serviceSelections = reactive({});
+
+const SERVICE_ICONS = {
+  AEPS: "mdi-fingerprint", DMT: "mdi-bank-transfer", UPI: "mdi-qrcode",
+  BBPS: "mdi-receipt-text-outline", MATM: "mdi-atm", POS: "mdi-point-of-sale",
+};
+const serviceIcon = (service) => SERVICE_ICONS[service] || "mdi-apps";
+
+// No provider picker shown to the user — each service gets a fixed default
+// provider assigned on selection instead.
+const DEFAULT_INTERFACE_BY_SERVICE = {
+  UPI: "ISG",
+  AEPS: "NSDL",
+  DMT: "NSDL",
+};
+
+function toggleService(svc) {
+  const current = serviceSelections[svc.id];
+  if (current?.selected) {
+    serviceSelections[svc.id] = { selected: false, interfaceId: "", interfaceName: "" };
+  } else {
+    const preferredName = DEFAULT_INTERFACE_BY_SERVICE[svc.service];
+    const preferred = preferredName && (svc.interfaces || []).find(i => i.interface === preferredName);
+    const fallback = preferred || svc.interfaces?.[0] || null;
+    serviceSelections[svc.id] = {
+      selected: true,
+      interfaceId: fallback?.id || "",
+      interfaceName: fallback?.interface || "",
+    };
+  }
+}
+
+const selectedServiceEntries = computed(() =>
+  Object.entries(serviceSelections)
+    .filter(([, sel]) => sel.selected && sel.interfaceId)
+    .map(([serviceId, sel]) => ({ serviceId, interfaceId: sel.interfaceId }))
+);
+const selectedServiceCount = computed(() => selectedServiceEntries.value.length);
+
+// ── Form state ──
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
-// Pincode dropdown query state
-const opPincodeQuery = ref('');
-const resPincodeQuery = ref('');
-const vPincodeQuery = ref('');
-const opPinFocus = ref(false);
-const resPinFocus = ref(false);
-const vPinFocus = ref(false);
-const opPinOpen = ref(false);
-const resPinOpen = ref(false);
-const vPinOpen = ref(false);
-
-const opincodeOptions = ref([]);
-const respincodeOptions = ref([]);
-const vpincodeOptions = ref([]);
-
-const steps = [
-  { key: "business",  label: "Business Details",  short: "Business",  icon: "mdi-domain" },
-  { key: "official",  label: "Official Address",   short: "Official",  icon: "mdi-map-marker-outline" },
-  { key: "addresses", label: "Address Details",    short: "Addresses", icon: "mdi-home-city-outline" },
-];
-
 const form = reactive({
-  name: "", primary_email_id: "", primary_mobile: "", password: "", confirmPassword: "",
-  official_address: "", address1: "", address2: "", address3: "", phone: "", city: "", state: "", pincode: "",
-  residential_address: "", res_address1: "", res_address2: "", res_address3: "", res_mobile: "", res_phone_number: "", res_city: "", res_state: "", res_pincode: "",
-  vister_address: "", v_address1: "", v_address2: "", v_address3: "", v_mobile: "", v_phone_number: "", v_city: "", v_state: "", v_pincode: "",
-  lat: "", long: "",
+  // Step 1
+  name: "",
+  primary_email_id: "",
+  primary_mobile: "",
+  password: "",
+  confirmPassword: "",
+
+  // Step 2 — Official
+  official_address: "",
+  address1: "",
+  address2: "",
+  address3: "",
+  phone: "",
+  city: "",
+  state: "",
+  pincode: "",
+
+  // Residential
+  residential_address: "",
+  res_address1: "",
+  res_address2: "",
+  res_address3: "",
+  res_mobile: "",
+  res_phone_number: "",
+  res_city: "",
+  res_state: "",
+  res_pincode: "",
+
+  // Visitor
+  vister_address: "",
+  v_address1: "",
+  v_address2: "",
+  v_address3: "",
+  v_mobile: "",
+  v_phone_number: "",
+  v_city: "",
+  v_state: "",
+  v_pincode: "",
+
+  lat: "",
+  long: "",
 });
 
-// ── Helpers ────────────────────────────────────────────────────────
-function showSnack(message, color = "success") {
-  snackbar.message = message; snackbar.color = color; snackbar.show = true;
-  setTimeout(() => snackbar.show = false, 4000);
-}
+// ── Errors ──
+const errors = reactive({});
+const clearError = (field) => { delete errors[field]; };
 
-function copyOfficialToResidential() {
+// ── Pincode (official) ──
+const opPincode = ref(null);
+const opPincodeOptions = ref([]);
+let pinDebounce = null;
+
+const opPinSearch = (q) => {
+  clearTimeout(pinDebounce);
+  if (!q || q.length < 2) { opPincodeOptions.value = []; return; }
+  pinDebounce = setTimeout(async () => {
+    try {
+      const res = await pincodeSearch(q);
+      opPincodeOptions.value = res.data?.data || res.data || [];
+    } catch (e) { console.error(e); }
+  }, 300);
+};
+watch(opPincode, (val) => {
+  if (!val || typeof val !== "object") return;
+  form.city = val.city;
+  form.state = val.statename;
+  form.pincode = val.pincode;
+});
+
+// ── Pincode (residential) ──
+const resPincode = ref(null);
+const resPincodeOptions = ref([]);
+let resPinDebounce = null;
+
+const resPinSearch = (q) => {
+  clearTimeout(resPinDebounce);
+  if (!q || q.length < 2) { resPincodeOptions.value = []; return; }
+  resPinDebounce = setTimeout(async () => {
+    try {
+      const res = await pincodeSearch(q);
+      resPincodeOptions.value = res.data?.data || res.data || [];
+    } catch (e) { console.error(e); }
+  }, 300);
+};
+watch(resPincode, (val) => {
+  if (!val || typeof val !== "object") return;
+  form.res_city = val.city;
+  form.res_state = val.statename;
+  form.res_pincode = val.pincode;
+});
+
+// ── Pincode (visitor) ──
+const vPincode = ref(null);
+const vPincodeOptions = ref([]);
+let vPinDebounce = null;
+
+const vPinSearch = (q) => {
+  clearTimeout(vPinDebounce);
+  if (!q || q.length < 2) { vPincodeOptions.value = []; return; }
+  vPinDebounce = setTimeout(async () => {
+    try {
+      const res = await pincodeSearch(q);
+      vPincodeOptions.value = res.data?.data || res.data || [];
+    } catch (e) { console.error(e); }
+  }, 300);
+};
+watch(vPincode, (val) => {
+  if (!val || typeof val !== "object") return;
+  form.v_city = val.city;
+  form.v_state = val.statename;
+  form.v_pincode = val.pincode;
+});
+
+// ── Address toggles ──
+const sameAsOfficialResidential = ref(false);
+const sameAsOfficialVisitor = ref(false);
+
+const copyOfficialToResidential = () => {
   if (sameAsOfficialResidential.value) {
     Object.assign(form, {
-      residential_address: form.official_address, res_address1: form.address1,
-      res_address2: form.address2, res_address3: form.address3,
-      res_city: form.city, res_state: form.state, res_pincode: form.pincode
+      residential_address: form.official_address,
+      res_address1: form.address1,
+      res_address2: form.address2,
+      res_address3: form.address3,
+      res_city: form.city,
+      res_state: form.state,
+      res_pincode: form.pincode,
     });
   }
-}
-
-function copyOfficialToVisitor() {
+};
+const copyOfficialToVisitor = () => {
   if (sameAsOfficialVisitor.value) {
     Object.assign(form, {
-      vister_address: form.official_address, v_address1: form.address1,
-      v_address2: form.address2, v_address3: form.address3,
-      v_city: form.city, v_state: form.state, v_pincode: form.pincode
+      vister_address: form.official_address,
+      v_address1: form.address1,
+      v_address2: form.address2,
+      v_address3: form.address3,
+      v_city: form.city,
+      v_state: form.state,
+      v_pincode: form.pincode,
     });
   }
-}
-
-// ── Pincode search handlers ────────────────────────────────────────
-const opinSearch = async (query) => {
-  if (!query || query.length < 2) { opincodeOptions.value = []; return; }
-  loading.value = true;
-  try { const res = await pincodeSearch(query); opincodeOptions.value = res.data.data; }
-  catch (err) { console.error("Official pincode search failed", err); }
-  finally { loading.value = false; }
 };
 
-const respinSearch = async (query) => {
-  if (!query || query.length < 2) { respincodeOptions.value = []; return; }
-  loading.value = true;
-  try { const res = await pincodeSearch(query); respincodeOptions.value = res.data.data; }
-  catch (err) { console.error("Residential pincode search failed", err); }
-  finally { loading.value = false; }
+// ── Password strength ──
+const passwordStrength = computed(() => {
+  const v = form.password;
+  if (!v) return 0;
+  let s = 0;
+  if (v.length >= 8) s++;
+  if (/[A-Z]/.test(v)) s++;
+  if (/[0-9]/.test(v)) s++;
+  if (/[^A-Za-z0-9]/.test(v)) s++;
+  return s;
+});
+const strengthLabel = computed(() => ["", "Weak", "Fair", "Good", "Strong"][passwordStrength.value] || "");
+const strengthClass = (i) => {
+  if (i > passwordStrength.value) return "seg--empty";
+  const c = ["", "seg--weak", "seg--fair", "seg--good", "seg--strong"];
+  return c[passwordStrength.value];
 };
 
-const vpinSearch = async (query) => {
-  if (!query || query.length < 2) { vpincodeOptions.value = []; return; }
-  loading.value = true;
-  try { const res = await pincodeSearch(query); vpincodeOptions.value = res.data.data; }
-  catch (err) { console.error("Visitor pincode search failed", err); }
-  finally { loading.value = false; }
+// ── Snackbar ──
+const snackbar = reactive({ show: false, message: "", color: "success" });
+const showSnack = (message, color = "success") => {
+  snackbar.message = message;
+  snackbar.color = color;
+  snackbar.show = true;
 };
 
-function selectOpincode(opt) {
-  form.city = opt.city; form.state = opt.statename; form.pincode = opt.pincode;
-  opPincodeQuery.value = opt.pincode; opPinOpen.value = false; opincodeOptions.value = [];
-}
+// ── Validation per step ──
+const validateStep = () => {
+  const newErrors = {};
 
-function selectResPincode(opt) {
-  form.res_city = opt.city; form.res_state = opt.statename; form.res_pincode = opt.pincode;
-  resPincodeQuery.value = opt.pincode; resPinOpen.value = false; respincodeOptions.value = [];
-}
+  if (step.value === 1) {
+    if (!form.name || form.name.trim().length < 2)
+      newErrors.name = "Distributor / company name is required";
+    if (!form.primary_email_id || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.primary_email_id))
+      newErrors.primary_email_id = "Enter a valid email address";
+    if (!/^[6-9]\d{9}$/.test(String(form.primary_mobile || "")))
+      newErrors.primary_mobile = "Enter a valid 10-digit mobile number";
+    if (!form.password || form.password.length < 8)
+      newErrors.password = "Password must be at least 8 characters";
+    if (form.password !== form.confirmPassword)
+      newErrors.confirmPassword = "Passwords do not match";
+  }
 
-function selectVPincode(opt) {
-  form.v_city = opt.city; form.v_state = opt.statename; form.v_pincode = opt.pincode;
-  vPincodeQuery.value = opt.pincode; vPinOpen.value = false; vpincodeOptions.value = [];
-}
+  if (step.value === 2) {
+    if (!form.official_address) newErrors.official_address = "Required";
+    if (!form.address1) newErrors.address1 = "Required";
+    if (!form.address2) newErrors.address2 = "Required";
+    if (!form.pincode) newErrors.pincode = "Required";
+    if (!form.city) newErrors.city = "Required";
+    if (!form.state) newErrors.state = "Required";
+  }
 
-function prevStep() { if (step.value > 1) step.value--; }
+  if (step.value === 3) {
+    if (!sameAsOfficialResidential.value) {
+      if (!form.residential_address) newErrors.residential_address = "Required";
+      if (!form.res_address1) newErrors.res_address1 = "Required";
+      if (!form.res_address2) newErrors.res_address2 = "Required";
+      if (!form.res_pincode) newErrors.res_pincode = "Required";
+      if (!form.res_city) newErrors.res_city = "Required";
+      if (!form.res_state) newErrors.res_state = "Required";
+    }
+    if (!sameAsOfficialVisitor.value) {
+      if (!form.vister_address) newErrors.vister_address = "Required";
+      if (!form.v_address1) newErrors.v_address1 = "Required";
+      if (!form.v_address2) newErrors.v_address2 = "Required";
+      if (!form.v_pincode) newErrors.v_pincode = "Required";
+      if (!form.v_city) newErrors.v_city = "Required";
+      if (!form.v_state) newErrors.v_state = "Required";
+    }
+  }
 
-const next = async () => {
-  loading.value = true;
+  Object.assign(errors, newErrors);
+  Object.keys(errors).forEach((k) => { if (!(k in newErrors)) delete errors[k]; });
+  return Object.keys(newErrors).length === 0;
+};
+
+// ── Navigation ──
+const prevStep = () => { if (step.value > 1) step.value--; };
+
+const handleNext = async () => {
+  if (!validateStep()) return;
+
+  if (step.value < totalSteps) {
+    step.value++;
+    return;
+  }
+
+  await submit();
+};
+
+// ── Submit — creates the distributor (vendor) account ──
+const submit = async () => {
+  submitting.value = true;
   try {
-    if (step.value === 1) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const mobileRegex = /^[6-9]\d{9}$/;
+    const payload = {
+      email: form.primary_email_id,
+      password: form.password,
+      mobile_no: form.primary_mobile,
+      name: form.name,
+      lat: form.lat || null,
+      long: form.long || null,
+      addresses: {
+        official: {
+          address: form.official_address, address1: form.address1, address2: form.address2,
+          address3: form.address3 || null, city: form.city, state: form.state, pincode: form.pincode,
+          phone: form.phone || null,
+        },
+        residential: {
+          address: sameAsOfficialResidential.value ? form.official_address : form.residential_address,
+          address1: sameAsOfficialResidential.value ? form.address1 : form.res_address1,
+          address2: sameAsOfficialResidential.value ? form.address2 : form.res_address2,
+          address3: (sameAsOfficialResidential.value ? form.address3 : form.res_address3) || null,
+          city: sameAsOfficialResidential.value ? form.city : form.res_city,
+          state: sameAsOfficialResidential.value ? form.state : form.res_state,
+          pincode: sameAsOfficialResidential.value ? form.pincode : form.res_pincode,
+          mobile: form.res_mobile || null,
+        },
+        visitor: {
+          address: sameAsOfficialVisitor.value ? form.official_address : form.vister_address,
+          address1: sameAsOfficialVisitor.value ? form.address1 : form.v_address1,
+          address2: sameAsOfficialVisitor.value ? form.address2 : form.v_address2,
+          address3: (sameAsOfficialVisitor.value ? form.address3 : form.v_address3) || null,
+          city: sameAsOfficialVisitor.value ? form.city : form.v_city,
+          state: sameAsOfficialVisitor.value ? form.state : form.v_state,
+          pincode: sameAsOfficialVisitor.value ? form.pincode : form.v_pincode,
+          mobile: form.v_mobile || null,
+        },
+      },
+      services: selectedServiceEntries.value,
+    };
 
-      if (!form.name.trim()) {
-        showSnack("Distributor name is required", "error"); return;
-      }
-      if (!form.primary_email_id.trim() || !emailRegex.test(form.primary_email_id.trim())) {
-        showSnack("Enter a valid email address", "error"); return;
-      }
-      if (!form.primary_mobile.trim() || !mobileRegex.test(form.primary_mobile.trim())) {
-        showSnack("Enter a valid 10-digit Indian mobile number", "error"); return;
-      }
-      if (!form.password || form.password.length < 8) {
-        showSnack("Password must be at least 8 characters", "error"); return;
-      }
-      if (form.password !== form.confirmPassword) {
-        showSnack("Passwords do not match", "error"); return;
-      }
+    const result = await registerVendor(payload);
+
+    if (result?.statusCode === "00") {
+      showSnack("Distributor account created! Redirecting to your dashboard…", "success");
+      setTimeout(() => router.push("/vendor/dashboard"), 1500);
+    } else {
+      showSnack(result?.message || "Error creating distributor account", "error");
     }
-
-    if (step.value === 2) {
-      const pincodeRegex = /^\d{6}$/;
-
-      if (!form.official_address || !form.address1 || !form.address2 || !form.city || !form.state || !form.pincode) {
-        showSnack("Please fill all required fields", "error"); return;
-      }
-      if (!form.official_address.trim()) {
-        showSnack("Door no / office address is required", "error"); return;
-      }
-      if (!form.address1.trim()) {
-        showSnack("Street line 1 is required", "error"); return;
-      }
-      if (!form.city.trim()) {
-        showSnack("City is required — please search and select a pincode", "error"); return;
-      }
-      if (!form.state.trim()) {
-        showSnack("State is required — please search and select a pincode", "error"); return;
-      }
-      if (!form.pincode.trim() || !pincodeRegex.test(form.pincode.trim())) {
-        showSnack("Please search and select a valid pincode", "error"); return;
-      }
-    }
-
-    if (step.value === 3) {
-      if (!form.residential_address || !form.res_address1 || !form.res_address2 || !form.res_city || !form.res_state || !form.res_pincode) {
-        showSnack("Please fill all required residential address fields", "error"); return;
-      }
-      if (!form.vister_address || !form.v_address1 || !form.v_address2 || !form.v_city || !form.v_state || !form.v_pincode) {
-        showSnack("Please fill all required visitor address fields", "error"); return;
-      }
-
-      const pincodeRegex = /^\d{6}$/;
-
-      if (!form.residential_address.trim()) {
-        showSnack("Residential door no / address is required", "error"); return;
-      }
-      if (!form.res_address1.trim()) {
-        showSnack("Residential street line 1 is required", "error"); return;
-      }
-      if (!form.res_city.trim() || !form.res_state.trim() || !form.res_pincode.trim()) {
-        showSnack("Please select a valid residential pincode", "error"); return;
-      }
-      if (!pincodeRegex.test(form.res_pincode.trim())) {
-        showSnack("Residential pincode must be 6 digits", "error"); return;
-      }
-
-      if (!form.vister_address.trim()) {
-        showSnack("Visitor / shop door no / address is required", "error"); return;
-      }
-      if (!form.v_address1.trim()) {
-        showSnack("Visitor street line 1 is required", "error"); return;
-      }
-      if (!form.v_city.trim() || !form.v_state.trim() || !form.v_pincode.trim()) {
-        showSnack("Please select a valid visitor / shop pincode", "error"); return;
-      }
-      if (!pincodeRegex.test(form.v_pincode.trim())) {
-        showSnack("Visitor pincode must be 6 digits", "error"); return;
-      }
-
-      const payload = {
-        email: form.primary_email_id,
-        password: form.password,
-        mobile_no: form.primary_mobile,
-        name: form.name,
-        lat: form.lat || null,
-        long: form.long || null,
-        addresses: {
-          official: { address: form.official_address, address1: form.address1, address2: form.address2, address3: form.address3 || null, city: form.city, state: form.state, pincode: form.pincode, phone: form.phone || null },
-          residential: { address: form.residential_address, address1: form.res_address1, address2: form.res_address2, address3: form.res_address3 || null, city: form.res_city, state: form.res_state, pincode: form.res_pincode, mobile: form.res_mobile || null },
-          visitor: { address: form.vister_address, address1: form.v_address1, address2: form.v_address2, address3: form.v_address3 || null, city: form.v_city, state: form.v_state, pincode: form.v_pincode, mobile: form.v_mobile || null },
-        }
-      };
-
-      submitting.value = true;
-      try {
-        const result = await registerVendor(payload);
-        if (result?.statusCode === "00") {
-          showSnack("Distributor account created! Redirecting to your dashboard…", "success");
-          setTimeout(() => router.push("/vendor/dashboard"), 1200);
-        } else {
-          showSnack(result?.message || "Error creating distributor account", "error");
-        }
-      } finally { submitting.value = false; }
-      return;
-    }
-
-    if (step.value < steps.length) step.value++;
-  } finally { loading.value = false; }
+  } catch (err) {
+    showSnack(err?.response?.data?.message || "Something went wrong", "error");
+  } finally {
+    submitting.value = false;
+  }
 };
+
+onMounted(async () => {
+  loadingServices.value = true;
+  try {
+    const res = await getPublicServiceCatalog();
+    if (res?.statusCode === "00") serviceList.value = res.data || [];
+  } finally {
+    loadingServices.value = false;
+  }
+});
 </script>
 
 <style scoped>
-/* ── RESET ──────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap');
 
-/* ── ROOT ───────────────────────────────────────────────────────── */
-.vo-root {
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ════════════════════════════════════
+   ROOT — same two-panel pattern as the login / merchant register page
+════════════════════════════════════ */
+.register-root {
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  font-family: 'Inter', sans-serif;
-  background: #f0f4f8;
 }
+@media (min-width: 768px) { .register-root { flex-direction: row; } }
 
-/* ── HEADER ─────────────────────────────────────────────────────── */
-.vo-header {
-  padding: 0.875rem 1.25rem;
-  background: #002d5a;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  gap: 0.75rem;
-}
-
-@media (min-width: 640px) { .vo-header { padding: 0.875rem 1.75rem; } }
-@media (min-width: 1024px) { .vo-header { padding: 0.875rem 2.5rem; } }
-
-.vo-header__brand { display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
-
-.vo-header__icon {
-  width: 2.125rem;
-  height: 2.125rem;
-  background: rgba(255,255,255,0.15);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 1.125rem;
-  flex-shrink: 0;
-}
-
-.vo-header__text { min-width: 0; }
-
-.vo-header__title {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vo-header__sub {
-  font-size: 0.7rem;
-  color: rgba(255,255,255,0.6);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vo-header__right { flex-shrink: 0; }
-
-.vo-header__step-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: rgba(255,255,255,0.9);
-  background: rgba(255,255,255,0.12);
-  padding: 0.3rem 0.75rem;
-  border-radius: 9999px;
-  white-space: nowrap;
-  border: 1px solid rgba(255,255,255,0.15);
-}
-
-/* ── PROGRESS STRIP ─────────────────────────────────────────────── */
-.vo-progress-strip {
-  height: 3px;
-  background: #d0dae6;
-  position: sticky;
-  top: 56px;
-  z-index: 49;
-}
-
-.vo-progress-strip__fill {
-  height: 100%;
-  background: linear-gradient(90deg, #0052a3, #0077cc);
-  transition: width 0.5s ease;
-}
-
-/* ── MAIN ───────────────────────────────────────────────────────── */
-.vo-main {
-  flex: 1;
-  padding: 1.25rem 1rem 2rem;
-  display: flex;
-  justify-content: center;
-}
-
-@media (min-width: 640px) { .vo-main { padding: 1.5rem 1.5rem 2.5rem; } }
-@media (min-width: 1024px) { .vo-main { padding: 2rem 2rem 3rem; } }
-
-.vo-content {
-  width: 100%;
-  max-width: 960px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* ── STEPPER BAR ────────────────────────────────────────────────── */
-.vo-stepper-bar {
-  background: #ffffff;
-  border: 1px solid #d0dae6;
-  border-radius: 10px;
-  padding: 1.125rem 1.25rem;
+/* ════════════════════════════════════
+   LEFT PANEL
+════════════════════════════════════ */
+.reg-left {
+  display: none;
+  background: linear-gradient(150deg, #08267a 0%, #1142d4 55%, #1a52f5 100%);
   position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.vo-stepper-track {
-  position: absolute;
-  top: calc(1.125rem + 20px);
-  left: calc(1.25rem + 20px);
-  right: calc(1.25rem + 20px);
-  height: 3px;
-  background: #e5edf5;
-  border-radius: 3px;
-  z-index: 0;
-}
-
-.vo-stepper-track__fill {
-  height: 100%;
-  background: #002d5a;
-  border-radius: 3px;
-  transition: width 0.4s ease;
-}
-
-.vo-stepper-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  position: relative;
-  z-index: 1;
-  flex: 1;
-}
-
-.vo-stepper-node {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
-}
-
-.vo-node--active {
-  background: #002d5a;
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(0,45,90,0.3);
-}
-
-.vo-node--done {
-  background: #002d5a;
-  color: #fff;
-}
-
-.vo-node--pending {
-  background: #e5edf5;
-  color: #8aafc8;
-}
-
-.vo-node-icon { font-size: 1rem; }
-
-.vo-stepper-label {
-  font-size: 0.6rem;
-  font-weight: 500;
-  color: #8aafc8;
-  text-align: center;
-  line-height: 1.3;
-  white-space: nowrap;
-}
-
-.vo-stepper-label--active {
-  color: #002d5a;
-  font-weight: 700;
-}
-
-/* ── MAIN FORM CARD ─────────────────────────────────────────────── */
-.vo-card {
-  background: #ffffff;
-  border: 1px solid #d0dae6;
-  border-radius: 10px;
   overflow: hidden;
 }
+@media (min-width: 768px) { .reg-left { display: flex; flex: 1; } }
 
-/* ── CARD HEAD ──────────────────────────────────────────────────── */
-.vo-card__head {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 1.375rem 1.375rem 0;
-  margin-bottom: 1.125rem;
+.reg-left::before {
+  content: ''; position: absolute; top: -90px; right: -90px;
+  width: 320px; height: 320px; border-radius: 50%;
+  background: rgba(255,255,255,.05); pointer-events: none;
 }
-
-@media (min-width: 640px) { .vo-card__head { padding: 1.625rem 1.75rem 0; } }
-
-.vo-card-icon-wrap {
-  width: 2.625rem;
-  height: 2.625rem;
-  background: #002d5a;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 1.25rem;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0,45,90,0.25);
-}
-
-.vo-card__heading {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #002d5a;
-}
-
-@media (min-width: 640px) { .vo-card__heading { font-size: 1.125rem; } }
-
-.vo-card__desc {
-  font-size: 0.78rem;
-  color: #5a7d9a;
-  margin-top: 0.2rem;
-  line-height: 1.5;
-}
-
-/* ── CARD BODY ──────────────────────────────────────────────────── */
-.vo-card__body {
-  padding: 0 1.375rem 1.375rem;
-}
-
-@media (min-width: 640px) { .vo-card__body { padding: 0 1.75rem 1.75rem; } }
-
-/* ── GRIDS ──────────────────────────────────────────────────────── */
-.vo-grid {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.vo-grid--2 { grid-template-columns: 1fr; }
-@media (min-width: 480px) { .vo-grid--2 { grid-template-columns: repeat(2, 1fr); } }
-
-.vo-grid--3 { grid-template-columns: 1fr; }
-@media (min-width: 560px) { .vo-grid--3 { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 820px) { .vo-grid--3 { grid-template-columns: repeat(3, 1fr); } }
-
-.vo-grid--4 { grid-template-columns: 1fr; }
-@media (min-width: 480px) { .vo-grid--4 { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 900px) { .vo-grid--4 { grid-template-columns: repeat(4, 1fr); } }
-
-.vo-span2 { grid-column: span 1; }
-@media (min-width: 480px) { .vo-span2 { grid-column: span 2; } }
-
-/* ── FIELD ──────────────────────────────────────────────────────── */
-.vo-field-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.vo-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #5a7d9a;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding-left: 0.1rem;
-}
-
-.vo-input-box {
-  display: flex;
-  align-items: center;
-  position: relative;
-  background: #ffffff;
-  border: 1.5px solid #c5d8e8;
-  border-radius: 8px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  overflow: hidden;
-}
-
-.vo-input-box:focus-within {
-  border-color: #002d5a;
-  box-shadow: 0 0 0 3px rgba(0,45,90,0.1);
-}
-
-.vo-input-box--disabled {
-  background: #f0f5f9 !important;
-  border-color: #d8e6f0 !important;
-  box-shadow: none !important;
-}
-
-.vo-input-icon {
-  position: absolute;
-  left: 0.75rem;
-  font-size: 0.9375rem;
-  color: #8aafc8;
-  pointer-events: none;
-  flex-shrink: 0;
-  transition: color 0.2s;
-}
-
-.vo-input-box:focus-within .vo-input-icon { color: #002d5a; }
-.vo-input-box--disabled .vo-input-icon { color: #b8cfe0; }
-
-.vo-prefix {
-  padding: 0 0.375rem 0 0.875rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #4a6a85;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.vo-input {
-  flex: 1;
-  padding: 0.625rem 0.75rem 0.625rem 2.25rem;
-  font-size: 0.8125rem;
-  color: #0d1b2a;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-family: inherit;
-  min-width: 0;
-}
-
-.vo-input--prefix { padding-left: 0.375rem; }
-
-.vo-input::placeholder { color: #9fb8cc; }
-
-.vo-input:disabled {
-  color: #8aafc8;
-  -webkit-text-fill-color: #8aafc8;
-  cursor: not-allowed;
-}
-
-.vo-select {
-  appearance: none;
-  cursor: pointer;
-}
-
-.vo-input-eye {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0 0.75rem;
-  color: #8aafc8;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-.vo-input-eye:hover { color: #002d5a; }
-
-/* ── ADDRESS SUB-TITLE ──────────────────────────────────────────── */
-.vo-address-sub-title {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #5a7d9a;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.75rem;
-}
-
-/* ── SECTION DIVIDER ────────────────────────────────────────────── */
-.vo-section-divider {
-  border: none;
-  border-top: 1px solid #e8f0f7;
-  margin: 1.25rem 0;
-}
-
-/* ── TOGGLE CARD ────────────────────────────────────────────────── */
-.vo-toggle-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.875rem 1.125rem;
-  background: #f0f6fb;
-  border: 1px solid #c5d8e8;
-  border-radius: 8px;
-  gap: 0.75rem;
-}
-
-.vo-toggle-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.vo-toggle-icon {
-  width: 2.125rem;
-  height: 2.125rem;
-  background: #fff;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #002d5a;
-  font-size: 1rem;
-  box-shadow: 0 1px 4px rgba(0,45,90,0.1);
-  flex-shrink: 0;
-}
-
-.vo-toggle-title {
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: #002d5a;
-}
-
-.vo-toggle-sub {
-  font-size: 0.75rem;
-  color: #7a9bb5;
-  margin-top: 0.1rem;
-}
-
-/* ── SWITCH ─────────────────────────────────────────────────────── */
-.vo-switch {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.vo-switch-input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-.vo-switch-track {
-  width: 2.75rem;
-  height: 1.5rem;
-  background: #b8cfe0;
-  border-radius: 9999px;
-  position: relative;
-  transition: background 0.22s;
-}
-
-.vo-switch-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 1.25rem;
-  height: 1.25rem;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.18);
-  transition: transform 0.22s;
-}
-
-.vo-switch-input:checked ~ .vo-switch-track { background: #002d5a; }
-.vo-switch-input:checked ~ .vo-switch-track .vo-switch-thumb { transform: translateX(1.25rem); }
-
-/* ── BUSINESS TYPE GRID ─────────────────────────────────────────── */
-.vo-btype-grid {
-  display: grid;
-  gap: 0.625rem;
-  grid-template-columns: 1fr;
-  margin-bottom: 1rem;
-}
-
-@media (min-width: 460px) { .vo-btype-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 720px) { .vo-btype-grid { grid-template-columns: repeat(3, 1fr); } }
-
-.vo-btype-card {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.875rem 1rem;
-  background: #f8fbfd;
-  border: 1.5px solid #c5d8e8;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-}
-
-.vo-btype-card:hover {
-  border-color: #002d5a;
-  background: #f0f5fb;
-}
-
-.vo-btype-card--selected {
-  border-color: #002d5a;
-  background: #eaf1f9;
-  box-shadow: 0 0 0 2px rgba(0,45,90,0.1);
-}
-
-.vo-btype-radio {
-  width: 1.125rem;
-  height: 1.125rem;
-  border-radius: 50%;
-  border: 1.5px solid #c5d8e8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: border-color 0.2s;
-}
-
-.vo-btype-card--selected .vo-btype-radio { border-color: #002d5a; }
-
-.vo-btype-radio-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: transparent;
-  transition: background 0.2s;
-}
-
-.vo-btype-radio-dot--on { background: #002d5a; }
-
-.vo-btype-icon {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 7px;
-  background: #e8f0f7;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #002d5a;
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-.vo-btype-body { flex: 1; min-width: 0; }
-.vo-btype-name { font-size: 0.8125rem; font-weight: 700; color: #002d5a; }
-.vo-btype-hint { font-size: 0.7rem; color: #5a7d9a; margin-top: 0.15rem; }
-
-.vo-btype-check {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  font-size: 0.9rem;
-  color: #002d5a;
-}
-
-/* ── ALERTS ─────────────────────────────────────────────────────── */
-.vo-info-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
-  background: #e8f1fa;
-  border: 1px solid #b8d0e8;
-  border-radius: 8px;
-  padding: 0.75rem 0.875rem;
-}
-
-.vo-info-alert__icon { font-size: 0.9375rem; color: #002d5a; flex-shrink: 0; margin-top: 1px; }
-.vo-info-alert__text { font-size: 0.8125rem; color: #003d72; line-height: 1.5; }
-
-.vo-warn-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
-  background: #fff8ee;
-  border: 1px solid #fbd89d;
-  border-radius: 8px;
-  padding: 0.75rem 0.875rem;
-  margin-bottom: 1rem;
-  font-size: 0.8125rem;
-  color: #7a4800;
-  line-height: 1.5;
-}
-
-.vo-warn-alert__icon { font-size: 0.9375rem; color: #d97706; flex-shrink: 0; margin-top: 1px; }
-
-.vo-success-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
-  background: #eefaf3;
-  border: 1px solid #a7e0bc;
-  border-radius: 8px;
-  padding: 0.75rem 0.875rem;
-  margin-bottom: 1rem;
-  font-size: 0.8125rem;
-  color: #145b32;
-  line-height: 1.5;
-}
-
-.vo-success-alert__icon { font-size: 0.9375rem; color: #22c55e; flex-shrink: 0; margin-top: 1px; }
-
-/* ── DOC GRID ───────────────────────────────────────────────────── */
-.vo-doc-grid {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(2, 1fr);
-}
-
-@media (min-width: 600px) { .vo-doc-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (min-width: 860px) { .vo-doc-grid { grid-template-columns: repeat(4, 1fr); } }
-
-.vo-doc-card {
-  background: #f8fbfd;
-  border: 1.5px solid #c5d8e8;
-  border-radius: 8px;
-  padding: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.vo-doc-card:hover { border-color: #002d5a; transform: translateY(-1px); }
-
-.vo-doc-card--done {
-  border-color: rgba(34,197,94,0.4);
-  background: #eefaf3;
-}
-
-.vo-doc-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.625rem;
-}
-
-.vo-doc-card__icon {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-}
-
-.vo-doc-card__icon--done { background: rgba(34,197,94,0.15); color: #22c55e; }
-.vo-doc-card__icon--pending { background: #e8f0f7; color: #002d5a; }
-
-.vo-doc-card__count {
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 0.2rem 0.5rem;
-  border-radius: 9999px;
-}
-
-.vo-doc-card__count--done { background: rgba(34,197,94,0.15); color: #15803d; }
-.vo-doc-card__count--pending { background: #e8f0f7; color: #002d5a; }
-
-.vo-doc-card__name {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #002d5a;
-  margin-bottom: 0.5rem;
-  word-break: break-word;
-}
-
-.vo-doc-progress {
-  height: 3px;
-  background: #d8e6f0;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.vo-doc-progress__fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
-.vo-doc-progress__fill--done { background: #22c55e; }
-.vo-doc-progress__fill--active { background: #002d5a; }
-
-.vo-doc-card__cta { font-size: 0.65rem; color: #7a9bb5; }
-
-/* ── DOC TYPE GRID ──────────────────────────────────────────────── */
-.vo-doctype-grid {
-  display: grid;
-  gap: 0.625rem;
-  grid-template-columns: repeat(2, 1fr);
-  margin-top: 0.75rem;
-}
-
-@media (min-width: 560px) { .vo-doctype-grid { grid-template-columns: repeat(3, 1fr); } }
-
-.vo-doctype-card {
-  background: #f8fbfd;
-  border: 1.5px solid #c5d8e8;
-  border-radius: 8px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.375rem;
-}
-
-.vo-doctype-card--done {
-  border-color: rgba(34,197,94,0.4);
-  background: #eefaf3;
-}
-
-.vo-doctype-card--locked {
-  border-color: #d8e6f0;
-  background: #f5f8fb;
-  opacity: 0.72;
-}
-
-.vo-doctype-card__icon--locked { color: #8aafc8; }
-
-.vo-doctype-card__icon { font-size: 1.5rem; }
-.vo-doctype-card--done .vo-doctype-card__icon { color: #22c55e; }
-.vo-doctype-card--pending .vo-doctype-card__icon { color: #f59e0b; }
-
-.vo-doctype-card__name {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #002d5a;
-}
-
-.vo-doctype-card__status {
-  font-size: 0.6rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 9999px;
-}
-
-.vo-doctype-card__status--done { background: rgba(34,197,94,0.15); color: #15803d; }
-.vo-doctype-card__status--pending { background: rgba(245,158,11,0.12); color: #b45309; }
-.vo-doctype-card__status--locked { background: #e8f0f7; color: #7a9bb5; }
-
-.vo-doctype-card__btn {
-  margin-top: auto;
-  padding: 0.375rem 0.875rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border-radius: 6px;
-  cursor: pointer;
-  border: none;
-  font-family: inherit;
-  background: #002d5a;
-  color: #fff;
-  transition: all 0.15s;
-}
-
-.vo-doctype-card__btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.vo-doctype-card__btn:not(:disabled):hover { background: #003d7a; }
-
-/* ── BACK BUTTON ────────────────────────────────────────────────── */
-.vo-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #3a5f7a;
-  background: #f0f5f9;
-  border: 1.5px solid #c5d8e8;
-  border-radius: 7px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-
-.vo-back-btn:hover { background: #e0edf5; border-color: #002d5a; color: #002d5a; }
-
-/* ── UPLOAD CARD ────────────────────────────────────────────────── */
-.vo-upload-card {
-  background: #f8fbfd;
-  border: 1px solid #d0dae6;
-  border-radius: 8px;
-  padding: 1.25rem;
-}
-
-.vo-upload-zone {
-  border: 2px dashed #c5d8e8;
-  border-radius: 8px;
-  padding: 2rem 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  text-align: center;
-  background: #fff;
-  transition: border-color 0.2s;
-}
-
-.vo-upload-zone:hover { border-color: #002d5a; }
-
-.vo-upload-zone__icon { font-size: 2.25rem; color: #8aafc8; }
-.vo-upload-zone__label { font-size: 0.875rem; font-weight: 600; color: #002d5a; }
-.vo-upload-zone__sub { font-size: 0.75rem; color: #7a9bb5; }
-.vo-upload-zone__count { font-size: 0.75rem; font-weight: 700; color: #002d5a; }
-
-.vo-upload-zone__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 1.25rem;
-  background: #e8f0f7;
-  border: 1.5px solid #b8d0e8;
-  border-radius: 7px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #002d5a;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-
-.vo-upload-zone__btn:hover { background: #d8e8f4; }
-
-.vo-upload-zone__input { position: absolute; opacity: 0; width: 0; height: 0; }
-
-.vo-save-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  margin-top: 1rem;
-  padding: 0.75rem 1.5rem;
-  background: #002d5a;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  box-shadow: 0 3px 10px rgba(0,45,90,0.28);
-  transition: background 0.18s, opacity 0.15s;
-}
-
-.vo-save-btn:hover:not(:disabled) { background: #003d7a; }
-.vo-save-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-/* ── CARD FOOTER ────────────────────────────────────────────────── */
-.vo-card-footer {
-  background: #f8fbfd;
-  border-top: 1px solid #d8e6f0;
-  padding: 1rem 1.375rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-@media (min-width: 600px) {
-  .vo-card-footer {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.75rem;
-  }
-}
-
-.vo-footer-terms {
-  font-size: 0.75rem;
-  color: #7a9bb5;
-}
-
-.vo-footer-link {
-  color: #002d5a;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.vo-footer-link:hover { text-decoration: underline; }
-
-.vo-footer-actions {
-  display: flex;
-  gap: 0.625rem;
-  width: 100%;
-}
-
-@media (min-width: 600px) { .vo-footer-actions { width: auto; } }
-
-.vo-btn-secondary {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  padding: 0.625rem 1.25rem;
-  background: #fff;
-  border: 1.5px solid #c5d8e8;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #3a5f7a;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.18s;
-  white-space: nowrap;
-}
-
-@media (min-width: 600px) { .vo-btn-secondary { flex: none; } }
-
-.vo-btn-secondary:hover {
-  background: #f0f6fb;
-  border-color: #002d5a;
-  color: #002d5a;
-}
-
-.vo-btn-primary {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  padding: 0.625rem 1.75rem;
-  background: #002d5a;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-  font-family: inherit;
-  box-shadow: 0 3px 10px rgba(0,45,90,0.28);
-  transition: background 0.18s, transform 0.1s, box-shadow 0.18s;
-  white-space: nowrap;
-}
-
-@media (min-width: 600px) { .vo-btn-primary { flex: none; } }
-
-.vo-btn-primary:hover { background: #003d7a; box-shadow: 0 5px 16px rgba(0,45,90,0.35); }
-.vo-btn-primary:active { transform: scale(0.98); }
-.vo-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
-
-/* ── SPINNER ────────────────────────────────────────────────────── */
-.vo-spinner {
-  width: 0.9375rem;
-  height: 0.9375rem;
-  border: 2px solid rgba(255,255,255,0.4);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.75s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── INFO ROW ───────────────────────────────────────────────────── */
-.vo-info-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-@media (min-width: 560px) { .vo-info-row { flex-direction: row; } }
-
-.vo-info-card {
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
-  padding: 1rem 1.125rem;
-  background: #fff;
-  border: 1px solid #d8e6f0;
-  border-radius: 10px;
-}
-
-.vo-info-card__icon {
-  padding: 0.5rem;
-  background: #e8f0f7;
-  border-radius: 7px;
-  color: #002d5a;
-  flex-shrink: 0;
-  font-size: 1.125rem;
-  line-height: 1;
-}
-
-.vo-info-card__title { font-size: 0.8125rem; font-weight: 700; color: #002d5a; }
-.vo-info-card__desc { font-size: 0.75rem; color: #5a7d9a; margin-top: 0.2rem; line-height: 1.5; }
-
-/* ── LOGIN ROW ──────────────────────────────────────────────────── */
-.vo-login-row {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #5a7d9a;
-  padding-bottom: 0.5rem;
-}
-
-.vo-login-link {
-  color: #002d5a;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.vo-login-link:hover { text-decoration: underline; }
-
-/* ── SNACKBAR ───────────────────────────────────────────────────── */
-.vo-snackbar {
-  position: fixed;
-  top: 1.25rem;
-  right: 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.75rem 1.125rem;
-  border-radius: 10px;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #fff;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-  z-index: 9999;
-  max-width: calc(100vw - 2.5rem);
-}
-
-.vo-snackbar--success { background: #002d5a; }
-.vo-snackbar--error { background: #c62828; }
-
-.vo-snackbar__close {
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.8);
-  cursor: pointer;
-  font-size: 1rem;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-.snack-enter-active, .snack-leave-active { transition: all 0.3s ease; }
-.snack-enter-from, .snack-leave-to { opacity: 0; transform: translateY(-12px); }
-
-/* ── PROCESSING OVERLAY ─────────────────────────────────────────── */
-.vo-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,22,46,0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9998;
-  backdrop-filter: blur(4px);
-}
-
-.vo-overlay__card {
-  background: #fff;
-  border-radius: 14px;
-  padding: 2.5rem 3rem;
-  text-align: center;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.2);
-}
-
-.vo-overlay__spinner {
-  width: 2.75rem;
-  height: 2.75rem;
-  border: 3px solid #e8f0f7;
-  border-top-color: #002d5a;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 1.25rem;
-}
-
-.vo-overlay__title { font-size: 1rem; font-weight: 700; color: #002d5a; }
-.vo-overlay__sub { font-size: 0.75rem; color: #5a7d9a; margin-top: 0.375rem; }
-
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-
-/* ── PINCODE DROPDOWN ───────────────────────────────────────────── */
-.vo-pincode-wrap {
-  position: relative;
-}
-
-.vo-input-box--focus {
-  border-color: #002d5a !important;
-  box-shadow: 0 0 0 3px rgba(0, 45, 90, 0.1) !important;
-}
-
-.vo-input-spinner {
-  position: absolute;
-  right: 0.75rem;
-  font-size: 1rem;
-  color: #8aafc8;
-  animation: spin 0.75s linear infinite;
-  flex-shrink: 0;
+.reg-left::after {
+  content: ''; position: absolute; bottom: -110px; left: -70px;
+  width: 380px; height: 380px; border-radius: 50%;
+  background: rgba(255,255,255,.04); pointer-events: none;
 }
 
-.vo-pin-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  background: #fff;
-  border: 1.5px solid #c5d8e8;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 45, 90, 0.12);
-  z-index: 100;
-  overflow: hidden;
-  max-height: 13rem;
+.left-inner {
+  position: relative; z-index: 1; width: 100%;
+  display: flex; flex-direction: column; padding: 44px 48px; gap: 26px;
   overflow-y: auto;
 }
 
-.vo-pin-dropdown::-webkit-scrollbar { width: 4px; }
-.vo-pin-dropdown::-webkit-scrollbar-track { background: transparent; }
-.vo-pin-dropdown::-webkit-scrollbar-thumb { background: #c5d8e8; border-radius: 4px; }
+.left-brand { display: flex; align-items: center; gap: 10px; }
+.brand-name { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: .1em; }
 
-.vo-pin-option {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.625rem 0.875rem;
-  cursor: pointer;
-  transition: background 0.15s;
-  border-bottom: 1px solid #f0f5f9;
+.left-copy { margin-top: 4px; }
+.left-headline { font-size: 26px; font-weight: 800; color: #fff; line-height: 1.28; margin-bottom: 10px; }
+.left-sub { font-size: 13px; color: rgba(255,255,255,.72); line-height: 1.7; max-width: 360px; }
+
+/* Step recap list */
+.steps-recap { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
+.steps-recap-item {
+  display: flex; align-items: center; gap: 12px;
+  opacity: .45; transition: opacity .2s;
+}
+.steps-recap-item.is-active, .steps-recap-item.is-done { opacity: 1; }
+.steps-recap-dot {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff;
+  background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28);
+}
+.steps-recap-item.is-active .steps-recap-dot { background: #fff; color: #1142d4; border-color: #fff; }
+.steps-recap-item.is-done .steps-recap-dot { background: #22c55e; border-color: #22c55e; }
+.steps-recap-label { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); }
+.steps-recap-item.is-active .steps-recap-label { color: #fff; }
+
+.feature-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+.feature-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+  padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 600; color: #fff;
+}
+.feature-pill .mdi { font-size: 14px; }
+
+/* ════════════════════════════════════
+   RIGHT PANEL
+════════════════════════════════════ */
+.reg-right {
+  display: flex; flex-direction: column;
+  background: #f4f5f7; min-height: 100dvh;
+}
+@media (min-width: 768px)  { .reg-right { flex: 0 0 520px; } }
+@media (min-width: 1024px) { .reg-right { flex: 0 0 560px; } }
+
+.reg-form-wrap { width: 100%; display: flex; flex-direction: column; min-height: 100dvh; }
+
+/* Mobile brand */
+.mobile-brand {
+  display: flex; align-items: center; gap: 8px; justify-content: center;
+  padding: 20px 20px 0;
+}
+@media (min-width: 768px) { .mobile-brand { display: none; } }
+.brand-icon-solid {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: #1142d4; box-shadow: 0 4px 14px rgba(17,66,212,.3);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px;
+}
+.brand-name-dark { color: #0f172a; font-size: 15px; font-weight: 800; letter-spacing: .08em; }
+
+/* Header */
+.reg-head {
+  background: #fff;
+  padding: 20px 24px 14px;
+  display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 20;
+  border-bottom: 1px solid #e8edf3;
+}
+@media (min-width: 768px) { .reg-head { padding: 28px 32px 16px; } }
+
+.back-btn {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  background: #eef2ff; border: 1.5px solid #d7e0fb;
+  display: flex; align-items: center; justify-content: center;
+  color: #1142d4; cursor: pointer;
+}
+.back-btn:hover { background: #e0e9fe; }
+
+.reg-head-text { flex: 1; }
+.header-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+  color: #94a3b8; text-transform: uppercase; margin: 0 0 3px;
+}
+.header-title { font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -.2px; }
+
+.step-dots { display: flex; gap: 5px; flex-shrink: 0; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: #dfe6ee; }
+.dot.active { background: #1142d4; }
+
+/* Progress bar */
+.progress-track { height: 3px; background: #e8edf3; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #1142d4, #1a52f5); transition: width .25s ease; }
+
+/* Body */
+.reg-body {
+  flex: 1; overflow-y: auto;
+  padding: 22px 24px 28px;
+}
+@media (min-width: 768px) { .reg-body { padding: 28px 32px 32px; } }
+
+.reg-body::-webkit-scrollbar { width: 5px; }
+.reg-body::-webkit-scrollbar-track { background: transparent; }
+.reg-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+.step-desc { font-size: .85rem; color: #64748b; margin: 0 0 1.1rem; line-height: 1.5; }
+
+.field-label {
+  display: block; font-size: .65rem; font-weight: 700; color: #64748b;
+  text-transform: uppercase; letter-spacing: .08em; margin-bottom: .3rem;
 }
 
-.vo-pin-option:last-child { border-bottom: none; }
+.mt-3 { margin-top: .875rem; }
+.mt-4 { margin-top: 1.1rem; }
 
-.vo-pin-option:hover { background: #f0f6fb; }
+/* ── field styling — matches the login / merchant register page's input look ── */
+.reg-field :deep(.v-field) {
+  border-radius: 11px !important;
+  background: #fff !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+.reg-field :deep(.v-field__outline__start),
+.reg-field :deep(.v-field__outline__end),
+.reg-field :deep(.v-field__outline__notch) {
+  border-color: #e2e8f0 !important; transition: border-color .15s !important;
+}
+.reg-field :deep(.v-field--focused .v-field__outline__start),
+.reg-field :deep(.v-field--focused .v-field__outline__end),
+.reg-field :deep(.v-field--focused .v-field__outline__notch) {
+  border-color: #1142d4 !important; border-width: 1.5px !important;
+}
+.reg-field :deep(.v-field--focused) { box-shadow: 0 0 0 3px rgba(17,66,212,.1) !important; }
+.reg-field :deep(.v-field__prepend-inner .v-icon) { color: #94a3b8 !important; }
+.reg-field :deep(.v-field--focused .v-field__prepend-inner .v-icon) { color: #1142d4 !important; }
+.reg-field :deep(.v-field__input) { color: #1e293b !important; font-size: .875rem !important; font-family: 'DM Sans', sans-serif !important; }
+.reg-field :deep(input::placeholder), .reg-field :deep(textarea::placeholder) { color: #94a3b8 !important; opacity: 1 !important; }
+.reg-field :deep(.v-field__prefix) { color: #475569 !important; font-size: .875rem !important; padding-right: 4px !important; }
+.reg-field :deep(.v-chip) { background: #e0e9fe !important; color: #1142d4 !important; font-weight: 600 !important; }
+.reg-field :deep(.v-field--error .v-field__outline__start),
+.reg-field :deep(.v-field--error .v-field__outline__end),
+.reg-field :deep(.v-field--error .v-field__outline__notch) { border-color: #ef4444 !important; }
 
-.vo-pin-option__icon {
-  font-size: 1rem;
-  color: #002d5a;
-  flex-shrink: 0;
+.reg-field--disabled :deep(.v-field) { background: #f1f5f9 !important; }
+.reg-field--disabled :deep(.v-field__input) { color: #94a3b8 !important; -webkit-text-fill-color: #94a3b8 !important; }
+.reg-field--disabled :deep(.v-field__outline__start),
+.reg-field--disabled :deep(.v-field__outline__end),
+.reg-field--disabled :deep(.v-field__outline__notch) { border-color: #e2e8f0 !important; opacity: .8 !important; }
+
+/* ── password strength ── */
+.strength-bar { display: flex; gap: 4px; margin-top: .65rem; }
+.seg { flex: 1; height: 4px; border-radius: 2px; background: #e2e8f0; }
+.seg--weak { background: #ef4444; }
+.seg--fair { background: #f59e0b; }
+.seg--good { background: #3b82f6; }
+.seg--strong { background: #22c55e; }
+.strength-label { font-size: .7rem; margin-top: .3rem; color: #64748b; }
+
+/* ── address ── */
+.address-toggle-card {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .9rem 1.1rem;
+  background: #fff; border: 1px solid #e8edf3; border-radius: 12px;
+}
+.address-toggle-info { display: flex; align-items: center; gap: .75rem; }
+.address-toggle-icon-wrap {
+  width: 2.1rem; height: 2.1rem; border-radius: 8px;
+  background: #eef2ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  color: #1142d4;
+}
+.address-toggle-title { font-weight: 700; font-size: .875rem; margin: 0; color: #0f172a; }
+.address-toggle-sub { font-size: .75rem; color: #94a3b8; margin: .1rem 0 0; }
+
+.toggle-switch { position: relative; display: inline-block; cursor: pointer; flex-shrink: 0; }
+.toggle-input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.toggle-track {
+  width: 2.75rem; height: 1.5rem; background: #dfe6ee; border-radius: 99px;
+  position: relative; transition: background .22s ease;
+}
+.toggle-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 1.25rem; height: 1.25rem; background: #fff; border-radius: 50%;
+  box-shadow: 0 1px 5px rgba(0,0,0,.18); transition: transform .22s ease;
+}
+.toggle-input:checked ~ .toggle-track { background: #1142d4; }
+.toggle-input:checked ~ .toggle-track .toggle-thumb { transform: translateX(1.25rem); }
+
+/* ── SERVICES ── */
+.svc-loading, .svc-empty {
+  font-size: .82rem; color: #64748b; padding: 1rem; text-align: center;
+  background: #fff; border: 1px dashed #e2e8f0; border-radius: 12px;
 }
 
-.vo-pin-option__code {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: #002d5a;
+.svc-grid {
+  display: grid; grid-template-columns: 1fr; gap: .625rem;
+}
+@media (min-width: 460px) { .svc-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.svc-card {
+  background: #fff; border: 1.5px solid #e2e8f0; border-radius: 12px;
+  transition: all .15s; overflow: hidden;
+}
+.svc-card--selected { border-color: #1142d4; box-shadow: 0 0 0 2px rgba(17,66,212,.1); }
+
+.svc-card__head {
+  display: flex; align-items: center; gap: .625rem;
+  padding: .8rem .9rem; cursor: pointer;
+}
+.svc-card__name { font-size: .85rem; font-weight: 700; color: #0f172a; }
+
+.svc-checkbox {
+  width: 1.125rem; height: 1.125rem; border-radius: 4px;
+  border: 1.5px solid #cbd5e1; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; transition: all .15s;
+}
+.svc-checkbox--on { background: #1142d4; border-color: #1142d4; }
+
+.svc-card__body { padding: 0 .9rem .9rem; display: flex; flex-direction: column; gap: .3rem; }
+.svc-card__hint { font-size: .7rem; color: #ef4444; }
+
+.svc-provider-badge {
+  display: inline-flex; align-items: center; width: fit-content;
+  font-size: .7rem; font-weight: 700; color: #1142d4;
+  background: #eef2ff; border: 1px solid #d7e0fb; border-radius: 9999px;
+  padding: .2rem .6rem;
 }
 
-.vo-pin-option__sub {
-  font-size: 0.7rem;
-  color: #7a9bb5;
-  margin-top: 0.05rem;
+.svc-summary {
+  margin-top: .875rem; font-size: .78rem; color: #1142d4;
+  background: #eef2ff; border: 1px solid #d7e0fb; border-radius: 10px; padding: .7rem .9rem; line-height: 1.5;
 }
 
-.vo-pin-empty {
-  padding: 0.875rem;
-  font-size: 0.8rem;
-  color: #8aafc8;
-  text-align: center;
+/* ── FOOTER ── */
+.reg-footer {
+  padding: 1.1rem 24px 1.5rem;
+  border-top: 1px solid #e8edf3;
+  background: #fff;
+  display: flex; flex-direction: column; align-items: center; gap: .65rem;
+  position: sticky; bottom: 0;
 }
+@media (min-width: 768px) { .reg-footer { padding: 1.2rem 32px 1.6rem; } }
 
-/* ── SPACING UTILITIES ──────────────────────────────────────────── */
-.vo-mt { margin-top: 1rem; }
-.vo-mt-sm { margin-top: 0.75rem; }
-
-/* ── FIELD VALIDATION ───────────────────────────────────────────── */
-.vo-input-box--error {
-  border-color: #dc2626 !important;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+.btn-next {
+  width: 100%;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 50px;
+  background: linear-gradient(135deg, #1142d4 0%, #1a52f5 100%);
+  color: #fff; border: none; border-radius: 12px;
+  font-size: .92rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 18px rgba(17,66,212,.3);
+  transition: filter .15s, box-shadow .15s;
 }
+.btn-next:hover:not(:disabled) { filter: brightness(1.07); box-shadow: 0 6px 24px rgba(17,66,212,.38); }
+.btn-next:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
 
-.vo-input-box--error .vo-input-icon { color: #dc2626 !important; }
-
-.vo-field-error {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: #dc2626;
-  padding-left: 0.1rem;
-  margin-top: -0.1rem;
+.btn-spinner {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+  animation: spin .7s linear infinite;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.vo-doc-validation-hint {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 0.875rem;
-  background: #fff8ee;
-  border: 1px solid #fbd89d;
-  border-radius: 7px;
-  font-size: 0.78rem;
-  color: #7a4800;
-  font-weight: 500;
-  margin-top: 0.875rem;
-}
-
-.vo-doc-validation-hint .mdi { font-size: 0.9375rem; color: #d97706; flex-shrink: 0; }
+.login-footer { font-size: .8rem; color: #64748b; margin: 0; }
+.login-link { color: #1142d4; font-weight: 700; cursor: pointer; }
+.login-link:hover { text-decoration: underline; }
 </style>

@@ -468,8 +468,65 @@
             </div>
           </template>
 
-          <!-- ════ STEP 5 — Documents ════ -->
+          <!-- ════ STEP 5 — Select Services ════ -->
           <template v-else-if="step === 5">
+            <div class="vo-card__head">
+              <div class="vo-card-icon-wrap">
+                <span class="mdi mdi-view-grid-outline"></span>
+              </div>
+              <div>
+                <h2 class="vo-card__heading">Select Services</h2>
+                <p class="vo-card__desc">Choose the services this distributor will offer, and the provider for each. Optional — you can skip and add these later.</p>
+              </div>
+            </div>
+
+            <div class="vo-card__body">
+              <div v-if="loadingServices" class="vo-info-alert">
+                <span class="mdi mdi-loading vo-input-spinner"></span>
+                <p class="vo-info-alert__text">Loading available services…</p>
+              </div>
+
+              <div v-else-if="!serviceList.length" class="vo-warn-alert">
+                <span class="mdi mdi-alert-outline vo-warn-alert__icon"></span>
+                <p>No services are configured yet. You can skip this step and continue.</p>
+              </div>
+
+              <div v-else class="vo-svc-grid">
+                <div v-for="svc in serviceList" :key="svc.id" class="vo-svc-card"
+                  :class="{ 'vo-svc-card--selected': serviceSelections[svc.id]?.selected }">
+                  <div class="vo-svc-card__head" @click="toggleService(svc)">
+                    <div class="vo-svc-checkbox" :class="{ 'vo-svc-checkbox--on': serviceSelections[svc.id]?.selected }">
+                      <span v-if="serviceSelections[svc.id]?.selected" class="mdi mdi-check"></span>
+                    </div>
+                    <div class="vo-btype-icon">
+                      <span class="mdi" :class="serviceIcon(svc.service)"></span>
+                    </div>
+                    <p class="vo-btype-name">{{ svc.service }}</p>
+                  </div>
+
+                  <div v-if="serviceSelections[svc.id]?.selected" class="vo-svc-card__body">
+                    <label class="vo-label">PROVIDER / INTERFACE</label>
+                    <select class="vo-input vo-select" v-model="serviceSelections[svc.id].interfaceId">
+                      <option value="" disabled>Select provider</option>
+                      <option v-for="iface in (svc.interfaces || []).filter(i => i.status)" :key="iface.id" :value="iface.id">{{ iface.interface }}</option>
+                    </select>
+                    <p v-if="!(svc.interfaces || []).some(i => i.status)" class="vo-field-error">No active provider linked to this service yet.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="selectedServiceCount" class="vo-info-alert vo-mt">
+                <span class="mdi mdi-information-outline vo-info-alert__icon"></span>
+                <p class="vo-info-alert__text">
+                  {{ selectedServiceCount }} service{{ selectedServiceCount > 1 ? 's' : '' }} selected. These will be
+                  linked to the distributor as pending — activate them from the vendor's profile once verified.
+                </p>
+              </div>
+            </div>
+          </template>
+
+          <!-- ════ STEP 6 — Documents ════ -->
+          <template v-else-if="step === 6">
             <div class="vo-card__head">
               <div class="vo-card-icon-wrap">
                 <span class="mdi mdi-file-document-multiple-outline"></span>
@@ -762,6 +819,7 @@ import { ref, reactive, computed, watch, onMounted } from "vue";
 import { useOnboadingApi } from "@/composables/apis/useOnboadingApi";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 import { useUsersApi } from "@/composables/apis/useUsersApi";
+import { useSetupServicesApi } from "~/composables/apis/useSetupServices";
 import { useOnboardingStore } from "@/stores/onboading";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
@@ -773,6 +831,7 @@ const {
 } = useOnboadingApi();
 const { addVendor, fetchVendor } = useUsersApi();
 const { getVendorById } = useAggregatorApi();
+const { getAllServices, linkVendorServices } = useSetupServicesApi();
 const Onboarding = useOnboardingStore();
 const { businessTypeList } = storeToRefs(Onboarding);
 const router = useRouter();
@@ -795,6 +854,11 @@ const activeDocType = ref(null);
 const docUploads = reactive({});
 const snackbar = reactive({ show: false, message: "", color: "success" });
 
+// ── Services selection ──
+const serviceList = ref([]);
+const loadingServices = ref(false);
+const serviceSelections = reactive({});
+
 // Pincode dropdown query state
 const opPincodeQuery = ref('');
 const resPincodeQuery = ref('');
@@ -815,6 +879,7 @@ const steps = [
   { key: "official",  label: "Official Address",   short: "Official",  icon: "mdi-map-marker-outline" },
   { key: "addresses", label: "Address Details",    short: "Addresses", icon: "mdi-home-city-outline" },
   { key: "btype",     label: "Business Type",      short: "Type",      icon: "mdi-briefcase-outline" },
+  { key: "services",  label: "Select Services",    short: "Services",  icon: "mdi-view-grid-outline" },
   { key: "documents", label: "Verification Docs",  short: "Docs",      icon: "mdi-file-document-outline" },
 ];
 
@@ -835,6 +900,30 @@ const BUSINESS_TYPE_RULES = computed(() => {
   });
   return rules;
 });
+
+// ── Services selection ──────────────────────────────────────────────
+const SERVICE_ICONS = {
+  AEPS: "mdi-fingerprint", DMT: "mdi-bank-transfer", UPI: "mdi-qrcode",
+  BBPS: "mdi-receipt-text-outline", MATM: "mdi-atm", POS: "mdi-point-of-sale",
+};
+const serviceIcon = (service) => SERVICE_ICONS[service] || "mdi-apps";
+
+function toggleService(svc) {
+  const current = serviceSelections[svc.id];
+  if (current?.selected) {
+    serviceSelections[svc.id] = { selected: false, interfaceId: "" };
+  } else {
+    const firstActive = (svc.interfaces || []).find(i => i.status);
+    serviceSelections[svc.id] = { selected: true, interfaceId: firstActive?.id || "" };
+  }
+}
+
+const selectedServiceEntries = computed(() =>
+  Object.entries(serviceSelections)
+    .filter(([, sel]) => sel.selected && sel.interfaceId)
+    .map(([serviceId, sel]) => ({ serviceId, interfaceId: sel.interfaceId }))
+);
+const selectedServiceCount = computed(() => selectedServiceEntries.value.length);
 
 // ── Required Docs ──────────────────────────────────────────────────
 const requiredDocs = computed(() => {
@@ -1194,6 +1283,17 @@ const next = async () => {
         else { showSnack(status?.message || "Compliance fetch failed", "error"); return; }
       } else { showSnack(res?.message || "Failed to update business type", "error"); return; }
     }
+
+    if (step.value === 5) {
+      if (selectedServiceEntries.value.length) {
+        const res = await linkVendorServices(activeVendor.value?.id, selectedServiceEntries.value);
+        if (res?.statusCode !== "00") {
+          showSnack(res?.message || "Failed to link selected services", "error"); return;
+        }
+        showSnack(`${selectedServiceEntries.value.length} service(s) linked — pending activation`, "success");
+      }
+    }
+
     if (step.value < steps.length) step.value++;
   } finally { loading.value = false; }
 };
@@ -1219,6 +1319,12 @@ onMounted(async () => {
   businessType();
   const comp = await fetchCompliance();
   if (comp) complianceList.value = comp;
+
+  loadingServices.value = true;
+  try {
+    const res = await getAllServices();
+    if (res?.statusCode === "00") serviceList.value = (res.data || []).filter(s => s.status);
+  } finally { loadingServices.value = false; }
 });
 </script>
 
@@ -1762,6 +1868,64 @@ onMounted(async () => {
   right: 0.5rem;
   font-size: 0.9rem;
   color: #002d5a;
+}
+
+/* ── SERVICES GRID ──────────────────────────────────────────────── */
+.vo-svc-grid {
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 460px) { .vo-svc-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 720px) { .vo-svc-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.vo-svc-card {
+  background: #f8fbfd;
+  border: 1.5px solid #c5d8e8;
+  border-radius: 8px;
+  transition: all 0.2s;
+  overflow: hidden;
+}
+
+.vo-svc-card--selected {
+  border-color: #002d5a;
+  background: #eaf1f9;
+  box-shadow: 0 0 0 2px rgba(0,45,90,0.1);
+}
+
+.vo-svc-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+}
+
+.vo-svc-checkbox {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 4px;
+  border: 1.5px solid #c5d8e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.vo-svc-checkbox--on {
+  background: #002d5a;
+  border-color: #002d5a;
+}
+
+.vo-svc-card__body {
+  padding: 0 1rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
 /* ── ALERTS ─────────────────────────────────────────────────────── */
