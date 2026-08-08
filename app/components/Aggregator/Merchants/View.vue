@@ -858,22 +858,10 @@
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span :class="['pill pill--sm', docStatusPill(selectedDoc?.doc_status)]">{{ selectedDoc?.doc_status }}</span>
-                <button class="icon-close icon-close--danger" title="Delete document" :disabled="deletingDoc" @click="deleteDocConfirming = true"><span class="mdi mdi-trash-can-outline"></span></button>
                 <button class="icon-close" @click="docDialog = false"><span class="mdi mdi-close"></span></button>
               </div>
             </div>
             <div class="dialog-body" v-if="selectedDoc">
-              <div class="doc-delete-confirm" v-if="deleteDocConfirming">
-                <span class="mdi mdi-alert-outline"></span>
-                <p>Delete this document and all its images? This cannot be undone.</p>
-                <div class="doc-delete-confirm__actions">
-                  <button class="btn-secondary" :disabled="deletingDoc" @click="deleteDocConfirming = false">Cancel</button>
-                  <button class="doc-delete-confirm__btn" :disabled="deletingDoc" @click="handleDeleteDocument">
-                    <span v-if="deletingDoc" class="doc-img-spinner"></span>
-                    <span v-else>Yes, delete</span>
-                  </button>
-                </div>
-              </div>
               <div class="info-grid info-grid--3" style="border:1px solid #f1f5f9;border-radius:10px;overflow:hidden;margin-bottom:16px;">
                 <div class="info-item"><label>Doc Number</label><p class="mono">{{ selectedDoc.doc_number || '—' }}</p></div>
                 <div class="info-item"><label>Verified By</label><p>{{ selectedDoc.doc_verified_by || '—' }}</p></div>
@@ -892,11 +880,24 @@
                     <span class="mdi mdi-file-pdf-box"></span>
                     <span class="doc-pdf-label">View PDF</span>
                   </div>
-                  <div class="doc-img-overlay">
-                    <button class="doc-img-reupload-btn" :disabled="reuploadBusy" @click="triggerReupload(img)">
+                  <div class="doc-img-overlay" v-if="confirmDeleteImageId !== img.id">
+                    <button class="doc-img-reupload-btn" :disabled="reuploadBusy || deletingImageId === img.id" @click="triggerReupload(img)">
                       <span v-if="reuploadBusy && reuploadingImageId === img.id" class="doc-img-spinner"></span>
                       <template v-else><span class="mdi mdi-camera-retake-outline"></span> Replace</template>
                     </button>
+                    <button class="doc-img-delete-btn" :disabled="reuploadBusy || deletingImageId === img.id" @click="confirmDeleteImageId = img.id">
+                      <span class="mdi mdi-trash-can-outline"></span> Delete
+                    </button>
+                  </div>
+                  <div class="doc-img-overlay doc-img-overlay--confirm" v-else>
+                    <p>Delete this image?</p>
+                    <div class="doc-img-overlay__actions">
+                      <button class="doc-img-confirm-no" :disabled="deletingImageId === img.id" @click="confirmDeleteImageId = null">No</button>
+                      <button class="doc-img-confirm-yes" :disabled="deletingImageId === img.id" @click="handleDeleteImage(img)">
+                        <span v-if="deletingImageId === img.id" class="doc-img-spinner"></span>
+                        <span v-else>Yes</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1181,7 +1182,7 @@ import { useAuthStore } from "~/stores/auth";
 const props = defineProps({ merchantId: String });
 const router = useRouter();
 const { getMerchantById } = useAggregatorApi();
-const { uploadDoc, complianceInit, deleteComplianceImage, deleteComplianceDocument } = useIsgOnboardingApi();
+const { uploadDoc, complianceInit, deleteComplianceImage } = useIsgOnboardingApi();
 const { getTransactionsByMerchantId } = useUsersApi();
 const { updateMerchantStatus, updateMerchantMstatus, updateMerchantRiskflag } = useMerchantUpdateApi();
 const { createTerminal, updateTerminal, updateTerminalStatus, deleteTerminal } = useTerminalApi();
@@ -1529,27 +1530,31 @@ const handleReuploadFile = async (e) => {
   }
 };
 
-const deleteDocConfirming = ref(false);
-const deletingDoc = ref(false);
+// Deletes a single image under the open document — the document itself
+// (its doc_type/doc_number row) is never deletable from here, only the
+// individual images attached to it.
+const confirmDeleteImageId = ref(null);
+const deletingImageId = ref(null);
 
-const handleDeleteDocument = async () => {
+const handleDeleteImage = async (img) => {
   if (!selectedDoc.value) return;
-  deletingDoc.value = true;
+  deletingImageId.value = img.id;
   try {
-    const res = await deleteComplianceDocument(selectedDoc.value.id, props.merchantId);
+    const res = await deleteComplianceImage(img.id, props.merchantId);
     if (res?.statusCode !== '00') {
-      showToast(res?.message || 'Failed to delete document. Please retry.', 'error');
+      showToast(res?.message || 'Failed to delete image. Please retry.', 'error');
       return;
     }
-    docDialog.value = false;
-    deleteDocConfirming.value = false;
+    selectedDoc.value.images = (selectedDoc.value.images || []).filter(i => i.id !== img.id);
+    confirmDeleteImageId.value = null;
     await refreshMerchant();
-    showToast('Document deleted', 'success');
+    selectedDoc.value = merchant.documents?.find(d => d.id === selectedDoc.value?.id) || selectedDoc.value;
+    showToast('Image deleted', 'success');
   } catch (err) {
-    console.error('Delete document error:', err);
-    showToast('Error deleting document. Please retry.', 'error');
+    console.error('Delete image error:', err);
+    showToast('Error deleting image. Please retry.', 'error');
   } finally {
-    deletingDoc.value = false;
+    deletingImageId.value = null;
   }
 };
 
@@ -1737,7 +1742,7 @@ const riskPill  = (s) => { if (!s) return 'pill--slate'; if (s === 'LOW') return
 const docStatusPill = (s) => { if (s==='VERIFIED') return 'pill--emerald'; if (s==='REJECTED') return 'pill--red'; if (s==='SUBMITTED') return 'pill--sky'; return 'pill--amber'; };
 const txnPill   = (s) => { if (['PAID','SUCCESS'].includes(s)) return 'pill--emerald'; if (['FAILED','CANCELLED'].includes(s)) return 'pill--red'; return 'pill--amber'; };
 
-const openDoc     = (doc) => { selectedDoc.value = doc; docDialog.value = true; deleteDocConfirming.value = false; };
+const openDoc     = (doc) => { selectedDoc.value = doc; docDialog.value = true; confirmDeleteImageId.value = null; };
 const openPreview = (url) => { previewUrl.value = url; imgPreview.value = true; };
 
 const isPdfDoc = (img) => {
@@ -1994,10 +1999,13 @@ onMounted(async () => {
 .doc-img-cell  { position: relative; border-radius: 8px; overflow: hidden; }
 .doc-img-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; cursor: pointer; transition: opacity .13s; display: block; }
 .doc-img-thumb:hover { opacity: .82; }
-.doc-img-overlay { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding: 8px; opacity: 0; background: linear-gradient(to top, rgba(15,23,42,.55), transparent 60%); transition: opacity .15s; pointer-events: none; }
+.doc-img-overlay { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; gap: 6px; padding: 8px; opacity: 0; background: linear-gradient(to top, rgba(15,23,42,.55), transparent 60%); transition: opacity .15s; pointer-events: none; }
 .doc-img-cell:hover .doc-img-overlay { opacity: 1; pointer-events: auto; }
 .doc-img-reupload-btn { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #0f172a; background: #fff; border: none; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
 .doc-img-reupload-btn:disabled { opacity: .7; cursor: not-allowed; }
+.doc-img-delete-btn { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #fff; background: #dc2626; border: none; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.doc-img-delete-btn:hover { background: #b91c1c; }
+.doc-img-delete-btn:disabled { opacity: .7; cursor: not-allowed; }
 .doc-img-spinner { width: 12px; height: 12px; border: 2px solid #e2e8f0; border-top-color: #1142d4; border-radius: 50%; animation: onb-doc-spin .7s linear infinite; display: inline-block; }
 @keyframes onb-doc-spin { to { transform: rotate(360deg); } }
 .img-preview   { width: 100%; max-height: 520px; object-fit: contain; border-radius: 8px; }
@@ -2007,18 +2015,16 @@ onMounted(async () => {
 .doc-pdf-thumb .mdi { font-size: 30px; color: #dc2626; }
 .doc-pdf-label { font-size: 11px; font-weight: 700; color: #b91c1c; }
 
-.icon-close--danger { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
-.icon-close--danger:hover { background: #fee2e2; color: #b91c1c; }
-.icon-close--danger:disabled { opacity: .6; cursor: not-allowed; }
+.doc-img-overlay--confirm { opacity: 1 !important; pointer-events: auto !important; align-items: center; justify-content: center; flex-direction: column; gap: 8px; background: rgba(15,23,42,.72); }
+.doc-img-overlay--confirm p { margin: 0; font-size: 11px; font-weight: 700; color: #fff; text-align: center; }
+.doc-img-overlay__actions { display: flex; align-items: center; gap: 8px; }
+.doc-img-confirm-no { font-size: 11px; font-weight: 700; color: #0f172a; background: #fff; border: none; border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+.doc-img-confirm-no:disabled { opacity: .7; cursor: not-allowed; }
+.doc-img-confirm-yes { display: flex; align-items: center; justify-content: center; min-width: 40px; font-size: 11px; font-weight: 700; color: #fff; background: #dc2626; border: none; border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+.doc-img-confirm-yes:hover { background: #b91c1c; }
+.doc-img-confirm-yes:disabled { opacity: .7; cursor: not-allowed; }
+.doc-img-confirm-yes .doc-img-spinner { border-color: rgba(255,255,255,.4); border-top-color: #fff; }
 
-.doc-delete-confirm { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin-bottom: 16px; border-radius: 10px; background: #fef2f2; border: 1px solid #fee2e2; }
-.doc-delete-confirm .mdi { font-size: 18px; color: #dc2626; flex-shrink: 0; }
-.doc-delete-confirm p { flex: 1; margin: 0; font-size: 13px; font-weight: 600; color: #991b1b; }
-.doc-delete-confirm__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.doc-delete-confirm__btn { display: flex; align-items: center; justify-content: center; min-width: 84px; font-size: 12px; font-weight: 700; color: #fff; background: #dc2626; border: none; border-radius: 7px; padding: 7px 12px; cursor: pointer; }
-.doc-delete-confirm__btn:hover { background: #b91c1c; }
-.doc-delete-confirm__btn:disabled { opacity: .7; cursor: not-allowed; }
-.doc-delete-confirm__btn .doc-img-spinner { border-color: rgba(255,255,255,.4); border-top-color: #fff; }
 .dialog-fade-enter-active, .dialog-fade-leave-active { transition: opacity .2s ease; }
 .dialog-fade-enter-from, .dialog-fade-leave-to { opacity: 0; }
 

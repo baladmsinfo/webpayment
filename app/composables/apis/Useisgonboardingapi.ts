@@ -103,18 +103,6 @@ export function useIsgOnboardingApi() {
     }
   };
 
-  // Deletes an entire compliance document (and its attached images).
-  const deleteComplianceDocument = async (documentId: number | string, merchantId?: string) => {
-    try {
-      const res = await del(`/onboarding/compliance/documents/${documentId}`, {
-        params: { merchantId },
-      });
-      return res.data;
-    } catch (err: any) {
-      return err?.response?.data ?? { statusCode: "01", message: "Network error" };
-    }
-  };
-
   const isgVerifyAccount = async (payload: {
     accountHolderName: string;
     accountNumber: string;
@@ -182,7 +170,6 @@ export function useIsgOnboardingApi() {
     uploadDoc,
     complianceInit,
     deleteComplianceImage,
-    deleteComplianceDocument,
     isgVerifyAccount,
     isgSubmitOnboarding,
     isgMarkKycSubmitted,

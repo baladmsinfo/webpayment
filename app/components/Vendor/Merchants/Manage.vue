@@ -677,6 +677,32 @@
           </div>
         </div>
 
+        <!-- Documents -->
+        <div class="card">
+          <div class="card__head">
+            <div class="card__head-dot card__head-dot--amber"></div>
+            <h3 class="card__title">Documents</h3>
+            <span class="ml-auto pill pill--slate" v-if="merchantForm.documents?.length">{{ merchantForm.documents.length }}</span>
+          </div>
+          <div class="doc-grid" v-if="merchantForm.documents?.length">
+            <div class="doc-card" v-for="doc in merchantForm.documents" :key="doc.id" @click="openDoc(doc)">
+              <div class="doc-card__top">
+                <span class="doc-card__icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </span>
+                <span :class="['pill pill--sm', statusPillClass(doc.doc_status)]">{{ doc.doc_status }}</span>
+              </div>
+              <p class="doc-card__name">{{ doc.doc_name || doc.doc_type }}</p>
+              <p class="doc-card__num font-mono">{{ doc.doc_number || '—' }}</p>
+              <p class="doc-card__count">{{ doc.images?.length || 0 }} image(s)</p>
+            </div>
+          </div>
+          <div v-else class="empty-state">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <p>No documents uploaded yet</p>
+          </div>
+        </div>
+
       </section>
 
       <!-- ════ TAB: SETTLEMENT & BANKING ════ -->
@@ -1287,6 +1313,82 @@
       </Transition>
     </Teleport>
 
+    <!-- ░░ Document Dialog ░░ -->
+    <Teleport to="body">
+      <Transition name="dialog-fade">
+        <div v-if="docDialog" class="dialog-overlay" @click.self="docDialog = false">
+          <div class="dialog">
+            <div class="dialog-hdr">
+              <div>
+                <p class="dialog-title">{{ selectedDoc?.doc_name || selectedDoc?.doc_type }}</p>
+                <p class="dialog-sub">{{ selectedDoc?.doc_type }}</p>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span :class="['pill pill--sm', statusPillClass(selectedDoc?.doc_status)]">{{ selectedDoc?.doc_status }}</span>
+                <button class="icon-close" @click="docDialog = false"><span class="mdi mdi-close"></span></button>
+              </div>
+            </div>
+            <div class="dialog-body" v-if="selectedDoc">
+              <div class="info-grid info-grid--3" style="border:1px solid #f1f5f9;border-radius:10px;overflow:hidden;margin-bottom:16px;">
+                <div class="info-item"><label>Doc Number</label><p class="font-mono">{{ selectedDoc.doc_number || '—' }}</p></div>
+                <div class="info-item"><label>Verified By</label><p>{{ selectedDoc.doc_verified_by || '—' }}</p></div>
+                <div class="info-item"><label>Result</label><p><span :class="['pill pill--sm', selectedDoc.doc_verified_result ? 'pill--emerald' : 'pill--amber']">{{ selectedDoc.doc_verified_result ? 'Verified' : 'Pending' }}</span></p></div>
+              </div>
+              <div class="dialog-section-lbl-row">
+                <p class="dialog-section-lbl">Document Images</p>
+                <button class="doc-reupload-add-btn" :disabled="reuploadBusy" @click="triggerReupload(null)">
+                  <span class="mdi mdi-tray-arrow-up"></span> Upload New
+                </button>
+              </div>
+              <div class="doc-img-grid" v-if="selectedDoc.images?.length">
+                <div class="doc-img-cell" v-for="img in selectedDoc.images" :key="img.id">
+                  <img v-if="!isPdfDoc(img)" :src="img.url" class="doc-img-thumb" @click="openDocImage(img)" />
+                  <div v-else class="doc-pdf-thumb" @click="openDocImage(img)">
+                    <span class="mdi mdi-file-pdf-box"></span>
+                    <span class="doc-pdf-label">View PDF</span>
+                  </div>
+                  <div class="doc-img-overlay" v-if="confirmDeleteImageId !== img.id">
+                    <button class="doc-img-reupload-btn" :disabled="reuploadBusy || deletingImageId === img.id" @click="triggerReupload(img)">
+                      <span v-if="reuploadBusy && reuploadingImageId === img.id" class="doc-img-spinner"></span>
+                      <template v-else><span class="mdi mdi-camera-retake-outline"></span> Replace</template>
+                    </button>
+                    <button class="doc-img-delete-btn" :disabled="reuploadBusy || deletingImageId === img.id" @click="confirmDeleteImageId = img.id">
+                      <span class="mdi mdi-trash-can-outline"></span> Delete
+                    </button>
+                  </div>
+                  <div class="doc-img-overlay doc-img-overlay--confirm" v-else>
+                    <p>Delete this image?</p>
+                    <div class="doc-img-overlay__actions">
+                      <button class="doc-img-confirm-no" :disabled="deletingImageId === img.id" @click="confirmDeleteImageId = null">No</button>
+                      <button class="doc-img-confirm-yes" :disabled="deletingImageId === img.id" @click="handleDeleteImage(img)">
+                        <span v-if="deletingImageId === img.id" class="doc-img-spinner"></span>
+                        <span v-else>Yes</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="empty-state" v-else>
+                <p style="font-size:13px;color:#94a3b8">No images uploaded for this document</p>
+              </div>
+              <input ref="reuploadInputRef" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none" @change="handleReuploadFile" />
+            </div>
+          </div>
+        </div>
+      </Transition>
+      <Transition name="dialog-fade">
+        <div v-if="imgPreview" class="dialog-overlay" @click.self="imgPreview = false">
+          <div class="dialog dialog--img">
+            <div class="dialog-hdr">
+              <p class="dialog-title">Image Preview</p>
+              <button class="icon-close" @click="imgPreview = false"><span class="mdi mdi-close"></span></button>
+            </div>
+            <div class="dialog-body dialog-body--img"><img :src="previewUrl" class="img-preview" /></div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- Snackbar -->
     <Transition name="snack">
       <div v-if="snackbar.show"
@@ -1304,6 +1406,7 @@ import { useRouter } from "vue-router";
 import { useOnboadingApi } from "~/composables/apis/useOnboadingApi";
 import { useUsersApi } from "~/composables/apis/useUsersApi";
 import { useVendorLinkedServiceApi } from '~/composables/apis/useVendorLinkedServiceApi'
+import { useIsgOnboardingApi } from "~/composables/apis/Useisgonboardingapi";
 
 const { getMyLinkedServices } = useVendorLinkedServiceApi()
 
@@ -1462,6 +1565,7 @@ const props = defineProps({ merchantId: String });
 const router = useRouter();
 const { getMerchantById, createKyc } = useOnboadingApi();
 const { getTransactionsByMerchantId } = useUsersApi();
+const { uploadDoc, complianceInit, deleteComplianceImage } = useIsgOnboardingApi();
 
 const merchantForm = reactive({});
 const transactions = ref({ data: [], pagination: {} });
@@ -1725,6 +1829,122 @@ const getMerchant = async (id) => {
     Object.assign(merchantForm, res.data || {});
   } catch (e) {
     console.error("Failed to fetch merchant:", e);
+  }
+};
+
+const notify = (message, color = 'success') => {
+  snackbar.message = message;
+  snackbar.color = color;
+  snackbar.show = true;
+  setTimeout(() => { snackbar.show = false; }, 3000);
+};
+
+// ── Documents (view / reupload / delete) ───────────────────────────
+const docDialog   = ref(false);
+const selectedDoc = ref(null);
+const imgPreview  = ref(false);
+const previewUrl  = ref(null);
+
+const openDoc     = (doc) => { selectedDoc.value = doc; docDialog.value = true; confirmDeleteImageId.value = null; };
+const openPreview = (url) => { previewUrl.value = url; imgPreview.value = true; };
+
+const isPdfDoc = (img) => {
+  if (!img) return false;
+  if (img.mimetype) return img.mimetype === 'application/pdf';
+  return /\.pdf(\?|$)/i.test(img.url || img.filename || '');
+};
+const openDocImage = (img) => {
+  if (isPdfDoc(img)) window.open(img.url, '_blank', 'noopener');
+  else openPreview(img.url);
+};
+
+// Replaces a single image on the currently open document: uploads the new
+// file (reusing the old image's filename/docid so it maps to the same
+// compliance slot), re-attaches the full image set via complianceInit
+// (which also resets doc_status back to PENDING for re-review), then
+// deletes the stale image row. `triggerReupload(null)` uploads a brand-new
+// image into a doc that has none yet.
+const reuploadInputRef   = ref(null);
+const reuploadingImageId = ref(null);
+const reuploadBusy       = ref(false);
+
+const triggerReupload = (img) => {
+  reuploadingImageId.value = img?.id ?? null;
+  reuploadInputRef.value?.click();
+};
+
+const handleReuploadFile = async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  if (!file || !selectedDoc.value) return;
+
+  const oldImg = selectedDoc.value.images?.find(i => i.id === reuploadingImageId.value) || null;
+  reuploadBusy.value = true;
+  try {
+    const uploadRes = await uploadDoc(file, {
+      filename: oldImg?.filename,
+      docid: oldImg?.docid,
+      merchantId: props.merchantId,
+    });
+    const newId = uploadRes?.data?.data?.id || uploadRes?.data?.id;
+    if (!newId) {
+      notify(uploadRes?.data?.error || uploadRes?.data?.message || 'Failed to upload image. Please retry.', 'error');
+      return;
+    }
+
+    const imageIds = (selectedDoc.value.images || []).map(i => (i.id === oldImg?.id ? newId : i.id));
+    if (!oldImg) imageIds.push(newId);
+
+    const initRes = await complianceInit({
+      doc_type: selectedDoc.value.doc_type,
+      doc_number: selectedDoc.value.doc_number,
+      images: imageIds,
+    }, props.merchantId);
+
+    if (initRes?.data?.statusCode !== '00' && initRes?.statusCode !== '00') {
+      notify(initRes?.data?.message || initRes?.message || 'Failed to save document', 'error');
+      return;
+    }
+
+    if (oldImg) await deleteComplianceImage(oldImg.id, props.merchantId);
+
+    await getMerchant(props.merchantId);
+    selectedDoc.value = merchantForm.documents?.find(d => d.id === selectedDoc.value?.id) || selectedDoc.value;
+    notify('Document image updated successfully');
+  } catch (err) {
+    console.error('Reupload error:', err);
+    notify('Error uploading image. Please retry.', 'error');
+  } finally {
+    reuploadBusy.value = false;
+    reuploadingImageId.value = null;
+  }
+};
+
+// Deletes a single image under the open document — the document itself
+// (its doc_type/doc_number row) is never deletable from here, only the
+// individual images attached to it.
+const confirmDeleteImageId = ref(null);
+const deletingImageId = ref(null);
+
+const handleDeleteImage = async (img) => {
+  if (!selectedDoc.value) return;
+  deletingImageId.value = img.id;
+  try {
+    const res = await deleteComplianceImage(img.id, props.merchantId);
+    if (res?.statusCode !== '00') {
+      notify(res?.message || 'Failed to delete image. Please retry.', 'error');
+      return;
+    }
+    selectedDoc.value.images = (selectedDoc.value.images || []).filter(i => i.id !== img.id);
+    confirmDeleteImageId.value = null;
+    await getMerchant(props.merchantId);
+    selectedDoc.value = merchantForm.documents?.find(d => d.id === selectedDoc.value?.id) || selectedDoc.value;
+    notify('Image deleted');
+  } catch (err) {
+    console.error('Delete image error:', err);
+    notify('Error deleting image. Please retry.', 'error');
+  } finally {
+    deletingImageId.value = null;
   }
 };
 
@@ -4171,4 +4391,69 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   gap: 4px;
 }
+
+/* ── Documents card ── */
+.doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.doc-card { border: 1px solid #eef1f6; border-radius: 10px; padding: 12px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.doc-card:hover { border-color: #c7d2fe; box-shadow: 0 2px 8px rgba(17,66,212,.08); }
+.doc-card__top { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+.doc-card__icon { color: #1142d4; display: flex; }
+.doc-card__name { font-size: 12px; font-weight: 700; color: #0f172a; margin: 0 0 3px; }
+.doc-card__num { font-size: 11px; color: #64748b; margin: 0 0 4px; }
+.doc-card__count { font-size: 11px; color: #94a3b8; margin: 0; }
+
+/* ── Document Dialog ── */
+.dialog-overlay { position: fixed; inset: 0; z-index: 400; background: rgba(15,23,42,.45); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.dialog { background: #fff; border-radius: 16px; width: 100%; max-width: 760px; box-shadow: 0 24px 64px rgba(0,0,0,.2); overflow: hidden; max-height: 90dvh; display: flex; flex-direction: column; }
+.dialog--img { max-width: 600px; }
+.dialog-hdr { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
+.dialog-title { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0; }
+.dialog-sub { font-size: 12px; color: #64748b; margin: 2px 0 0; }
+.dialog-body { padding: 20px; overflow-y: auto; flex: 1; }
+.dialog-body--img { padding: 8px; }
+.dialog-section-lbl-row { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 8px; }
+.dialog-section-lbl { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .07em; margin: 0; }
+.icon-close { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; cursor: pointer; color: #64748b; font-size: 16px; transition: all .15s; }
+.icon-close:hover { background: #f1f5f9; color: #0f172a; }
+
+.btn-secondary { font-size: 12px; font-weight: 700; color: #334155; background: #fff; border: 1px solid #e2e8f0; border-radius: 7px; padding: 7px 12px; cursor: pointer; }
+.btn-secondary:hover { background: #f8fafc; }
+.btn-secondary:disabled { opacity: .6; cursor: not-allowed; }
+
+.doc-reupload-add-btn { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #1142d4; background: #eef2ff; border: 1px solid #e0e7ff; border-radius: 7px; padding: 5px 10px; cursor: pointer; transition: background .15s; }
+.doc-reupload-add-btn:hover { background: #e0e7ff; }
+.doc-reupload-add-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.doc-img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.doc-img-cell { position: relative; border-radius: 8px; overflow: hidden; }
+.doc-img-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; cursor: pointer; transition: opacity .13s; display: block; }
+.doc-img-thumb:hover { opacity: .82; }
+.doc-img-overlay { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; gap: 6px; padding: 8px; opacity: 0; background: linear-gradient(to top, rgba(15,23,42,.55), transparent 60%); transition: opacity .15s; pointer-events: none; }
+.doc-img-cell:hover .doc-img-overlay { opacity: 1; pointer-events: auto; }
+.doc-img-reupload-btn { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #0f172a; background: #fff; border: none; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.doc-img-reupload-btn:disabled { opacity: .7; cursor: not-allowed; }
+.doc-img-delete-btn { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #fff; background: #dc2626; border: none; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.doc-img-delete-btn:hover { background: #b91c1c; }
+.doc-img-delete-btn:disabled { opacity: .7; cursor: not-allowed; }
+.doc-img-spinner { width: 12px; height: 12px; border: 2px solid #e2e8f0; border-top-color: #1142d4; border-radius: 50%; animation: doc-spin .7s linear infinite; display: inline-block; }
+@keyframes doc-spin { to { transform: rotate(360deg); } }
+.img-preview { width: 100%; max-height: 520px; object-fit: contain; border-radius: 8px; }
+
+.doc-pdf-thumb { width: 100%; aspect-ratio: 4/3; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: #fef2f2; border: 1px solid #fee2e2; transition: opacity .13s; }
+.doc-pdf-thumb:hover { opacity: .82; }
+.doc-pdf-thumb .mdi { font-size: 30px; color: #dc2626; }
+.doc-pdf-label { font-size: 11px; font-weight: 700; color: #b91c1c; }
+
+.doc-img-overlay--confirm { opacity: 1 !important; pointer-events: auto !important; align-items: center; justify-content: center; flex-direction: column; gap: 8px; background: rgba(15,23,42,.72); }
+.doc-img-overlay--confirm p { margin: 0; font-size: 11px; font-weight: 700; color: #fff; text-align: center; }
+.doc-img-overlay__actions { display: flex; align-items: center; gap: 8px; }
+.doc-img-confirm-no { font-size: 11px; font-weight: 700; color: #0f172a; background: #fff; border: none; border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+.doc-img-confirm-no:disabled { opacity: .7; cursor: not-allowed; }
+.doc-img-confirm-yes { display: flex; align-items: center; justify-content: center; min-width: 40px; font-size: 11px; font-weight: 700; color: #fff; background: #dc2626; border: none; border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+.doc-img-confirm-yes:hover { background: #b91c1c; }
+.doc-img-confirm-yes:disabled { opacity: .7; cursor: not-allowed; }
+.doc-img-confirm-yes .doc-img-spinner { border-color: rgba(255,255,255,.4); border-top-color: #fff; }
+
+.dialog-fade-enter-active, .dialog-fade-leave-active { transition: opacity .2s ease; }
+.dialog-fade-enter-from, .dialog-fade-leave-to { opacity: 0; }
 </style>
