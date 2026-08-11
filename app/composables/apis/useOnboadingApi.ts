@@ -16,8 +16,10 @@ export function useOnboadingApi() {
 
   const businessTurnOver = async () => {
     const res = await get("/admin/onboarding/trunOver");
-    Onboading.setTurnOver(res.data);
-    return res.data;
+    if (res.data.statusCode == "00") {
+      Onboading.setTurnOver(res.data.data);
+      return res.data.data;
+    }
   };
 
   const businessType = async () => {

@@ -440,6 +440,43 @@
             </p>
           </div>
 
+          <!-- ─────────── STEP 7: Select Services ─────────── -->
+          <div v-if="step === 7" class="step-pane">
+            <p class="step-desc">
+              Choose the services you'll offer. A default provider is assigned automatically for each. Optional —
+              you can skip and add these later from your dashboard.
+            </p>
+
+            <div v-if="loadingServices" class="svc-loading">Loading available services…</div>
+
+            <div v-else-if="!serviceList.length" class="svc-empty">No services are available to select right now — you can skip this step.</div>
+
+            <div v-else class="svc-grid">
+              <div v-for="svc in serviceList" :key="svc.id" class="svc-card"
+                :class="{ 'svc-card--selected': serviceSelections[svc.id]?.selected }">
+                <div class="svc-card__head" @click="toggleService(svc)">
+                  <div class="svc-checkbox" :class="{ 'svc-checkbox--on': serviceSelections[svc.id]?.selected }">
+                    <v-icon v-if="serviceSelections[svc.id]?.selected" size="13">mdi-check</v-icon>
+                  </div>
+                  <v-icon size="18" color="#1142d4">{{ serviceIcon(svc.service) }}</v-icon>
+                  <span class="svc-card__name">{{ svc.service }}</span>
+                </div>
+
+                <!-- <div v-if="serviceSelections[svc.id]?.selected" class="svc-card__body">
+                  <span v-if="serviceSelections[svc.id]?.interfaceName" class="svc-provider-badge">
+                    Provider: {{ serviceSelections[svc.id].interfaceName }}
+                  </span>
+                  <p v-else class="svc-card__hint">No provider linked to this service yet.</p>
+                </div> -->
+              </div>
+            </div>
+
+            <p v-if="selectedServiceCount" class="svc-summary">
+              {{ selectedServiceCount }} service{{ selectedServiceCount > 1 ? 's' : '' }} selected — these will be
+              linked to your account as pending until an admin activates them.
+            </p>
+          </div>
+
         </div>
 
         <!-- Footer actions -->
@@ -482,6 +519,7 @@ import { useUsersApi } from "@/composables/apis/useUsersApi";
 import { useOnboadingApi } from "@/composables/apis/useOnboadingApi";
 import { useOnboardingStore } from "@/stores/onboading";
 import { storeToRefs } from "pinia";
+import { useSetupServicesApi } from "~/composables/apis/useSetupServices";
 
 definePageMeta({ middleware: "guest" });
 
@@ -491,10 +529,56 @@ const { businessTypeList, turnOverList } = storeToRefs(Onboarding);
 
 const { MCCSearch, businessTurnOver, businessType, pincodeSearch } = useOnboadingApi();
 const { registor } = useUsersApi();
+const { getPublicServiceCatalog } = useSetupServicesApi();
+
+// ── Services selection (same source/pattern as vendor.vue's register wizard) ──
+const serviceList = ref([]);
+const loadingServices = ref(false);
+const serviceSelections = reactive({});
+
+const SERVICE_ICONS = {
+  AEPS: "mdi-fingerprint", DMT: "mdi-bank-transfer", UPI: "mdi-qrcode",
+  BBPS: "mdi-receipt-text-outline", MATM: "mdi-atm", POS: "mdi-point-of-sale",
+};
+const serviceIcon = (service) => SERVICE_ICONS[service] || "mdi-apps";
+
+// No provider picker shown to the user — each service gets a fixed default
+// provider assigned on selection instead (same defaults as vendor.vue).
+const DEFAULT_INTERFACE_BY_SERVICE = {
+  UPI: "ISG",
+  AEPS: "NSDL",
+  DMT: "NSDL",
+};
+
+function toggleService(svc) {
+  const current = serviceSelections[svc.id];
+  if (current?.selected) {
+    serviceSelections[svc.id] = { selected: false, service: svc.service, interfaceName: "" };
+  } else {
+    const preferredName = DEFAULT_INTERFACE_BY_SERVICE[svc.service];
+    const preferred = preferredName && (svc.interfaces || []).find(i => i.interface === preferredName);
+    const fallback = preferred || svc.interfaces?.[0] || null;
+    serviceSelections[svc.id] = {
+      selected: true,
+      service: svc.service,
+      interfaceName: fallback?.interface || "",
+    };
+  }
+}
+
+// Sent to the backend as { service, interfaceName } — MerchantServiceKyc
+// stores the service/interface enum values directly, unlike VendorLinkedService
+// which links by servicelist/interfacelist id.
+const selectedServiceEntries = computed(() =>
+  Object.values(serviceSelections)
+    .filter((sel) => sel.selected && sel.interfaceName)
+    .map((sel) => ({ service: sel.service, interfaceName: sel.interfaceName }))
+);
+const selectedServiceCount = computed(() => selectedServiceEntries.value.length);
 
 // ── Step control ──
 const step = ref(1);
-const totalSteps = 6;
+const totalSteps = 7;
 const submitting = ref(false);
 
 const stepTitles = [
@@ -504,6 +588,7 @@ const stepTitles = [
   "Store Location",
   "Address Details",
   "Beneficiary & Review",
+  "Select Services",
 ];
 const stepTitle = computed(() => stepTitles[step.value - 1]);
 
@@ -891,6 +976,7 @@ const submit = async () => {
       lead_source: form.lead_source,
       lg_code: form.lg_code,
       ckyc: form.ckyc,
+      services: selectedServiceEntries.value,
     };
 
     const result = await registor(payload);
@@ -916,6 +1002,13 @@ onMounted(async () => {
 
   try { await businessType(); } catch (e) { console.error(e); }
   try { await businessTurnOver(); } catch (e) { console.error(e); }
+
+  loadingServices.value = true;
+  try {
+    const res = await getPublicServiceCatalog();
+    if (res?.statusCode === "00") serviceList.value = res.data || [];
+  } catch (e) { console.error(e); }
+  finally { loadingServices.value = false; }
 });
 
 watch(() => form.email, (newVal) => {
@@ -1175,6 +1268,52 @@ watch(() => form.email, (newVal) => {
 }
 .toggle-input:checked ~ .toggle-track { background: #1142d4; }
 .toggle-input:checked ~ .toggle-track .toggle-thumb { transform: translateX(1.25rem); }
+
+/* ── SERVICES ── */
+.svc-loading, .svc-empty {
+  font-size: .82rem; color: #64748b; padding: 1rem; text-align: center;
+  background: #fff; border: 1px dashed #e2e8f0; border-radius: 12px;
+}
+
+.svc-grid {
+  display: grid; grid-template-columns: 1fr; gap: .625rem;
+}
+@media (min-width: 460px) { .svc-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.svc-card {
+  background: #fff; border: 1.5px solid #e2e8f0; border-radius: 12px;
+  transition: all .15s; overflow: hidden;
+}
+.svc-card--selected { border-color: #1142d4; box-shadow: 0 0 0 2px rgba(17,66,212,.1); }
+
+.svc-card__head {
+  display: flex; align-items: center; gap: .625rem;
+  padding: .8rem .9rem; cursor: pointer;
+}
+.svc-card__name { font-size: .85rem; font-weight: 700; color: #0f172a; }
+
+.svc-checkbox {
+  width: 1.125rem; height: 1.125rem; border-radius: 4px;
+  border: 1.5px solid #cbd5e1; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; transition: all .15s;
+}
+.svc-checkbox--on { background: #1142d4; border-color: #1142d4; }
+
+.svc-card__body { padding: 0 .9rem .9rem; display: flex; flex-direction: column; gap: .3rem; }
+.svc-card__hint { font-size: .7rem; color: #ef4444; }
+
+.svc-provider-badge {
+  display: inline-flex; align-items: center; width: fit-content;
+  font-size: .7rem; font-weight: 700; color: #1142d4;
+  background: #eef2ff; border: 1px solid #d7e0fb; border-radius: 9999px;
+  padding: .2rem .6rem;
+}
+
+.svc-summary {
+  margin-top: .875rem; font-size: .78rem; color: #1142d4;
+  background: #eef2ff; border: 1px solid #d7e0fb; border-radius: 10px; padding: .7rem .9rem; line-height: 1.5;
+}
 
 /* ── review ── */
 .review-card {
