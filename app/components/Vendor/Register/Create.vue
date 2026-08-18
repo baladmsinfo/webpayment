@@ -11,7 +11,7 @@
         <div class="left-copy">
           <h2 class="left-headline">Become a<br />Bucksbox Partner</h2>
           <p class="left-sub">
-            Register as a distributor to onboard merchants, track commissions and grow your network — all from a
+            Register as a partner to onboard merchants, track commissions and grow your network — all from a
             single dashboard.
           </p>
         </div>
@@ -69,12 +69,12 @@
 
           <!-- ─────────── STEP 1: Business Details ─────────── -->
           <div v-if="step === 1" class="step-pane">
-            <p class="step-desc">Set up your distributor identity, primary contact &amp; login password.</p>
+            <p class="step-desc">Set up your partner identity, primary contact &amp; login password.</p>
 
             <v-row dense>
               <v-col cols="12">
-                <label class="field-label">DISTRIBUTOR / COMPANY NAME</label>
-                <v-text-field v-model.trim="form.name" placeholder="Enter distributor or company name"
+                <label class="field-label">PARTNER / COMPANY NAME</label>
+                <v-text-field v-model.trim="form.name" placeholder="Enter partner or company name"
                   variant="outlined" density="comfortable" prepend-inner-icon="mdi-office-building-outline"
                   class="reg-field" hide-details="auto" :error-messages="errors.name ? [errors.name] : []"
                   @update:model-value="clearError('name')" />
@@ -128,7 +128,7 @@
 
           <!-- ─────────── STEP 2: Official Address ─────────── -->
           <div v-if="step === 2" class="step-pane">
-            <p class="step-desc">Registered office address for your distributor account.</p>
+            <p class="step-desc">Registered office address for your partner account.</p>
 
             <v-row dense>
               <v-col cols="12" sm="6">
@@ -620,7 +620,7 @@ const validateStep = () => {
 
   if (step.value === 1) {
     if (!form.name || form.name.trim().length < 2)
-      newErrors.name = "Distributor / company name is required";
+      newErrors.name = "Partner / company name is required";
     if (!form.primary_email_id || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.primary_email_id))
       newErrors.primary_email_id = "Enter a valid email address";
     if (!/^[6-9]\d{9}$/.test(String(form.primary_mobile || "")))
@@ -722,10 +722,10 @@ const submit = async () => {
     const result = await registerVendor(payload);
 
     if (result?.statusCode === "00") {
-      showSnack("Distributor account created! Redirecting to your dashboard…", "success");
+      showSnack("Partner account created! Redirecting to your dashboard…", "success");
       setTimeout(() => router.push("/vendor/dashboard"), 1500);
     } else {
-      showSnack(result?.message || "Error creating distributor account", "error");
+      showSnack(result?.message || "Error creating partner account", "error");
     }
   } catch (err) {
     showSnack(err?.response?.data?.message || "Something went wrong", "error");
