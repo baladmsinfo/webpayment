@@ -475,15 +475,15 @@
                       <div class="doc-item-status-icon">
                         <span class="mdi"
                           :class="doc.uploaded ? 'mdi-check-circle-outline' : 'mdi-alert-circle-outline'"
-                          :style="{ color: doc.uploaded ? '#16a34a' : '#ef4444' }"></span>
+                          :style="{ color: doc.uploaded ? '#16a34a' : (doc.mandatory ? '#ef4444' : '#94a3b8') }"></span>
                       </div>
                       <div class="doc-item-name">{{ doc.name }}</div>
                       <div class="doc-item-chip"
                         :class="doc.uploaded ? 'doc-item-chip--done' : 'doc-item-chip--pending'">
-                        {{ doc.uploaded ? 'Uploaded' : 'Pending' }}
+                        {{ doc.uploaded ? 'Uploaded' : (doc.mandatory ? 'Mandatory' : 'Optional') }}
                       </div>
                       <button class="doc-item-btn"
-                        :disabled="doc.uploaded || (activeCategory?.category !== 'STORE_IMAGE' && activeCategory?.uploaded > 0)"
+                        :disabled="doc.uploaded"
                         @click="openDocUpload(doc.code)">
                         {{ doc.uploaded ? 'Added' : 'Add Document' }}
                       </button>
@@ -1028,7 +1028,6 @@ const {
   isgVerifyPan,
   isgVerifyAccount,
   isgSubmitOnboarding,
-  isgMarkKycSubmitted,
   uploadDoc,
   complianceInit,
 } = useIsgOnboardingApi();
@@ -1223,35 +1222,53 @@ const DOC_RULES = {
 };
 
 // ── Computed ──────────────────────────────────────────────────────────────────
-const isStoreImageCategory = (category) => category === 'STORE_IMAGE';
-
+// Every category the backend returns is already business-type filtered AND
+// already carries the correct required/uploaded/compliant counts computed by
+// service.complianceStatus (isg.documentMatrix.js) — do NOT recompute these
+// client-side (previously this only surfaced STORE_IMAGE/INDIVIDUAL_PAN/IDENTITY
+// and treated any single upload in a category as satisfying it, which silently
+// hid mandatory docs like MERCHANT_APPLICATION_FORM/MERCHANT_AGREEMENT/
+// CANCELLED_CHEQUE and business-legality docs, causing submit to reject with
+// "Missing mandatory documents" even though the UI showed everything complete).
 const requiredDocs = computed(() => {
   if (!complianceResponse.value?.categories) return [];
-
-  const ISG_CATEGORIES = ['STORE_IMAGE', 'INDIVIDUAL_PAN', 'IDENTITY'];
-
-  return complianceResponse.value.categories
-    .filter(cat => ISG_CATEGORIES.includes(cat.category))
-    .map(cat => {
-      const documents = cat.category === 'IDENTITY'
-        ? (cat.documents || []).filter(doc => doc.code === 'AADHAAR')
-        : (cat.documents || []);
-
-      const uploadedCount = documents.filter(d => d.uploaded).length;
-      const isStoreImage = isStoreImageCategory(cat.category);
-      const required = isStoreImage ? documents.length : 1;
-      const uploaded = uploadedCount;
-      const compliant = isStoreImage ? uploadedCount === documents.length : uploadedCount > 0;
-      const missing = isStoreImage ? Math.max(documents.length - uploadedCount, 0) : compliant ? 0 : 1;
-
-      return { category: cat.category, documents, required, uploaded, missing, compliant };
-    });
+  return complianceResponse.value.categories.map(cat => ({
+    category: cat.category,
+    documents: cat.documents || [],
+    required: cat.required,
+    uploaded: cat.uploaded,
+    missing: cat.missing,
+    compliant: cat.compliant,
+  }));
 });
 
 const isComplianceComplete = computed(() => {
   if (!requiredDocs.value.length) return false;
   return requiredDocs.value.every(cat => cat.compliant);
 });
+
+// code -> human-readable name, used to translate a missingDocuments[] error
+// response from POST /submit/onboading into something the vendor can act on.
+const docNameByCode = computed(() => {
+  const map = {};
+  for (const cat of requiredDocs.value) {
+    for (const doc of cat.documents) map[doc.code] = doc.name;
+  }
+  return map;
+});
+
+function describeMissingDocuments(missingDocuments) {
+  if (!missingDocuments?.length) return "";
+  return missingDocuments
+    .map((entry) => {
+      const groupMatch = /^One of \[(.+)\]$/.exec(entry);
+      if (groupMatch) {
+        return `one of: ${groupMatch[1].split(", ").map((c) => docNameByCode.value[c] || c).join(" or ")}`;
+      }
+      return docNameByCode.value[entry] || entry;
+    })
+    .join(", ");
+}
 
 const activeDocRule = computed(() => DOC_RULES[activeDocType.value] || DOC_RULES["DEFAULT"]);
 const showDocNumber = computed(() => activeDocRule.value.requiresNumber);
@@ -1697,13 +1714,18 @@ async function handleStep6Submit() {
   submitting.value = true;
   processingMsg.value = "Submitting ISG onboarding...";
   try {
-    // const res = await isgSubmitOnboarding({ merchantId: props.merchantId });
-    const res = await isgMarkKycSubmitted(props.merchantId);
+    const res = await isgSubmitOnboarding({ merchantId: props.merchantId });
     if (res?.statusCode === "00" || res?.data?.statusCode === "00") {
       submitResult.value = res?.data?.data
        || res?.data || null;
       showSnack(res?.message || res?.data?.message || "ISG onboarding submitted successfully!", "success");
       step.value = 7;
+    } else if (res?.missingDocuments?.length) {
+      showSnack(`Missing required documents: ${describeMissingDocuments(res.missingDocuments)}`, "error");
+      const status = await complianceStatus(props.merchantId);
+      if (status?.statusCode === "00") complianceResponse.value = status;
+      docStep.value = 0;
+      step.value = 5;
     } else {
       showSnack(res?.message || res?.data?.message || "Submission failed. Please retry.", "error");
     }
