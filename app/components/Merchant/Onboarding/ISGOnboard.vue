@@ -683,6 +683,7 @@ const {
   isgVerifyPan,
   isgVerifyAccount,
   isgSubmitOnboarding,
+  isgMarkKycSubmitted,
   setVerifyOtp,
 } = useIsgOnboardingApi();
 
@@ -767,29 +768,6 @@ const isComplianceComplete = computed(() => {
   if (!requiredDocs.value.length) return false;
   return requiredDocs.value.every((cat) => cat.compliant);
 });
-
-// code -> human-readable name, used to translate a missingDocuments[] error
-// response from POST /submit/onboading into something the user can act on.
-const docNameByCode = computed(() => {
-  const map = {};
-  for (const cat of requiredDocs.value) {
-    for (const doc of cat.documents) map[doc.code] = doc.name;
-  }
-  return map;
-});
-
-function describeMissingDocuments(missingDocuments) {
-  if (!missingDocuments?.length) return "";
-  return missingDocuments
-    .map((entry) => {
-      const groupMatch = /^One of \[(.+)\]$/.exec(entry);
-      if (groupMatch) {
-        return `one of: ${groupMatch[1].split(", ").map((c) => docNameByCode.value[c] || c).join(" or ")}`;
-      }
-      return docNameByCode.value[entry] || entry;
-    })
-    .join(", ");
-}
 
 // Doc-code -> upload metadata (docId/docName/docIsBack/requiredImageCount/...)
 // resolved from the shared registry.
@@ -1083,17 +1061,14 @@ async function handleStep6Submit() {
   submitting.value = true;
   processingMsg.value = "Submitting ISG onboarding...";
   try {
-    const res = await isgSubmitOnboarding({ merchantId: merchantProfile.value?.id });
+    // const res = await isgSubmitOnboarding({ merchantId: merchantProfile.value?.id });
+    const res = await isgMarkKycSubmitted();
     if (res?.statusCode === "00") {
       submitResult.value = res?.data || null;
       showToast(res?.message || "ISG onboarding submitted successfully!");
       step.value = 5; scrollToTop();
       emit("submitted", submitResult.value);
       setTimeout(() => { router.push("/merchant/dashboard"); }, 2000);
-    } else if (res?.missingDocuments?.length) {
-      showToast(`Missing required documents: ${describeMissingDocuments(res.missingDocuments)}`, "error");
-      await loadComplianceStatus();
-      step.value = 3; scrollToTop();
     } else {
       showToast(res?.message || "Submission failed. Please retry.", "error");
     }
