@@ -1471,6 +1471,14 @@
               </svg>
             </button>
           </div>
+          <button class="btn-primary" style="margin-left:auto" @click="openLinkMerchantModal">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Link Merchant
+          </button>
         </div>
 
         <div class="merchant-grid" v-if="merchantView === 'card' && filteredMerchants.length">
@@ -1683,6 +1691,78 @@
           <p>No merchants found</p>
         </div>
       </section>
+
+      <!-- Link Merchant Modal -->
+      <Teleport to="body">
+        <Transition name="modal-fade">
+          <div v-if="linkMerchantModal.open" class="modal-overlay" @click.self="closeLinkMerchantModal">
+            <div class="modal-box modal-box--wide">
+
+              <div class="modal-box__header">
+                <h3 class="modal-box__title">Link Merchant to Vendor</h3>
+                <button class="modal-close" @click="closeLinkMerchantModal">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="modal-box__body">
+                <div class="search-box" style="margin-bottom:12px">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input v-model="unlinkedSearch" placeholder="Search unlinked merchants by name or MID…"
+                    class="search-input" @input="onUnlinkedSearchInput" />
+                </div>
+
+                <div v-if="unlinkedLoading" class="empty-state" style="padding:20px 0">
+                  <p>Loading unlinked merchants…</p>
+                </div>
+
+                <div v-else-if="!unlinkedMerchants.length" class="empty-state" style="padding:20px 0">
+                  <p>No unlinked merchants found{{ unlinkedSearch ? ' for this search' : '' }}.</p>
+                </div>
+
+                <div v-else class="link-merchant-list">
+                  <label v-for="m in unlinkedMerchants" :key="m.id" class="link-merchant-row">
+                    <input type="checkbox" :value="m.id" v-model="selectedUnlinkedIds" />
+                    <div class="link-merchant-info">
+                      <p class="link-merchant-name">{{ m.legal_name || m.business_name || '—' }}</p>
+                      <p class="link-merchant-mid font-mono text-xs">{{ m.mid }}</p>
+                    </div>
+                    <span :class="['pill pill--sm', m.status ? 'pill--emerald' : 'pill--red']">
+                      {{ m.status ? 'Active' : 'Inactive' }}
+                    </span>
+                    <span class="pill pill--sm pill--slate">{{ m.mstatus }}</span>
+                  </label>
+                </div>
+
+                <p v-if="selectedUnlinkedIds.length" style="font-size:12px;color:#64748b;margin-top:10px">
+                  {{ selectedUnlinkedIds.length }} merchant(s) selected
+                </p>
+              </div>
+
+              <div class="modal-box__footer">
+                <button class="btn-cancel" @click="closeLinkMerchantModal">Cancel</button>
+                <button class="btn-primary" :disabled="!selectedUnlinkedIds.length || linkingMerchants"
+                  @click="confirmLinkMerchants">
+                  <svg v-if="linkingMerchants" class="spin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  {{ linkingMerchants ? 'Linking…' : `Link ${selectedUnlinkedIds.length || ''} Merchant(s)` }}
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
 
       <!-- ════ TAB: TERMINALS ════ -->
       <section v-show="activeTab === 'terminals'" class="tab-section">
@@ -2926,7 +3006,7 @@ const deleteCommissionSlab = async (slabId) => {
 
 const props = defineProps({ vendorId: String });
 const router = useRouter();
-const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag } = useAggregatorApi();
+const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag, getUnlinkedMerchants, linkMerchantsToVendor } = useAggregatorApi();
 const { getAllTransactionsUnderVendor } = useUsersApi();
 
 const vendorForm = reactive({});
@@ -3010,6 +3090,62 @@ const getVendor = async (id) => {
     Object.assign(vendorForm, res.data || {});
   } catch { showSnack('Failed to load vendor data', 'error'); }
 };
+
+// ── Link Merchant to Vendor ──────────────────────────────────────────
+const linkMerchantModal = reactive({ open: false });
+const unlinkedMerchants = ref([]);
+const unlinkedSearch = ref('');
+const unlinkedLoading = ref(false);
+const selectedUnlinkedIds = ref([]);
+const linkingMerchants = ref(false);
+let unlinkedSearchTimer = null;
+
+async function loadUnlinkedMerchants() {
+  unlinkedLoading.value = true;
+  try {
+    const res = await getUnlinkedMerchants(props.vendorId, { search: unlinkedSearch.value });
+    unlinkedMerchants.value = res?.statusCode === '00' ? (res.data || []) : [];
+  } catch {
+    showSnack('Failed to load unlinked merchants', 'error');
+  } finally {
+    unlinkedLoading.value = false;
+  }
+}
+
+function onUnlinkedSearchInput() {
+  clearTimeout(unlinkedSearchTimer);
+  unlinkedSearchTimer = setTimeout(loadUnlinkedMerchants, 350);
+}
+
+function openLinkMerchantModal() {
+  linkMerchantModal.open = true;
+  selectedUnlinkedIds.value = [];
+  unlinkedSearch.value = '';
+  loadUnlinkedMerchants();
+}
+
+function closeLinkMerchantModal() {
+  linkMerchantModal.open = false;
+}
+
+async function confirmLinkMerchants() {
+  if (!selectedUnlinkedIds.value.length) return;
+  linkingMerchants.value = true;
+  try {
+    const res = await linkMerchantsToVendor(props.vendorId, selectedUnlinkedIds.value);
+    if (res?.statusCode === '00') {
+      showSnack(res.message || 'Merchant(s) linked successfully');
+      closeLinkMerchantModal();
+      getVendor(props.vendorId);
+    } else {
+      showSnack(res?.message || 'Failed to link merchants', 'error');
+    }
+  } catch {
+    showSnack('Failed to link merchants', 'error');
+  } finally {
+    linkingMerchants.value = false;
+  }
+}
 
 // ── Status Management (Active / Lifecycle / Risk Flag) ─────────────
 const confirmDialog = reactive({
@@ -5543,6 +5679,49 @@ onMounted(() => {
 /* Wide modal for commission config */
 .modal-box--wide {
   max-width: 760px;
+}
+
+/* ── Link Merchant modal ── */
+.link-merchant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.link-merchant-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.link-merchant-row:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+.link-merchant-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.link-merchant-info {
+  flex: 1;
+  min-width: 0;
+}
+.link-merchant-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+.link-merchant-mid {
+  color: #64748b;
+  margin: 2px 0 0;
 }
 
 /* ── Cards ribbon (status summary bar) ── */

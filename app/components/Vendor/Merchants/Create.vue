@@ -251,7 +251,7 @@
                                 </v-col>
 
                                 <v-col cols="12" sm="6" md="4" lg="3">
-                                    <v-combobox v-model="opincode" :items="opincodeOptions" item-title="pincode"
+                                    <v-combobox v-model="opincode" :items="opincodeOptions" :item-title="pincodeItemTitle"
                                         item-value="pincode" placeholder="Search Pincode" variant="outlined"
                                         density="comfortable" return-object :loading="loading" class="mh-field"
                                         hide-details="auto" @update:search="opinSearch">
@@ -336,7 +336,7 @@
                                         density="comfortable" class="mh-field" hide-details="auto" />
                                 </v-col>
                                 <v-col cols="12" sm="6" md="4" lg="3">
-                                    <v-combobox v-model="resPincode" :items="respincodeOptions" item-title="pincode"
+                                    <v-combobox v-model="resPincode" :items="respincodeOptions" :item-title="pincodeItemTitle"
                                         item-value="pincode" placeholder="Search Pincode" variant="outlined"
                                         density="comfortable" return-object :loading="loading" class="mh-field"
                                         hide-details="auto" @update:search="respinSearch" />
@@ -411,7 +411,7 @@
                                         variant="outlined" density="comfortable" class="mh-field" hide-details="auto" />
                                 </v-col>
                                 <v-col cols="12" sm="6" md="4" lg="3">
-                                    <v-combobox v-model="vPincode" :items="vpincodeOptions" item-title="pincode"
+                                    <v-combobox v-model="vPincode" :items="vpincodeOptions" :item-title="pincodeItemTitle"
                                         item-value="pincode" placeholder="Search Pincode" variant="outlined"
                                         density="comfortable" return-object :loading="loading" class="mh-field"
                                         hide-details="auto" @update:search="vpinSearch" />
@@ -700,6 +700,15 @@ const onSearch = async (query) => {
         mccOptions.value = res.data.data;
     } catch (err) { console.error("MCC search failed", err); }
     finally { loading.value = false; }
+};
+
+// Dropdown label for a pincode search result — shows city/district alongside
+// the pincode so entries that share a pincode (common across nearby
+// city/district combinations) are distinguishable in the list.
+const pincodeItemTitle = (item) => {
+    if (!item || typeof item !== "object") return String(item ?? "");
+    const place = [item.city, item.district].filter(Boolean).join(", ");
+    return place ? `${item.pincode} — ${place}` : item.pincode;
 };
 
 const opinSearch = async (query) => {

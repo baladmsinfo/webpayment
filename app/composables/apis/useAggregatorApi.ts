@@ -82,6 +82,28 @@ export function useAggregatorApi() {
         return res.data;
     };
 
+    // Merchants under this aggregator not yet linked to any vendor —
+    // candidates for the "Link Merchant" action on the vendor page.
+    const getUnlinkedMerchants = async (vendorId: string, { search = "", page = 1, limit = 20 } = {}) => {
+        try {
+            const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+            if (search) params.set("search", search);
+            const res = await get(`/aggregator/vendor/${vendorId}/unlinked-merchants?${params.toString()}`);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to load unlinked merchants" };
+        }
+    };
+
+    const linkMerchantsToVendor = async (vendorId: string, merchantIds: string[]) => {
+        try {
+            const res = await post(`/aggregator/vendor/${vendorId}/link-merchants`, { merchantIds });
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to link merchants to vendor" };
+        }
+    };
+
     const getMerchantById = async (id: string) => {
         try {
             const res = await get(`/merchant/${id}`);
@@ -300,6 +322,8 @@ export function useAggregatorApi() {
         getPendingVendors,
         getMerchantById,
         getVendorById,
+        getUnlinkedMerchants,
+        linkMerchantsToVendor,
         updateVendorStatus,
         updateVendorMstatus,
         updateVendorRiskflag,

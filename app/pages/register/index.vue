@@ -259,9 +259,9 @@
                   variant="outlined" density="comfortable" class="reg-field" hide-details="auto" />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-combobox v-model="opPincode" :items="opPincodeOptions" item-title="pincode" item-value="pincode"
-                  placeholder="Search pincode" variant="outlined" density="comfortable" return-object
-                  class="reg-field" hide-details="auto" @update:search="opPinSearch" />
+                <v-combobox v-model="opPincode" :items="opPincodeOptions" :item-title="pincodeItemTitle"
+                  item-value="pincode" placeholder="Search pincode" variant="outlined" density="comfortable"
+                  return-object class="reg-field" hide-details="auto" @update:search="opPinSearch" />
               </v-col>
               <v-col cols="4">
                 <v-text-field v-model.trim="form.pincode" placeholder="Pincode" variant="outlined"
@@ -319,7 +319,7 @@
                   variant="outlined" density="comfortable" class="reg-field" hide-details="auto" />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-combobox v-model="resPincode" :items="resPincodeOptions" item-title="pincode"
+                <v-combobox v-model="resPincode" :items="resPincodeOptions" :item-title="pincodeItemTitle"
                   item-value="pincode" placeholder="Search pincode" variant="outlined" density="comfortable"
                   return-object class="reg-field" hide-details="auto" @update:search="resPinSearch" />
               </v-col>
@@ -379,9 +379,9 @@
                   variant="outlined" density="comfortable" class="reg-field" hide-details="auto" />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-combobox v-model="vPincode" :items="vPincodeOptions" item-title="pincode" item-value="pincode"
-                  placeholder="Search pincode" variant="outlined" density="comfortable" return-object
-                  class="reg-field" hide-details="auto" @update:search="vPinSearch" />
+                <v-combobox v-model="vPincode" :items="vPincodeOptions" :item-title="pincodeItemTitle"
+                  item-value="pincode" placeholder="Search pincode" variant="outlined" density="comfortable"
+                  return-object class="reg-field" hide-details="auto" @update:search="vPinSearch" />
               </v-col>
               <v-col cols="4">
                 <v-text-field v-model.trim="form.v_pincode" placeholder="Pincode" variant="outlined"
@@ -695,6 +695,15 @@ watch(mcc, (val) => {
     form.nature_of_business = "";
   }
 });
+
+// Dropdown label for a pincode search result — shows city/district alongside
+// the pincode so entries that share a pincode (common across nearby
+// city/district combinations) are distinguishable in the list.
+const pincodeItemTitle = (item) => {
+  if (!item || typeof item !== "object") return String(item ?? "");
+  const place = [item.city, item.district].filter(Boolean).join(", ");
+  return place ? `${item.pincode} — ${place}` : item.pincode;
+};
 
 // ── Pincode (official) ──
 const opPincode = ref(null);

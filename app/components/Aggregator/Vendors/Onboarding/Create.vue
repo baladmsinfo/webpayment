@@ -156,7 +156,7 @@
                       <span class="mdi mdi-map-marker-outline vo-pin-option__icon"></span>
                       <div>
                         <p class="vo-pin-option__code">{{ opt.pincode }}</p>
-                        <p class="vo-pin-option__sub">{{ opt.city }}, {{ opt.statename }}</p>
+                        <p class="vo-pin-option__sub">{{ [opt.city, opt.district, opt.statename].filter(Boolean).join(', ') }}</p>
                       </div>
                     </div>
                   </div>
@@ -279,7 +279,7 @@
                       <span class="mdi mdi-map-marker-outline vo-pin-option__icon"></span>
                       <div>
                         <p class="vo-pin-option__code">{{ opt.pincode }}</p>
-                        <p class="vo-pin-option__sub">{{ opt.city }}, {{ opt.statename }}</p>
+                        <p class="vo-pin-option__sub">{{ [opt.city, opt.district, opt.statename].filter(Boolean).join(', ') }}</p>
                       </div>
                     </div>
                   </div>
@@ -387,7 +387,7 @@
                       <span class="mdi mdi-map-marker-outline vo-pin-option__icon"></span>
                       <div>
                         <p class="vo-pin-option__code">{{ opt.pincode }}</p>
-                        <p class="vo-pin-option__sub">{{ opt.city }}, {{ opt.statename }}</p>
+                        <p class="vo-pin-option__sub">{{ [opt.city, opt.district, opt.statename].filter(Boolean).join(', ') }}</p>
                       </div>
                     </div>
                   </div>

@@ -262,7 +262,7 @@
                             <span class="mdi mdi-alert-circle-outline"></span> {{ interfaceInputError }}
                         </p>
 
-                        <p class="field-hint">Allowed: AEPS · DMT · UPI · BBPS · MATM · POS</p>
+                        <p class="field-hint">Allowed: ISG · MOS · WORLD · BUCKSBOX · AXIS · NSDL · FINO · CANARA · EASEBUZZ</p>
                     </div>
                     <div class="form-field form-field-grow">
                         <label class="form-label">API Key <span class="label-optional">(optional)</span></label>
@@ -475,7 +475,7 @@ const toast = reactive({ show: false, type: "success", message: "" });
 const deleteModal = reactive({ show: false, loading: false, type: "", item: null });
 
 const VALID_SERVICES = ["AEPS", "DMT", "UPI", "BBPS", "MATM", "POS"];
-const VALID_INTERFACES = ["ISG", "MOS", "WORLD", "BUCKSBOX", "NSDL", "FINO", "CANARA"];
+const VALID_INTERFACES = ["ISG", "MOS", "WORLD", "BUCKSBOX", "AXIS", "NSDL", "FINO", "CANARA", "EASEBUZZ"];
 
 const serviceInputError = ref('');
 const interfaceInputError = ref('');

@@ -545,11 +545,12 @@
                         Onboarded
                       </span>
 
-                      <!-- Onboard is only actionable when the merchant itself is still PENDING
-                           AND this service's KYC is still PENDING — a merchant that has already
-                           moved past PENDING shouldn't be re-onboardable from here even if a
-                           given service row happens to still read PENDING. -->
-                      <div v-else-if="merchantForm.mstatus === 'PENDING' && svc.status === 'PENDING'" class="svc-inline-onboard">
+                      <!-- Onboard is actionable whenever this service's own KYC is still
+                           PENDING — independent of the merchant's overall mstatus, since a
+                           merchant already APPROVED/ONBOARDED overall can still have an
+                           individual service (e.g. a newly added interface) left PENDING
+                           and needing to be onboarded. -->
+                      <div v-else-if="svc.status === 'PENDING'" class="svc-inline-onboard">
                         <span class="mr-5" :class="['ml-auto pill', statusPillClass(svc.status)]">{{ svc.status
                         }}</span>
 
@@ -1546,6 +1547,10 @@ const onboardService = async (svc, intf, kycStatus) => {
           gst_status: kycStatus?.gst_status || "PENDING",
           store_img_status: kycStatus?.store_img_status || "PENDING",
         }
+      });
+    } else if (svc === "UPI" && intf === "EASEBUZZ") {
+      router.push({
+        path: `/vendor/onboarding/easebuzz/${props.merchantId}`,
       });
     }
 

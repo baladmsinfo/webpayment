@@ -1454,7 +1454,7 @@ const executeUpdate = async () => {
 
 // ── Terminal Management ─────────────────────────────────────────────
 const terminalTypeOptions          = ['POS', 'mPOS', 'SoftPOS', 'QR', 'Soundbox'];
-const terminalInterfaceOptions     = ['ISG', 'MOS', 'WORLD', 'BUCKSBOX', 'AXIS', 'NSDL', 'FINO', 'CANARA'];
+const terminalInterfaceOptions     = ['ISG', 'MOS', 'WORLD', 'BUCKSBOX', 'AXIS', 'NSDL', 'FINO', 'CANARA', 'EASEBUZZ'];
 const terminalInterfaceTypeOptions = ['POS', 'ANDROID', 'WEB', 'QR'];
 const terminalServiceOptions       = ['AEPS', 'DMT', 'UPI', 'BBPS', 'MATM', 'POS'];
 
