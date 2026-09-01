@@ -33,7 +33,7 @@
         <span :class="['onb-pill', docStatusPillClass(selectedSvc.status)]">{{ selectedSvc.status || 'PENDING' }}</span>
       </div>
 
-      <div v-if="selectedSvc ? selectedSvc.status !== 'PENDING' : merchant.mstatus === 'ONBOARDED'" class="onb-alert onb-alert--success">
+      <div v-if="selectedSvc ? selectedSvc.status !== 'SUBMITTED' : merchant.mstatus === 'ONBOARDED'" class="onb-alert onb-alert--success">
         <span class="mdi mdi-check-circle-outline"></span>
         <template v-if="selectedSvc">This {{ selectedSvc.service }} / {{ selectedSvc.interface }} service is already {{ selectedSvc.status }}.</template>
         <template v-else>This merchant has already been onboarded with ISG.</template>
@@ -170,7 +170,7 @@
 
       <!-- ── Submission Panel ── -->
       <div class="onb-card onb-submit-card"
-        v-if="selectedSvc ? selectedSvc.status === 'PENDING' : merchant.mstatus !== 'ONBOARDED'">
+        v-if="selectedSvc ? selectedSvc.status === 'SUBMITTED' : merchant.mstatus !== 'ONBOARDED'">
         <template v-if="!submitResult">
           <div class="onb-card-head">
             <span class="mdi mdi-rocket-launch-outline"></span>

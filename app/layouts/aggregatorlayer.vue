@@ -82,6 +82,7 @@ const menus = ref([
     url: "/aggregator/setups",
     children: [
       { title: "Services and Interfaces", icon: "mdi-connection", url: "/aggregator/setups/services" },
+      { title: "Location and Pincodes", icon: "mdi-map-marker-radius-outline", url: "/aggregator/setups/locations" },
       // { title: "Pending Vendors",   icon: "mdi-account-clock-outline", url: "/aggregator/vendor/pending"   },
     ],
   },

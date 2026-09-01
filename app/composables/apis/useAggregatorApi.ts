@@ -5,7 +5,7 @@ import { useVendorStore } from "~/stores/vendors";
 import { useOnboardingStore } from "~/stores/onboading";
 
 export function useAggregatorApi() {
-    const { get, post } = useApi();
+    const { get, post, del } = useApi();
     const auth = useAuthStore();
     const merchant = useMerchantsStore();
     const vendor = useVendorStore();
@@ -101,6 +101,47 @@ export function useAggregatorApi() {
             return res.data;
         } catch (err: any) {
             return err?.response?.data ?? { statusCode: "99", message: "Failed to link merchants to vendor" };
+        }
+    };
+
+    // Vendor document images — same "upload, then attach to a doc_type" flow
+    // as the merchant compliance image endpoints, scoped to a specific
+    // vendor by :vendorId since the aggregator (not the vendor) is acting.
+    const uploadVendorDocumentImage = async (
+        vendorId: string,
+        file: File,
+        options?: { filename?: string; docid?: number }
+    ) => {
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            if (options?.filename) formData.append("filename", options.filename);
+            if (options?.docid) formData.append("docid", String(options.docid));
+            const res = await post(`/aggregator/vendor/${vendorId}/documents/images`, formData);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to upload document image" };
+        }
+    };
+
+    const attachVendorDocument = async (
+        vendorId: string,
+        payload: { doc_type: string; doc_number?: string; images: number[] }
+    ) => {
+        try {
+            const res = await post(`/aggregator/vendor/${vendorId}/documents/attach`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to save document" };
+        }
+    };
+
+    const deleteVendorDocumentImage = async (vendorId: string, imageId: number | string) => {
+        try {
+            const res = await del(`/aggregator/vendor/${vendorId}/documents/images/${imageId}`);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to delete image" };
         }
     };
 
@@ -324,6 +365,9 @@ export function useAggregatorApi() {
         getVendorById,
         getUnlinkedMerchants,
         linkMerchantsToVendor,
+        uploadVendorDocumentImage,
+        attachVendorDocument,
+        deleteVendorDocumentImage,
         updateVendorStatus,
         updateVendorMstatus,
         updateVendorRiskflag,

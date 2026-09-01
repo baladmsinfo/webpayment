@@ -1978,14 +1978,44 @@
                   <p>{{ selectedDoc.doc_verified_remark || '—' }}</p>
                 </div>
               </div>
-              <p class="dialog__section-lbl">Document Images</p>
+              <div class="dialog__section-lbl-row">
+                <p class="dialog__section-lbl">Document Images</p>
+                <button class="doc-reupload-add-btn" :disabled="reuploadBusy" @click="triggerReupload(null)">
+                  <span class="mdi mdi-tray-arrow-up"></span> Upload New
+                </button>
+              </div>
               <div class="doc-img-grid" v-if="selectedDoc.images?.length">
-                <img v-for="img in selectedDoc.images" :key="img.id" :src="img.url" class="doc-img-thumb"
-                  @click="openPreview(img.url)" />
+                <div class="doc-img-cell" v-for="img in selectedDoc.images" :key="img.id">
+                  <img v-if="!isPdfDoc(img)" :src="img.url" class="doc-img-thumb" @click="openDocImage(img)" />
+                  <div v-else class="doc-pdf-thumb" @click="openDocImage(img)">
+                    <span class="mdi mdi-file-pdf-box"></span>
+                    <span class="doc-pdf-label">View PDF</span>
+                  </div>
+                  <div class="doc-img-overlay" v-if="confirmDeleteImageId !== img.id">
+                    <button class="doc-img-reupload-btn" :disabled="reuploadBusy || deletingImageId === img.id" @click="triggerReupload(img)">
+                      <span v-if="reuploadBusy && reuploadingImageId === img.id" class="doc-img-spinner"></span>
+                      <template v-else><span class="mdi mdi-camera-retake-outline"></span> Replace</template>
+                    </button>
+                    <button class="doc-img-delete-btn" :disabled="reuploadBusy || deletingImageId === img.id" @click="confirmDeleteImageId = img.id">
+                      <span class="mdi mdi-trash-can-outline"></span> Delete
+                    </button>
+                  </div>
+                  <div class="doc-img-overlay doc-img-overlay--confirm" v-else>
+                    <p>Delete this image?</p>
+                    <div class="doc-img-overlay__actions">
+                      <button class="doc-img-confirm-no" :disabled="deletingImageId === img.id" @click="confirmDeleteImageId = null">No</button>
+                      <button class="doc-img-confirm-yes" :disabled="deletingImageId === img.id" @click="handleDeleteImage(img)">
+                        <span v-if="deletingImageId === img.id" class="doc-img-spinner"></span>
+                        <span v-else>Yes</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="empty-state" v-else>
                 <p>No images uploaded for this document</p>
               </div>
+              <input ref="reuploadInputRef" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none" @change="handleReuploadFile" />
             </div>
           </div>
         </div>
@@ -3006,7 +3036,7 @@ const deleteCommissionSlab = async (slabId) => {
 
 const props = defineProps({ vendorId: String });
 const router = useRouter();
-const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag, getUnlinkedMerchants, linkMerchantsToVendor } = useAggregatorApi();
+const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag, getUnlinkedMerchants, linkMerchantsToVendor, uploadVendorDocumentImage, attachVendorDocument, deleteVendorDocumentImage } = useAggregatorApi();
 const { getAllTransactionsUnderVendor } = useUsersApi();
 
 const vendorForm = reactive({});
@@ -3070,8 +3100,108 @@ const txnPill = (s) => { if (['PAID', 'SUCCESS'].includes(s)) return 'pill--emer
 
 const toggleEdit = (section) => { editMode[section] = !editMode[section]; };
 const toggleExpand = (id) => { expandedMerchant.value = expandedMerchant.value === id ? null : id; };
-const openDoc = (doc) => { selectedDoc.value = doc; docDialog.value = true; };
+const openDoc = (doc) => { selectedDoc.value = doc; docDialog.value = true; confirmDeleteImageId.value = null; };
 const openPreview = (url) => { previewUrl.value = url; imgPreview.value = true; };
+
+// ── Document image Replace / Delete (Documents tab) ────────────────
+// Mirrors Aggregator/Merchants/View.vue's reupload flow: uploads the new
+// file (reusing the old image's filename/docid so it maps to the same
+// compliance slot), re-attaches the full image set via attachVendorDocument
+// (which also resets doc_status back to PENDING for re-review), then
+// deletes the stale image row. triggerReupload(null) uploads a brand-new
+// image into a doc that has none yet.
+const isPdfDoc = (img) => {
+  if (!img) return false;
+  if (img.mimetype) return img.mimetype === 'application/pdf';
+  return /\.pdf(\?|$)/i.test(img.url || img.filename || '');
+};
+const openDocImage = (img) => {
+  if (isPdfDoc(img)) window.open(img.url, '_blank', 'noopener');
+  else openPreview(img.url);
+};
+
+const reuploadInputRef = ref(null);
+const reuploadingImageId = ref(null);
+const reuploadBusy = ref(false);
+
+const triggerReupload = (img) => {
+  reuploadingImageId.value = img?.id ?? null;
+  reuploadInputRef.value?.click();
+};
+
+const handleReuploadFile = async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  if (!file || !selectedDoc.value) return;
+
+  const oldImg = selectedDoc.value.images?.find(i => i.id === reuploadingImageId.value) || null;
+  reuploadBusy.value = true;
+  try {
+    const uploadRes = await uploadVendorDocumentImage(props.vendorId, file, {
+      filename: oldImg?.filename,
+      docid: oldImg?.docid,
+    });
+    const newId = uploadRes?.data?.id;
+    if (!newId) {
+      showSnack(uploadRes?.message || 'Failed to upload image. Please retry.', 'error');
+      return;
+    }
+
+    const imageIds = (selectedDoc.value.images || []).map(i => (i.id === oldImg?.id ? newId : i.id));
+    if (!oldImg) imageIds.push(newId);
+
+    const attachRes = await attachVendorDocument(props.vendorId, {
+      doc_type: selectedDoc.value.doc_type,
+      doc_number: selectedDoc.value.doc_number,
+      images: imageIds,
+    });
+
+    if (attachRes?.statusCode !== '00') {
+      showSnack(attachRes?.message || 'Failed to save document', 'error');
+      return;
+    }
+
+    if (oldImg) await deleteVendorDocumentImage(props.vendorId, oldImg.id);
+
+    await getVendor(props.vendorId);
+    selectedDoc.value = vendorForm.documents?.find(d => d.id === selectedDoc.value?.id) || selectedDoc.value;
+    showSnack('Document image updated successfully', 'success');
+  } catch (err) {
+    console.error('Reupload error:', err);
+    showSnack('Error uploading image. Please retry.', 'error');
+  } finally {
+    reuploadBusy.value = false;
+    reuploadingImageId.value = null;
+  }
+};
+
+// Deletes a single image under the open document — the document itself
+// (its doc_type/doc_number row) is never deletable from here, only the
+// individual images attached to it.
+const confirmDeleteImageId = ref(null);
+const deletingImageId = ref(null);
+
+const handleDeleteImage = async (img) => {
+  if (!selectedDoc.value) return;
+  deletingImageId.value = img.id;
+  try {
+    const res = await deleteVendorDocumentImage(props.vendorId, img.id);
+    if (res?.statusCode !== '00') {
+      showSnack(res?.message || 'Failed to delete image. Please retry.', 'error');
+      return;
+    }
+    selectedDoc.value.images = (selectedDoc.value.images || []).filter(i => i.id !== img.id);
+    confirmDeleteImageId.value = null;
+    await getVendor(props.vendorId);
+    selectedDoc.value = vendorForm.documents?.find(d => d.id === selectedDoc.value?.id) || selectedDoc.value;
+    showSnack('Image deleted', 'success');
+  } catch (err) {
+    console.error('Delete image error:', err);
+    showSnack('Error deleting image. Please retry.', 'error');
+  } finally {
+    deletingImageId.value = null;
+  }
+};
 
 const cancelEdit = () => {
   Object.keys(editMode).forEach(k => editMode[k] = false);
@@ -4768,6 +4898,165 @@ onMounted(() => {
 .doc-img-thumb:hover {
   opacity: .82;
 }
+
+.dialog__section-lbl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 14px 0 8px;
+}
+.dialog__section-lbl-row .dialog__section-lbl {
+  margin: 0;
+}
+
+.doc-reupload-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #eef2ff;
+  color: #1142d4;
+  border: 1px solid #d7e0fb;
+  border-radius: 7px;
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.doc-reupload-add-btn:hover:not(:disabled) {
+  background: #e0e9fe;
+}
+.doc-reupload-add-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.doc-img-cell {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.doc-pdf-thumb {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #f1f5f9;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #64748b;
+  font-size: 26px;
+}
+.doc-pdf-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.doc-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, .55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.doc-img-cell:hover .doc-img-overlay {
+  opacity: 1;
+}
+.doc-img-overlay--confirm {
+  opacity: 1;
+  background: rgba(15, 23, 42, .78);
+  gap: 8px;
+  padding: 8px;
+  text-align: center;
+}
+.doc-img-overlay--confirm p {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+}
+.doc-img-overlay__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.doc-img-reupload-btn,
+.doc-img-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.doc-img-reupload-btn {
+  background: #fff;
+  color: #1142d4;
+}
+.doc-img-reupload-btn:hover:not(:disabled) {
+  background: #eef2ff;
+}
+.doc-img-delete-btn {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.doc-img-delete-btn:hover:not(:disabled) {
+  background: #fecaca;
+}
+.doc-img-reupload-btn:disabled,
+.doc-img-delete-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.doc-img-confirm-no,
+.doc-img-confirm-yes {
+  border: none;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.doc-img-confirm-no {
+  background: #fff;
+  color: #334155;
+}
+.doc-img-confirm-yes {
+  background: #dc2626;
+  color: #fff;
+}
+.doc-img-confirm-no:disabled,
+.doc-img-confirm-yes:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.doc-img-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(17, 66, 212, .3);
+  border-top-color: #1142d4;
+  animation: doc-img-spin .7s linear infinite;
+  display: inline-block;
+}
+.doc-img-confirm-yes .doc-img-spinner {
+  border-color: rgba(255, 255, 255, .4);
+  border-top-color: #fff;
+}
+@keyframes doc-img-spin { to { transform: rotate(360deg); } }
 
 .img-preview {
   width: 100%;
