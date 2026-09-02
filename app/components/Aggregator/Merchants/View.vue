@@ -1730,13 +1730,12 @@ const mstatusBadge      = (s) => { if (!s) return 'pill--amber'; if (['APPROVED'
 const mstatusBadgeClass = (s) => mstatusBadge(s);
 const kycStatusPill = (s) => { if (!s || s === 'PENDING') return 'pill--amber'; if (['VERIFIED','APPROVED'].includes(s)) return 'pill--emerald'; if (['REJECTED','FAILED','SUSPENDED'].includes(s)) return 'pill--red'; if (['PROCESSING','UNDER_REVIEW','SUBMITTED'].includes(s)) return 'pill--sky'; return 'pill--amber'; };
 
-// Onboard action — surfaced once the vendor/merchant has SUBMITTED this
-// service/interface row for review (not while it's still PENDING, i.e.
-// before they've submitted anything). Clicking it takes the aggregator to a
-// dedicated review-and-confirm page (rather than submitting inline) so they
-// can check the merchant's full info/documents before confirming this
-// specific service. See Onboarding.vue's matching SUBMITTED gate.
-const canOnboardService = (svc) => svc.status === 'SUBMITTED';
+// Onboard action — surfaced while this service/interface row is still
+// PENDING (nothing submitted yet) or once it's been SUBMITTED for review.
+// Clicking it takes the aggregator to a dedicated review-and-confirm page
+// (rather than submitting inline) so they can check the merchant's full
+// info/documents before confirming this specific service.
+const canOnboardService = (svc) => svc.status === 'PENDING' || svc.status === 'SUBMITTED';
 const goToOnboardReview = (svc) => {
   router.push(`/aggregator/merchants/onboarding/${props.merchantId}?svc=${svc.id}`);
 };

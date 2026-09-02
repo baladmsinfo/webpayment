@@ -1552,6 +1552,10 @@ const onboardService = async (svc, intf, kycStatus) => {
       router.push({
         path: `/vendor/onboarding/easebuzz/${props.merchantId}`,
       });
+    } else if (svc === "UPI" && intf === "BUCKSBOX") {
+      router.push({
+        path: `/vendor/onboarding/bucksbox/${props.merchantId}`,
+      });
     }
 
     snackbar.message = `${svc} → ${intf} onboarding initiated`;
