@@ -14,7 +14,7 @@ export function useIsgOnboardingApi() {
     }
   };
 
-  const isgVerifyOtp = async (payload: { phone: string; otp: string }) => {
+  const isgVerifyOtp = async (payload: { phone: string; otp: string; interface?: string }) => {
     try {
       const res = await post(`/onboarding/upi/isg/verify-otp`, payload);
       return res;
@@ -60,6 +60,7 @@ export function useIsgOnboardingApi() {
     dob: string;
     fathername: string;
     merchantId?: string;
+    interface?: string;
   }) => {
     try {
       const res = await post(`/onboarding/upi/isg/verify/pan`, payload);
@@ -83,9 +84,9 @@ export function useIsgOnboardingApi() {
     });
   };
 
-  const complianceInit = async (payload: any, merchantId: any) => {
+  const complianceInit = async (payload: any, merchantId: any, interfaceName: string = "ISG") => {
     const res = await post(`/onboarding/upi/isg/compliance/docUpload`, payload, {
-      params: { merchantId },
+      params: { merchantId, interface: interfaceName },
     });
     return res;
   };
@@ -110,6 +111,7 @@ export function useIsgOnboardingApi() {
     consent: string;
     additionalData: string;
     merchantId?: string;
+    interface?: string;
   }) => {
     try {
       const res = await post(`/onboarding/upi/isg/verify/account`, payload);
@@ -119,10 +121,20 @@ export function useIsgOnboardingApi() {
     }
   };
 
-  const isgSubmitOnboarding = async (payload: { merchantId: string }) => {
+  const isgSubmitOnboarding = async (payload: {
+    merchantId: string;
+    interface?: string;
+    // Which MerchantServiceKyc row's compliance to validate against, when it
+    // differs from `interface` — e.g. the aggregator confirming "Onboard to
+    // ISG" for a merchant whose OTP/PAN/bank/document verification actually
+    // happened under BUCKSBOX. See isg.route.js's /submit/onboading.
+    complianceInterface?: string;
+  }) => {
     try {
       const res = await post(`/onboarding/upi/isg/submit/onboading`, {
-      merchantId: payload.merchantId
+        merchantId: payload.merchantId,
+        interface: payload.interface,
+        complianceInterface: payload.complianceInterface,
       });
       return res.data;
     } catch (err: any) {

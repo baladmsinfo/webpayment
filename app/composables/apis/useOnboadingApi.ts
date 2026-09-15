@@ -30,9 +30,9 @@ export function useOnboadingApi() {
     }
   };
 
-  const complianceStatus = async (merchantId: any) => {
+  const complianceStatus = async (merchantId: any, interfaceName: string = "ISG") => {
     const res = await get(`/onboarding/upi/isg/compliance/status`, {
-      params: { merchantId }
+      params: { merchantId, interface: interfaceName }
     })
     return res.data
   }

@@ -625,7 +625,7 @@
                 <div v-if="walletData.settlementAccount" class="w-meta-item">
                   <span class="mdi mdi-bank-outline w-meta-icon"></span>
                   <span class="w-meta-label">Settlement A/C</span>
-                  <span class="w-meta-val mono">{{ walletMask(walletData.settlementAccount) }}</span>
+                  <span class="w-meta-val mono">{{ walletMask(walletData.settlementAccount?.bank_account_no) }}</span>
                 </div>
               </div>
               <div class="w-bal-actions" v-if="!walletLoading && walletData.walletId">
@@ -881,6 +881,9 @@
                     <span class="doc-pdf-label">View PDF</span>
                   </div>
                   <div class="doc-img-overlay" v-if="confirmDeleteImageId !== img.id">
+                    <button class="doc-img-view-btn" @click.stop="openDocImage(img)">
+                      <span class="mdi mdi-eye-outline"></span> View
+                    </button>
                     <button class="doc-img-reupload-btn" :disabled="reuploadBusy || deletingImageId === img.id" @click="triggerReupload(img)">
                       <span v-if="reuploadBusy && reuploadingImageId === img.id" class="doc-img-spinner"></span>
                       <template v-else><span class="mdi mdi-camera-retake-outline"></span> Replace</template>
@@ -2000,8 +2003,10 @@ onMounted(async () => {
 .doc-img-cell  { position: relative; border-radius: 8px; overflow: hidden; }
 .doc-img-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; cursor: pointer; transition: opacity .13s; display: block; }
 .doc-img-thumb:hover { opacity: .82; }
-.doc-img-overlay { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; gap: 6px; padding: 8px; opacity: 0; background: linear-gradient(to top, rgba(15,23,42,.55), transparent 60%); transition: opacity .15s; pointer-events: none; }
+.doc-img-overlay { position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; gap: 5px; padding: 8px; opacity: 0; background: linear-gradient(to top, rgba(15,23,42,.55), transparent 60%); transition: opacity .15s; pointer-events: none; }
 .doc-img-cell:hover .doc-img-overlay { opacity: 1; pointer-events: auto; }
+.doc-img-view-btn { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #fff; background: #1142d4; border: none; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.doc-img-view-btn:hover { background: #0d34a8; }
 .doc-img-reupload-btn { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #0f172a; background: #fff; border: none; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
 .doc-img-reupload-btn:disabled { opacity: .7; cursor: not-allowed; }
 .doc-img-delete-btn { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #fff; background: #dc2626; border: none; border-radius: 6px; padding: 5px 9px; cursor: pointer; }

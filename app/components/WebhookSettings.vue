@@ -323,7 +323,7 @@ const eventCategories = [
   },
   {
     label: 'Merchant', icon: 'mdi-store-outline', cls: 'chip-purple',
-    events: ['merchant.activated', 'merchant.suspended'],
+    events: ['merchant.activated', 'merchant.suspended', 'merchant.onboarded', 'merchant.riskflag'],
   },
   {
     label: 'KYC', icon: 'mdi-shield-check-outline', cls: 'chip-green',

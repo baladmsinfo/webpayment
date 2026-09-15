@@ -472,60 +472,60 @@
         </div>
 
         <!-- Service KYC -->
-        <div class="card" v-if="merchantForm.merchantservicekyc?.length">
+        <div class="card" v-if="visibleServiceKyc.length">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--sky"></div>
             <h3 class="card__title">Service KYC</h3>
           </div>
 
           <!-- Global KYC Summary -->
-          <div v-if="merchantForm.merchantservicekyc[0]?.merchantKyc" class="global-kyc-banner">
+          <div v-if="visibleServiceKyc[0]?.merchantKyc" class="global-kyc-banner">
             <div class="global-kyc-banner__inner">
               <div class="global-kyc-banner__item">
                 <span class="global-kyc-banner__label">Global Status</span>
-                <span :class="['pill', statusPillClass(merchantForm.merchantservicekyc[0].merchantKyc.globalStatus)]">
-                  {{ merchantForm.merchantservicekyc[0].merchantKyc.globalStatus }}
+                <span :class="['pill', statusPillClass(visibleServiceKyc[0].merchantKyc.globalStatus)]">
+                  {{ visibleServiceKyc[0].merchantKyc.globalStatus }}
                 </span>
               </div>
               <div class="global-kyc-banner__item">
                 <span class="global-kyc-banner__label">Risk Level</span>
-                <span :class="['pill', riskPillClass(merchantForm.merchantservicekyc[0].merchantKyc.globalRiskLevel)]">
-                  {{ merchantForm.merchantservicekyc[0].merchantKyc.globalRiskLevel }}
-                  ({{ merchantForm.merchantservicekyc[0].merchantKyc.globalRiskScore }})
+                <span :class="['pill', riskPillClass(visibleServiceKyc[0].merchantKyc.globalRiskLevel)]">
+                  {{ visibleServiceKyc[0].merchantKyc.globalRiskLevel }}
+                  ({{ visibleServiceKyc[0].merchantKyc.globalRiskScore }})
                 </span>
               </div>
               <div class="global-kyc-banner__item">
                 <span class="global-kyc-banner__label">AML Flag</span>
                 <span
-                  :class="['flag', merchantForm.merchantservicekyc[0].merchantKyc.amlFlag ? 'flag--on' : 'flag--off']">
-                  {{ merchantForm.merchantservicekyc[0].merchantKyc.amlFlag ? 'Yes' : 'No' }}
+                  :class="['flag', visibleServiceKyc[0].merchantKyc.amlFlag ? 'flag--on' : 'flag--off']">
+                  {{ visibleServiceKyc[0].merchantKyc.amlFlag ? 'Yes' : 'No' }}
                 </span>
               </div>
               <div class="global-kyc-banner__item">
                 <span class="global-kyc-banner__label">Sanction Match</span>
                 <span
-                  :class="['flag', merchantForm.merchantservicekyc[0].merchantKyc.sanctionMatch ? 'flag--on' : 'flag--off']">
-                  {{ merchantForm.merchantservicekyc[0].merchantKyc.sanctionMatch ? 'Yes' : 'No' }}
+                  :class="['flag', visibleServiceKyc[0].merchantKyc.sanctionMatch ? 'flag--on' : 'flag--off']">
+                  {{ visibleServiceKyc[0].merchantKyc.sanctionMatch ? 'Yes' : 'No' }}
                 </span>
               </div>
               <div class="global-kyc-banner__item"
-                v-if="merchantForm.merchantservicekyc[0].merchantKyc.globalVerifiedAt">
+                v-if="visibleServiceKyc[0].merchantKyc.globalVerifiedAt">
                 <span class="global-kyc-banner__label">Verified At</span>
                 <span class="global-kyc-banner__value">{{
-                  formatDate(merchantForm.merchantservicekyc[0].merchantKyc.globalVerifiedAt) }}</span>
+                  formatDate(visibleServiceKyc[0].merchantKyc.globalVerifiedAt) }}</span>
               </div>
-              <div class="global-kyc-banner__item" v-if="merchantForm.merchantservicekyc[0].merchantKyc.remarks">
+              <div class="global-kyc-banner__item" v-if="visibleServiceKyc[0].merchantKyc.remarks">
                 <span class="global-kyc-banner__label">Remarks</span>
-                <span class="global-kyc-banner__value">{{ merchantForm.merchantservicekyc[0].merchantKyc.remarks
+                <span class="global-kyc-banner__value">{{ visibleServiceKyc[0].merchantKyc.remarks
                 }}</span>
               </div>
             </div>
           </div>
 
           <div class="svc-kyc-list">
-            <div class="card" v-if="merchantForm.merchantservicekyc?.length">
+            <div class="card" v-if="visibleServiceKyc.length">
               <div class="svc-kyc-list">
-                <div v-for="svc in merchantForm.merchantservicekyc" :key="svc.id" class="svc-kyc-card">
+                <div v-for="svc in visibleServiceKyc" :key="svc.id" class="svc-kyc-card">
 
                   <!-- Card Header -->
                   <div class="svc-kyc-card__top" @click="toggleSvcExpand(svc.id)" style="cursor:pointer;">
@@ -1579,6 +1579,16 @@ const { uploadDoc, complianceInit, deleteComplianceImage } = useIsgOnboardingApi
 const merchantForm = reactive({});
 const transactions = ref({ data: [], pagination: {} });
 const servicesOptions = ref([]);
+
+// UPI/ISG and UPI/EASEBUZZ are onboarded through the aggregator's dedicated
+// review flow (Aggregator/Merchants/Onboarding.vue) — hidden here from both
+// the vendor's KYC & Services list and the "add service" dropdown below.
+const RESTRICTED_UPI_INTERFACES = new Set(["ISG", "EASEBUZZ"]);
+const visibleServiceKyc = computed(() =>
+  (merchantForm.merchantservicekyc || []).filter(
+    (svc) => !(svc.service === "UPI" && RESTRICTED_UPI_INTERFACES.has(svc.interface))
+  )
+);
 const transactionPage = ref(1);
 const transactionLimit = ref(10);
 const isFormChanged = ref(false);
@@ -1969,8 +1979,13 @@ const getTransactions = async (merchantId, page = 1, limit = 10) => {
 const getServicesFunc = async () => {
   try {
     const res = await getMyLinkedServices();
-    // res.services is already grouped: [{ id, service, interfaces: [...] }]
-    servicesOptions.value = res?.services ?? [];
+    // res.services is already grouped: [{ id, service, interfaces: [...] }].
+    // ISG and EASEBUZZ are onboarded through the aggregator's dedicated
+    // review flow, not this vendor "add service" dropdown — strip them out.
+    servicesOptions.value = (res?.services ?? []).map((svc) => ({
+      ...svc,
+      interfaces: (svc.interfaces || []).filter((intf) => !RESTRICTED_UPI_INTERFACES.has(intf.interface)),
+    }));
   } catch (e) {
     console.error("Failed to fetch vendor linked services:", e);
   }

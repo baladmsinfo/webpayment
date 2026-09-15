@@ -1906,6 +1906,255 @@
         </div>
       </section>
 
+      <!-- ════ TAB: WALLET ════ -->
+      <section v-show="activeTab === 'wallet'" class="tab-section">
+
+        <!-- Balance + Stats -->
+        <div class="wallet-top-row">
+          <!-- Balance card -->
+          <div class="w-balance-card">
+            <div class="w-balance-bg"></div>
+            <div class="w-balance-content">
+              <div class="w-balance-label-row">
+                <span class="mdi mdi-wallet-outline w-bal-icon"></span>
+                <span class="w-bal-label">Available Balance</span>
+                <span v-if="walletLoading" class="w-live-badge">Loading…</span>
+                <span v-else-if="walletData.walletActive" class="w-live-badge w-live-active">
+                  <span class="w-live-dot"></span>Active
+                </span>
+                <span v-else-if="walletData.walletId" class="w-live-badge w-live-inactive">Inactive</span>
+              </div>
+              <div class="w-balance-amount">
+                <span class="w-curr-sym">₹</span>
+                <span v-if="walletLoading" class="w-amount-skel"></span>
+                <span v-else class="w-amount-val">{{ walletFmt(walletData.balance) }}</span>
+              </div>
+              <div class="w-balance-meta" v-if="!walletLoading && walletData.walletId">
+                <div class="w-meta-item">
+                  <span class="mdi mdi-identifier w-meta-icon"></span>
+                  <span class="w-meta-label">Wallet ID</span>
+                  <span class="w-meta-val mono">{{ walletData.walletId }}</span>
+                </div>
+                <div v-if="walletData.settlementAccount" class="w-meta-item">
+                  <span class="mdi mdi-bank-outline w-meta-icon"></span>
+                  <span class="w-meta-label">Settlement A/C</span>
+                  <span class="w-meta-val mono">{{ walletMask(walletData.settlementAccount?.bank_account_no) }}</span>
+                </div>
+              </div>
+              <div class="w-bal-actions" v-if="!walletLoading && walletData.walletId">
+                <button class="w-bal-btn" @click="showWalletAdd = true">
+                  <span class="mdi mdi-arrow-collapse-down"></span> Add Money
+                </button>
+                <button class="w-bal-btn w-bal-btn-outline" @click="openWalletWithdraw">
+                  <span class="mdi mdi-arrow-top-right"></span> Withdraw
+                </button>
+              </div>
+              <div v-if="!walletLoading && !walletData.walletId" class="w-no-wallet">
+                <span class="mdi mdi-wallet-off-outline"></span>
+                No wallet configured for this vendor
+              </div>
+            </div>
+          </div>
+
+          <!-- Stat cards -->
+          <div class="w-stat-cards">
+            <div class="w-stat-card">
+              <div class="w-stat-icon w-stat-credit"><span class="mdi mdi-arrow-collapse-down"></span></div>
+              <div class="w-stat-info">
+                <span class="w-stat-label">Credits (page)</span>
+                <span class="w-stat-val mono">₹{{ walletFmt(walletTotalCredits) }}</span>
+              </div>
+            </div>
+            <div class="w-stat-card">
+              <div class="w-stat-icon w-stat-debit"><span class="mdi mdi-arrow-top-right"></span></div>
+              <div class="w-stat-info">
+                <span class="w-stat-label">Debits (page)</span>
+                <span class="w-stat-val mono">₹{{ walletFmt(walletTotalDebits) }}</span>
+              </div>
+            </div>
+            <div class="w-stat-card">
+              <div class="w-stat-icon w-stat-tx"><span class="mdi mdi-swap-horizontal"></span></div>
+              <div class="w-stat-info">
+                <span class="w-stat-label">Total Records</span>
+                <span class="w-stat-val mono">{{ walletMeta.total }}</span>
+              </div>
+            </div>
+            <div class="w-stat-card">
+              <div class="w-stat-icon" :class="walletData.walletActive ? 'w-stat-active' : 'w-stat-idle'">
+                <span class="mdi" :class="walletData.walletActive ? 'mdi-check-circle-outline' : 'mdi-alert-circle-outline'"></span>
+              </div>
+              <div class="w-stat-info">
+                <span class="w-stat-label">Wallet Status</span>
+                <span class="w-stat-val" :class="walletData.walletActive ? 'w-text-green' : 'w-text-amber'">
+                  {{ walletData.walletActive ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transfer History -->
+        <div class="card" style="overflow:hidden;margin-top:0">
+          <div class="card__head" style="flex-wrap:wrap;gap:12px;">
+            <div class="card__head-dot card__head-dot--indigo"></div>
+            <h3 class="card__title">Transfer History</h3>
+            <span class="w-count-chip">{{ walletMeta.total }} records</span>
+            <div class="w-filter-row" style="margin-left:auto">
+              <div class="w-tab-strip">
+                <button v-for="wt in walletTypeOpts" :key="wt.v" class="w-tab-btn" :class="{ active: walletTypeFilter === wt.v }" @click="setWalletType(wt.v)">{{ wt.l }}</button>
+              </div>
+              <div class="w-filter-right">
+                <input v-model="walletSearch" class="w-search" placeholder="Search…" @input="debouncedWalletFetch" />
+                <input v-model="walletFrom" type="date" class="w-date" @change="fetchWalletHistory()" />
+                <input v-model="walletTo" type="date" class="w-date" @change="fetchWalletHistory()" />
+                <button class="w-icon-btn" @click="clearWalletFilters"><span class="mdi mdi-filter-remove-outline"></span></button>
+                <button class="w-icon-btn" @click="fetchWalletHistory()"><span class="mdi mdi-refresh" :class="{ spin: walletHistoryLoading }"></span></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-scroll-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>Date &amp; Time</th><th>Type</th><th>Description</th>
+                  <th style="text-align:right">Amount</th><th style="text-align:right">Balance After</th><th>Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="walletHistoryLoading">
+                  <td colspan="7" class="w-loading-row"><span class="mdi mdi-loading spin"></span> Loading…</td>
+                </tr>
+                <tr v-else-if="!walletHistory.length">
+                  <td colspan="7">
+                    <div class="empty-state"><span class="mdi mdi-inbox-outline" style="font-size:32px"></span><p>No records found</p></div>
+                  </td>
+                </tr>
+                <template v-else>
+                  <tr v-for="(row, i) in walletHistory" :key="row.id ?? i">
+                    <td style="color:#8a93a8;font-size:.75rem">{{ (walletMeta.page - 1) * walletMeta.limit + i + 1 }}</td>
+                    <td>
+                      <span style="font-weight:600;font-size:.82rem;color:#0f1728;display:block">{{ wFmtDate(row.createdAt) }}</span>
+                      <span style="font-size:.73rem;color:#8a93a8">{{ wFmtTime(row.createdAt) }}</span>
+                    </td>
+                    <td>
+                      <span :class="['pill pill--sm', row.type === 'CREDIT' ? 'pill--emerald' : 'pill--red']">
+                        <span class="mdi" :class="row.type === 'CREDIT' ? 'mdi-arrow-collapse-down' : 'mdi-arrow-top-right'"></span>
+                        {{ row.type }}
+                      </span>
+                    </td>
+                    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ row.description ?? '—' }}</td>
+                    <td style="text-align:right;font-weight:700">
+                      <span :style="{ color: row.type === 'CREDIT' ? '#059669' : '#ef4444' }">
+                        {{ row.type === 'CREDIT' ? '+' : '-' }}₹{{ walletFmt(row.amount) }}
+                      </span>
+                    </td>
+                    <td style="text-align:right;font-family:'DM Mono',monospace;font-size:.8rem">₹{{ walletFmt(row.balanceAfter) }}</td>
+                    <td style="font-family:'DM Mono',monospace;font-size:.73rem;color:#8a93a8;max-width:130px;overflow:hidden;text-overflow:ellipsis">{{ row.referenceId ?? row.id ?? '—' }}</td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div v-if="walletMeta.totalPages > 1" class="w-pagination">
+            <button class="w-page-btn" :disabled="walletMeta.page <= 1" @click="goWalletPage(walletMeta.page - 1)">
+              <span class="mdi mdi-chevron-left"></span>
+            </button>
+            <span class="w-page-info">Page {{ walletMeta.page }} / {{ walletMeta.totalPages }}</span>
+            <button class="w-page-btn" :disabled="walletMeta.page >= walletMeta.totalPages" @click="goWalletPage(walletMeta.page + 1)">
+              <span class="mdi mdi-chevron-right"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Add Money Modal ── -->
+        <Teleport to="body">
+          <div v-if="showWalletAdd" class="w-modal-backdrop" @click.self="showWalletAdd = false">
+            <div class="w-modal-box">
+              <div class="w-modal-header">
+                <h3 class="w-modal-title"><span class="mdi mdi-plus-circle-outline" style="color:#1142d4"></span> Add Money</h3>
+                <button class="w-modal-close" @click="showWalletAdd = false"><span class="mdi mdi-close"></span></button>
+              </div>
+              <div class="w-modal-body">
+                <label class="w-field-label">Amount (₹)</label>
+                <div class="w-amount-field">
+                  <span class="w-field-prefix">₹</span>
+                  <input v-model.number="walletAddAmount" type="number" min="1" class="w-field-input" placeholder="0.00" @keyup.enter="submitWalletAdd" />
+                </div>
+                <label class="w-field-label" style="margin-top:14px">Description (optional)</label>
+                <input v-model="walletAddDesc" class="w-field-input w-field-full" placeholder="e.g. Account top-up" />
+                <p v-if="walletAddError" class="w-field-error">{{ walletAddError }}</p>
+              </div>
+              <div class="w-modal-footer">
+                <button class="w-btn-ghost" @click="showWalletAdd = false">Cancel</button>
+                <button class="w-btn-primary" :disabled="walletAddLoading || !walletAddAmount" @click="submitWalletAdd">
+                  <span v-if="walletAddLoading" class="mdi mdi-loading spin"></span>
+                  {{ walletAddLoading ? 'Processing…' : 'Add Money' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Teleport>
+
+        <!-- ── Withdraw Modal (2-step) ── -->
+        <Teleport to="body">
+          <div v-if="showWalletWithdraw" class="w-modal-backdrop" @click.self="closeWalletWithdraw">
+            <div class="w-modal-box">
+              <template v-if="walletWithdrawStep === 1">
+                <div class="w-modal-header">
+                  <h3 class="w-modal-title"><span class="mdi mdi-bank-transfer-out" style="color:#d97706"></span> Withdraw Funds</h3>
+                  <button class="w-modal-close" @click="closeWalletWithdraw"><span class="mdi mdi-close"></span></button>
+                </div>
+                <div class="w-modal-body">
+                  <div class="w-avail-row">
+                    <span class="mdi mdi-wallet-outline"></span>
+                    Available: <strong>₹{{ walletFmt(walletData.balance) }}</strong>
+                  </div>
+                  <label class="w-field-label" style="margin-top:14px">Withdraw Amount (₹)</label>
+                  <div class="w-amount-field">
+                    <span class="w-field-prefix">₹</span>
+                    <input v-model.number="walletWithdrawAmount" type="number" min="1" :max="walletData.balance" class="w-field-input" placeholder="0.00" />
+                  </div>
+                  <label class="w-field-label" style="margin-top:14px">Description (optional)</label>
+                  <input v-model="walletWithdrawDesc" class="w-field-input w-field-full" placeholder="e.g. Monthly withdrawal" />
+                  <p v-if="walletWithdrawError" class="w-field-error">{{ walletWithdrawError }}</p>
+                </div>
+                <div class="w-modal-footer">
+                  <button class="w-btn-ghost" @click="closeWalletWithdraw">Cancel</button>
+                  <button class="w-btn-amber" :disabled="!walletWithdrawAmount || walletWithdrawAmount > walletData.balance" @click="walletWithdrawStep = 2">
+                    Continue <span class="mdi mdi-arrow-right"></span>
+                  </button>
+                </div>
+              </template>
+              <template v-else>
+                <div class="w-modal-header">
+                  <h3 class="w-modal-title"><span class="mdi mdi-shield-check-outline" style="color:#1142d4"></span> Confirm Withdrawal</h3>
+                  <button class="w-modal-close" @click="closeWalletWithdraw"><span class="mdi mdi-close"></span></button>
+                </div>
+                <div class="w-modal-body">
+                  <div class="w-confirm-summary">
+                    <div class="w-confirm-row"><span class="w-confirm-lbl">Withdraw Amount</span><span class="w-confirm-val font-mono">₹{{ walletFmt(walletWithdrawAmount) }}</span></div>
+                    <div class="w-confirm-row"><span class="w-confirm-lbl">Balance After</span><span class="w-confirm-val font-mono">₹{{ walletFmt(walletData.balance - walletWithdrawAmount) }}</span></div>
+                    <div v-if="walletWithdrawDesc" class="w-confirm-row"><span class="w-confirm-lbl">Description</span><span class="w-confirm-val">{{ walletWithdrawDesc }}</span></div>
+                  </div>
+                  <p v-if="walletWithdrawError" class="w-field-error">{{ walletWithdrawError }}</p>
+                </div>
+                <div class="w-modal-footer">
+                  <button class="w-btn-ghost" @click="walletWithdrawStep = 1"><span class="mdi mdi-arrow-left"></span> Back</button>
+                  <button class="w-btn-danger" :disabled="walletWithdrawLoading" @click="submitWalletWithdraw">
+                    <span v-if="walletWithdrawLoading" class="mdi mdi-loading spin"></span>
+                    {{ walletWithdrawLoading ? 'Processing…' : 'Confirm Withdraw' }}
+                  </button>
+                </div>
+              </template>
+            </div>
+          </div>
+        </Teleport>
+
+      </section>
+
     </main>
 
     <!-- ░░ FOOTER (desktop only) ░░ -->
@@ -1992,6 +2241,9 @@
                     <span class="doc-pdf-label">View PDF</span>
                   </div>
                   <div class="doc-img-overlay" v-if="confirmDeleteImageId !== img.id">
+                    <button class="doc-img-view-btn" @click.stop="openDocImage(img)">
+                      <span class="mdi mdi-eye-outline"></span> View
+                    </button>
                     <button class="doc-img-reupload-btn" :disabled="reuploadBusy || deletingImageId === img.id" @click="triggerReupload(img)">
                       <span v-if="reuploadBusy && reuploadingImageId === img.id" class="doc-img-spinner"></span>
                       <template v-else><span class="mdi mdi-camera-retake-outline"></span> Replace</template>
@@ -2123,6 +2375,7 @@ import { useUsersApi } from "~/composables/apis/useUsersApi";
 import { useVendorCardApi } from '~/composables/apis/useVendorCardApi'
 import { useVendorLinkedServiceApi } from '~/composables/apis/useVendorLinkedServiceApi'
 import { useOnboadingApi } from '~/composables/apis/useOnboadingApi'
+import { useApi } from '~/composables/apis/useApi'
 
 // New Commission Config and Components
 
@@ -3059,12 +3312,129 @@ const tabs = computed(() => [
   { key: 'info', label: 'Vendor Info', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>` },
   { key: 'linkedservices', label: 'Services and Interfaces', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`, count: linkedServices.value.length },
   { key: 'commissions', label: 'Commissions', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>` },
+  { key: 'wallet', label: 'Wallet', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>` },
   { key: 'cards', label: 'Cards', count: vendorCards.value.length, icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>` },
   { key: 'merchants', label: 'Merchants', count: vendorForm.merchants?.length || 0, icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
   // { key: 'terminals',    label: 'Terminals',      count: vendorForm.terminals?.length || 0, icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>` },
   { key: 'documents', label: 'Documents', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>` },
   { key: 'transactions', label: 'Transactions', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>` },
 ]);
+
+// ── Wallet ─────────────────────────────────────────────────────
+const { get: apiGet, post: apiPost } = useApi();
+
+const walletData           = ref({ walletId: null, balance: 0, walletActive: false, settlementAccount: null });
+const walletHistory        = ref([]);
+const walletMeta           = ref({ page: 1, limit: 20, total: 0, totalPages: 0 });
+const walletLoading        = ref(false);
+const walletHistoryLoading = ref(false);
+const walletAddLoading     = ref(false);
+const walletWithdrawLoading = ref(false);
+
+const walletTypeFilter = ref('');
+const walletSearch     = ref('');
+const walletFrom       = ref('');
+const walletTo         = ref('');
+const walletTypeOpts   = [{ l: 'All', v: '' }, { l: 'Credit', v: 'CREDIT' }, { l: 'Debit', v: 'DEBIT' }];
+
+const showWalletAdd      = ref(false);
+const walletAddAmount    = ref(null);
+const walletAddDesc      = ref('');
+const walletAddError     = ref('');
+
+const showWalletWithdraw   = ref(false);
+const walletWithdrawStep   = ref(1);
+const walletWithdrawAmount = ref(null);
+const walletWithdrawDesc   = ref('');
+const walletWithdrawError  = ref('');
+
+const walletFmt  = (v) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v ?? 0);
+const walletMask = (a) => a ? '•••• ' + String(a).slice(-4) : '—';
+const wFmtDate   = (s) => s ? new Date(s).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const wFmtTime   = (s) => s ? new Date(s).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+
+const walletTotalCredits = computed(() => walletHistory.value.filter(r => r.type === 'CREDIT').reduce((s, r) => s + (r.amount ?? 0), 0));
+const walletTotalDebits  = computed(() => walletHistory.value.filter(r => r.type === 'DEBIT').reduce((s, r) => s + (r.amount ?? 0), 0));
+
+const fetchWalletBalance = async () => {
+  if (!props.vendorId) return;
+  walletLoading.value = true;
+  try {
+    const res = await apiGet(`/aggregator/vendors/${props.vendorId}/balance`);
+    if (res.data?.statusCode === '00') walletData.value = res.data.data;
+  } catch { /* silent */ } finally { walletLoading.value = false; }
+};
+
+const fetchWalletHistory = async (page = 1) => {
+  if (!props.vendorId) return;
+  walletHistoryLoading.value = true;
+  try {
+    const p = new URLSearchParams({ page: String(page), limit: '20' });
+    if (walletTypeFilter.value) p.set('type', walletTypeFilter.value);
+    if (walletSearch.value)     p.set('search', walletSearch.value);
+    if (walletFrom.value)       p.set('from', walletFrom.value);
+    if (walletTo.value)         p.set('to', walletTo.value);
+    const res = await apiGet(`/aggregator/vendors/${props.vendorId}/balance/history?${p.toString()}`);
+    if (res.data?.statusCode === '00') {
+      walletHistory.value = res.data.data;
+      walletMeta.value    = res.data.meta;
+    }
+  } catch { /* silent */ } finally { walletHistoryLoading.value = false; }
+};
+
+const setWalletType = (v) => { walletTypeFilter.value = v; fetchWalletHistory(); };
+const goWalletPage  = (p) => fetchWalletHistory(p);
+const clearWalletFilters = () => { walletTypeFilter.value = ''; walletSearch.value = ''; walletFrom.value = ''; walletTo.value = ''; fetchWalletHistory(); };
+
+let walletDebounceTimer = null;
+const debouncedWalletFetch = () => { clearTimeout(walletDebounceTimer); walletDebounceTimer = setTimeout(() => fetchWalletHistory(), 400); };
+
+const submitWalletAdd = async () => {
+  walletAddError.value = '';
+  if (!walletAddAmount.value || walletAddAmount.value <= 0) { walletAddError.value = 'Enter a valid amount'; return; }
+  walletAddLoading.value = true;
+  try {
+    const res = await apiPost(`/aggregator/vendors/${props.vendorId}/balance/add`, { amount: walletAddAmount.value, description: walletAddDesc.value });
+    if (res.data?.statusCode === '00') {
+      showSnack('Money added successfully');
+      showWalletAdd.value = false;
+      walletAddAmount.value = null;
+      walletAddDesc.value = '';
+      walletData.value.balance = res.data.data?.newBalance ?? walletData.value.balance;
+      fetchWalletHistory();
+    } else {
+      walletAddError.value = res.data?.message || 'Failed to add money';
+    }
+  } catch { walletAddError.value = 'Network error. Please try again.'; }
+  finally { walletAddLoading.value = false; }
+};
+
+const openWalletWithdraw = () => { showWalletWithdraw.value = true; walletWithdrawStep.value = 1; walletWithdrawError.value = ''; };
+const closeWalletWithdraw = () => { showWalletWithdraw.value = false; walletWithdrawStep.value = 1; walletWithdrawAmount.value = null; walletWithdrawDesc.value = ''; walletWithdrawError.value = ''; };
+
+const submitWalletWithdraw = async () => {
+  walletWithdrawError.value = '';
+  walletWithdrawLoading.value = true;
+  try {
+    const res = await apiPost(`/aggregator/vendors/${props.vendorId}/balance/withdraw`, { amount: walletWithdrawAmount.value, description: walletWithdrawDesc.value });
+    if (res.data?.statusCode === '00') {
+      showSnack('Withdrawal successful');
+      closeWalletWithdraw();
+      walletData.value.balance = res.data.data?.newBalance ?? walletData.value.balance;
+      fetchWalletHistory();
+    } else {
+      walletWithdrawError.value = res.data?.message || 'Withdrawal failed';
+    }
+  } catch { walletWithdrawError.value = 'Network error. Please try again.'; }
+  finally { walletWithdrawLoading.value = false; }
+};
+
+watch(activeTab, (tab) => {
+  if (tab === 'wallet' && !walletData.value.walletId) {
+    fetchWalletBalance();
+    fetchWalletHistory();
+  }
+});
 
 const filteredMerchants = computed(() => {
   let list = vendorForm.merchants || [];
@@ -5000,6 +5370,22 @@ onMounted(() => {
   font-weight: 700;
   cursor: pointer;
 }
+.doc-img-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #1142d4;
+  color: #fff;
+}
+.doc-img-view-btn:hover {
+  background: #0d34a8;
+}
 .doc-img-reupload-btn {
   background: #fff;
   color: #1142d4;
@@ -6127,4 +6513,96 @@ onMounted(() => {
   .cards-search { max-width: 140px; }
   .status-select { font-size: 9.5px; padding: 2px 18px 2px 6px; }
 }
+
+/* ── Wallet Tab ── */
+.wallet-top-row { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 768px) { .wallet-top-row { grid-template-columns: 340px 1fr; } }
+.w-balance-card { position: relative; border-radius: 18px; overflow: hidden; min-height: 186px; display: flex; flex-direction: column; justify-content: flex-end; box-shadow: 0 6px 24px rgba(17,66,212,.28); }
+.w-balance-bg   { position: absolute; inset: 0; background: linear-gradient(135deg, #1142d4 0%, #1e3fbe 50%, #0e35a8 100%); }
+.w-balance-content { position: relative; z-index: 1; padding: 22px; }
+.w-balance-label-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.w-bal-icon  { font-size: 18px; color: rgba(255,255,255,.7); }
+.w-bal-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.7); text-transform: uppercase; letter-spacing: .8px; flex: 1; }
+.w-live-badge    { font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: .4px; background: rgba(255,255,255,.15); color: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.2); }
+.w-live-active   { background: rgba(34,197,94,.25); color: #86efac; border-color: rgba(34,197,94,.4); }
+.w-live-inactive { background: rgba(239,68,68,.2); color: #fca5a5; }
+.w-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block; margin-right: 4px; }
+.w-balance-amount { display: flex; align-items: baseline; gap: 6px; margin-bottom: 14px; }
+.w-curr-sym   { font-size: 22px; font-weight: 700; color: rgba(255,255,255,.7); }
+.w-amount-skel { width: 120px; height: 38px; background: rgba(255,255,255,.15); border-radius: 8px; display: inline-block; }
+.w-amount-val  { font-size: 36px; font-weight: 800; color: #fff; font-family: 'DM Mono', monospace; line-height: 1; }
+.w-balance-meta { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.w-meta-item  { display: flex; align-items: center; gap: 6px; }
+.w-meta-icon  { font-size: 12px; color: rgba(255,255,255,.5); }
+.w-meta-label { font-size: 10px; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .5px; min-width: 80px; }
+.w-meta-val   { font-size: 11.5px; color: rgba(255,255,255,.85); font-family: 'DM Mono', monospace; }
+.w-bal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.w-bal-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; border: none; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; background: rgba(255,255,255,.2); color: #fff; transition: all .15s; }
+.w-bal-btn:hover { background: rgba(255,255,255,.3); }
+.w-bal-btn-outline { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.25); }
+.w-bal-btn-outline:hover { background: rgba(255,255,255,.18); }
+.w-no-wallet { font-size: 12px; color: rgba(255,255,255,.65); text-align: center; padding: 12px 0; display: flex; align-items: center; gap: 6px; }
+.w-stat-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start; }
+.w-stat-card  { background: #fff; border: 1px solid #e8edf3; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+.w-stat-icon  { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+.w-stat-credit { background: rgba(5,150,105,.1);  color: #059669; }
+.w-stat-debit  { background: rgba(239,68,68,.1);   color: #ef4444; }
+.w-stat-tx     { background: rgba(17,66,212,.1);   color: #1142d4; }
+.w-stat-active { background: rgba(34,197,94,.1);   color: #15803d; }
+.w-stat-idle   { background: rgba(217,119,6,.1);   color: #d97706; }
+.w-stat-info   { flex: 1; min-width: 0; }
+.w-stat-label  { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .6px; display: block; }
+.w-stat-val    { font-size: 16px; font-weight: 800; color: #0f172a; font-family: 'DM Mono', monospace; }
+.w-text-green  { color: #059669; }
+.w-text-amber  { color: #d97706; }
+.w-count-chip  { background: #f1f5f9; color: #64748b; font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 20px; border: 1px solid #e2e8f0; }
+.w-filter-row  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.w-tab-strip   { display: flex; gap: 3px; }
+.w-tab-btn     { padding: 5px 12px; border: 1px solid #e2e8f0; border-radius: 7px; font-size: 11.5px; font-weight: 600; cursor: pointer; background: #f8fafc; color: #64748b; font-family: inherit; transition: all .15s; }
+.w-tab-btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+.w-filter-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.w-search  { height: 32px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0 10px; font-size: 12px; font-family: inherit; outline: none; width: 160px; transition: border .15s; }
+.w-search:focus { border-color: #1142d4; }
+.w-date    { height: 32px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0 8px; font-size: 12px; font-family: inherit; outline: none; cursor: pointer; }
+.w-icon-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #64748b; cursor: pointer; font-size: 16px; transition: all .15s; }
+.w-icon-btn:hover { background: #f1f5f9; color: #0f172a; }
+.w-loading-row { text-align: center; color: #94a3b8; padding: 24px 0; font-size: 13px; }
+.w-pagination  { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 18px; border-top: 1px solid #f1f5f9; }
+.w-page-btn    { width: 32px; height: 32px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #64748b; transition: all .15s; }
+.w-page-btn:hover:not(:disabled) { background: #1142d4; color: #fff; border-color: #1142d4; }
+.w-page-btn:disabled { opacity: .45; cursor: not-allowed; }
+.w-page-info   { font-size: 12px; font-weight: 600; color: #64748b; }
+.w-modal-backdrop { position: fixed; inset: 0; z-index: 500; background: rgba(15,23,42,.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.w-modal-box   { background: #fff; border-radius: 18px; width: 100%; max-width: 420px; box-shadow: 0 24px 64px rgba(0,0,0,.22); overflow: hidden; display: flex; flex-direction: column; }
+.w-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
+.w-modal-title  { font-size: 14.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+.w-modal-close  { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; cursor: pointer; color: #64748b; font-size: 16px; transition: all .15s; }
+.w-modal-close:hover { background: #f1f5f9; color: #0f172a; }
+.w-modal-body   { padding: 20px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
+.w-modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid #f1f5f9; background: #fafafa; flex-shrink: 0; }
+.w-avail-row  { display: flex; align-items: center; gap: 8px; background: rgba(17,66,212,.06); border: 1px solid rgba(17,66,212,.12); border-radius: 9px; padding: 10px 14px; font-size: 13px; color: #1142d4; font-weight: 600; }
+.w-field-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .6px; display: block; }
+.w-amount-field { display: flex; align-items: center; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-top: 6px; transition: border .15s; }
+.w-amount-field:focus-within { border-color: #1142d4; box-shadow: 0 0 0 3px rgba(17,66,212,.08); }
+.w-field-prefix { padding: 0 12px; font-size: 14px; font-weight: 700; color: #64748b; background: #f8fafc; border-right: 1px solid #e2e8f0; height: 42px; display: flex; align-items: center; }
+.w-field-input  { flex: 1; border: none; padding: 0 12px; font-size: 14px; font-family: 'DM Mono', monospace; color: #0f172a; outline: none; height: 42px; background: transparent; }
+.w-field-full   { width: 100%; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0 12px; font-size: 13px; font-family: inherit; color: #0f172a; outline: none; height: 42px; margin-top: 6px; transition: border .15s; }
+.w-field-full:focus { border-color: #1142d4; box-shadow: 0 0 0 3px rgba(17,66,212,.08); }
+.w-field-error  { font-size: 11.5px; color: #ef4444; font-weight: 600; margin-top: 4px; }
+.w-btn-ghost    { padding: 9px 16px; border: 1px solid #e2e8f0; border-radius: 9px; font-size: 12.5px; font-weight: 600; background: #f8fafc; color: #475569; cursor: pointer; font-family: inherit; transition: all .15s; }
+.w-btn-ghost:hover { background: #f1f5f9; }
+.w-btn-primary  { display: flex; align-items: center; gap: 6px; padding: 9px 20px; background: #1142d4; color: #fff; border: none; border-radius: 9px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
+.w-btn-primary:hover:not(:disabled) { background: #0e35a8; }
+.w-btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+.w-btn-amber    { display: flex; align-items: center; gap: 6px; padding: 9px 20px; background: #d97706; color: #fff; border: none; border-radius: 9px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
+.w-btn-amber:hover:not(:disabled) { background: #b45309; }
+.w-btn-amber:disabled { opacity: .55; cursor: not-allowed; }
+.w-btn-danger   { display: flex; align-items: center; gap: 6px; padding: 9px 20px; background: #ef4444; color: #fff; border: none; border-radius: 9px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
+.w-btn-danger:hover:not(:disabled) { background: #dc2626; }
+.w-btn-danger:disabled { opacity: .55; cursor: not-allowed; }
+.w-confirm-summary { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.w-confirm-row  { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.w-confirm-lbl  { font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; }
+.w-confirm-val  { font-size: 13px; font-weight: 600; color: #0f172a; }
+.spin { display: inline-block; animation: spin .8s linear infinite; }
 </style>

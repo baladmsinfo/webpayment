@@ -524,7 +524,14 @@
             <div class="dialog-body">
               <p class="dialog-section-lbl">Images</p>
               <div class="doc-img-grid" v-if="selectedDoc?.images?.length">
-                <img v-for="img in selectedDoc.images" :key="img.id" :src="img.url" class="doc-img-thumb" @click="openPreview(img.url)" />
+                <div class="doc-img-cell" v-for="img in selectedDoc.images" :key="img.id">
+                  <img :src="img.url" class="doc-img-thumb" @click="openPreview(img.url)" />
+                  <div class="doc-img-overlay">
+                    <button class="doc-img-view-btn" @click.stop="openPreview(img.url)">
+                      <span class="mdi mdi-eye-outline"></span> View
+                    </button>
+                  </div>
+                </div>
               </div>
               <p v-else class="empty-title">No images uploaded</p>
             </div>
@@ -1627,8 +1634,21 @@ onMounted(async () => {
 .icon-close { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; cursor: pointer; color: #64748b; font-size: 16px; transition: all .15s; }
 .icon-close:hover { background: #f1f5f9; color: #0f172a; }
 .doc-img-grid  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.doc-img-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; cursor: pointer; transition: opacity .13s; }
+.doc-img-cell  { position: relative; border-radius: 8px; overflow: hidden; }
+.doc-img-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; cursor: pointer; transition: opacity .13s; display: block; }
 .doc-img-thumb:hover { opacity: .82; }
+.doc-img-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  opacity: 0; background: rgba(15,23,42,.45); transition: opacity .15s; pointer-events: none;
+}
+.doc-img-cell:hover .doc-img-overlay { opacity: 1; pointer-events: auto; }
+.doc-img-view-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  border: none; border-radius: 6px; padding: 6px 12px;
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  background: #1142d4; color: #fff;
+}
+.doc-img-view-btn:hover { background: #0d34a8; }
 .img-preview   { width: 100%; max-height: 520px; object-fit: contain; border-radius: 8px; }
 .dialog-fade-enter-active, .dialog-fade-leave-active { transition: opacity .2s ease; }
 .dialog-fade-enter-from, .dialog-fade-leave-to { opacity: 0; }

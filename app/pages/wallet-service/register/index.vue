@@ -107,7 +107,7 @@
 
                 <v-col cols="12" sm="6" md="6" lg="4">
                   <label class="field-label">ANNUAL TURNOVER</label>
-                  <v-autocomplete v-model="form.annual_turn_over" :items="turnOverList.data || []"
+                  <v-autocomplete v-model="form.annual_turn_over" :items="turnOverList"
                     item-title="label" item-value="value" placeholder="Select Annual Turnover"
                     variant="outlined" density="comfortable" :rules="[req]"
                     prepend-inner-icon="mdi-currency-rupee" class="wp-field" hide-details="auto" />

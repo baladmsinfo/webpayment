@@ -55,6 +55,16 @@
           <option value="ACTIVE">Active</option>
           <option value="INACTIVE">Inactive</option>
         </select>
+        <select class="filter-select" v-model="filterKycPending">
+          <option value="">KYC Pending: Any</option>
+          <option value="has">Has KYC Pending</option>
+          <option value="none">No KYC Pending</option>
+        </select>
+        <select class="filter-select" v-model="filterKycVerified">
+          <option value="">KYC Verified: Any</option>
+          <option value="has">Has KYC Verified</option>
+          <option value="none">No KYC Verified</option>
+        </select>
       </div>
     </div>
 
@@ -69,6 +79,8 @@
               <th class="th-hide-sm">MID</th>
               <th>Merchant Status</th>
               <th>KYC Status</th>
+              <th class="th-hide-md">KYC Pending</th>
+              <th class="th-hide-md">KYC Verified</th>
               <th class="th-hide-md">Risk Flag</th>
               <th class="th-hide-md">Applied On</th>
               <th class="th-action">Action</th>
@@ -91,6 +103,8 @@
               <td class="th-hide-sm"><div class="skel skel-line-md"></div></td>
               <td><div class="skel skel-chip"></div></td>
               <td><div class="skel skel-chip"></div></td>
+              <td class="th-hide-md"><div class="skel skel-chip"></div></td>
+              <td class="th-hide-md"><div class="skel skel-chip"></div></td>
               <td class="th-hide-md"><div class="skel skel-chip"></div></td>
               <td class="th-hide-md"><div class="skel skel-line-md"></div></td>
               <td><div class="skel skel-btn"></div></td>
@@ -139,6 +153,20 @@
                 </span>
               </td>
 
+              <!-- KYC Pending -->
+              <td class="th-hide-md">
+                <span class="chip" :class="item.kycPendingCount > 0 ? 'chip-amber' : 'chip-grey'">
+                  {{ item.kycPendingCount }}
+                </span>
+              </td>
+
+              <!-- KYC Verified -->
+              <td class="th-hide-md">
+                <span class="chip" :class="item.kycVerifiedCount > 0 ? 'chip-green' : 'chip-grey'">
+                  {{ item.kycVerifiedCount }}
+                </span>
+              </td>
+
               <!-- Risk Flag -->
               <td class="th-hide-md">
                 <div class="risk-cell">
@@ -167,7 +195,7 @@
 
             <!-- Empty -->
             <tr v-if="filteredList.length === 0">
-              <td colspan="8" class="empty-td">
+              <td colspan="10" class="empty-td">
                 <div class="empty-state">
                   <div class="empty-icon">
                     <span class="mdi mdi-store-off-outline"></span>
@@ -235,6 +263,8 @@ const search        = ref('');
 const searchFocused = ref(false);
 const filterMStatus = ref('');
 const filterStatus  = ref('');
+const filterKycPending  = ref(''); // '' | 'has' | 'none' — against item.kycPendingCount
+const filterKycVerified = ref(''); // '' | 'has' | 'none' — against item.kycVerifiedCount
 
 /* ── Helpers ── */
 const AVATAR_COLORS = ['#1142d4','#7c3aed','#db2777','#059669','#d97706','#dc2626','#0891b2'];
@@ -266,7 +296,11 @@ const filteredList = computed(() => {
   );
   if (filterMStatus.value) list = list.filter((m: any) => m.mstatus === filterMStatus.value);
   if (filterStatus.value)  list = list.filter((m: any) => formatStatus(m.status) === filterStatus.value);
-  return list;
+  if (filterKycPending.value)  list = list.filter((m: any) => (filterKycPending.value === 'has') === ((m.kycPendingCount || 0) > 0));
+  if (filterKycVerified.value) list = list.filter((m: any) => (filterKycVerified.value === 'has') === ((m.kycVerifiedCount || 0) > 0));
+  // Highest KYC Pending count first — copy before sorting so the store's
+  // own list array (reactive) isn't mutated in place by .sort().
+  return [...list].sort((a: any, b: any) => (b.kycPendingCount || 0) - (a.kycPendingCount || 0));
 });
 
 /* ── Stats strip ── */

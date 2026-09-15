@@ -279,38 +279,38 @@
                 <span class="mdi mdi-close-circle-outline"></span> {{ easebuzzFormError }}
               </div>
               <div class="onb-form-field">
-                <label>Category Code (MCC) <span class="onb-req">*</span></label>
-                <select v-model="easebuzzForm.category_code">
-                  <option value="" disabled>Select category code</option>
-                  <option v-for="opt in EASEBUZZ_CATEGORY_CODES" :key="opt.code" :value="opt.code">{{ opt.code }} — {{ opt.label }}</option>
-                </select>
+                <label>Category Code (MCC)</label>
+                <p class="onb-resolved-value" v-if="easebuzzCategoryMatch">{{ easebuzzCategoryMatch.code }} — {{ easebuzzCategoryMatch.label }}</p>
+                <p class="onb-resolved-value onb-resolved-value--missing" v-else>
+                  <span class="mdi mdi-alert-outline"></span> No MCC on file for this merchant{{ merchant?.mcc?.id != null ? ` (MCC ${merchant.mcc.id} isn't in Easebuzz's category list)` : '' }}
+                </p>
               </div>
               <div class="onb-form-field">
-                <label>Business Type Code <span class="onb-req">*</span></label>
-                <select v-model="easebuzzForm.business_type_code">
-                  <option value="" disabled>Select business type code</option>
-                  <option v-for="opt in EASEBUZZ_BUSINESS_TYPE_CODES" :key="opt.code" :value="opt.code">{{ opt.code }} — {{ opt.label }}</option>
-                </select>
+                <label>Business Type Code</label>
+                <p class="onb-resolved-value" v-if="easebuzzBusinessTypeMatch">{{ easebuzzBusinessTypeMatch.code }} — {{ easebuzzBusinessTypeMatch.label }}</p>
+                <p class="onb-resolved-value onb-resolved-value--missing" v-else>
+                  <span class="mdi mdi-alert-outline"></span> No Easebuzz mapping for business type "{{ merchant?.businesstype?.type || 'unknown' }}"
+                </p>
               </div>
               <div class="onb-form-field">
-                <label>Entity Type <span class="onb-req">*</span></label>
-                <select v-model="easebuzzForm.entity_type">
-                  <option value="" disabled>Select entity type</option>
-                  <option v-for="opt in EASEBUZZ_ENTITY_TYPES" :key="opt.code" :value="opt.code">{{ opt.code }} — {{ opt.label }}</option>
-                </select>
+                <label>Entity Type</label>
+                <p class="onb-resolved-value" v-if="easebuzzEntityTypeMatch">{{ easebuzzEntityTypeMatch.code }} — {{ easebuzzEntityTypeMatch.label }}</p>
+                <p class="onb-resolved-value onb-resolved-value--missing" v-else>
+                  <span class="mdi mdi-alert-outline"></span> No Easebuzz mapping for business type "{{ merchant?.businesstype?.type || 'unknown' }}"
+                </p>
               </div>
               <div class="onb-form-field">
                 <label>GSTIN <span class="onb-optional">(optional)</span></label>
                 <input v-model.trim="easebuzzForm.gstin" placeholder="GST number" />
               </div>
               <div class="onb-form-field">
-                <label>Primary VPA <span class="onb-optional">(optional)</span></label>
-                <input v-model.trim="easebuzzForm.primary_vpa" placeholder="merchant@upi" />
+                <label>Primary VPA</label>
+                <p class="onb-resolved-value">{{ easebuzzForm.primary_vpa }}</p>
               </div>
             </div>
             <div class="onb-dialog-footer">
               <button class="onb-btn-ghost" @click="easebuzzModal.open = false">Cancel</button>
-              <button class="onb-submit-btn" :disabled="submitting" @click="confirmEasebuzzSubmit">
+              <button class="onb-submit-btn" :disabled="submitting || !easebuzzAutoFieldsResolved" @click="confirmEasebuzzSubmit">
                 <span v-if="submitting" class="onb-btn-spinner"></span>
                 {{ submitting ? 'Submitting…' : 'Confirm & Submit to Easebuzz' }}
               </button>
@@ -514,12 +514,23 @@ function chooseProvider(provider) {
 async function submitToIsg() {
   submitting.value = true;
   try {
-    const res = await isgSubmitOnboarding({ merchantId: props.merchantId });
+    const res = await isgSubmitOnboarding({
+      merchantId: props.merchantId,
+      // The service/interface row this review was opened from (e.g.
+      // BUCKSBOX, via its own onboarding wizard reusing ISG's routes) is
+      // usually where the actual OTP/PAN/bank/document verification
+      // happened — compliance is checked against that row, while the
+      // backend always creates/updates a separate UPI/ISG row for the
+      // real onboarding itself. See isg.route.js's /submit/onboading.
+      complianceInterface: selectedSvc.value?.interface,
+    });
     if (res?.statusCode === "00" && res?.data) {
       submitResult.value = { provider: 'ISG', ...res.data };
       showToast(res?.message || "ISG onboarding submitted successfully!");
       if (merchant.value) merchant.value.mstatus = "ONBOARDED";
-      if (selectedSvc.value) selectedSvc.value.status = "VERIFIED";
+      // Note: this does NOT touch selectedSvc's own row (e.g. BUCKSBOX) —
+      // the backend creates/updates a separate UPI/ISG row, so the
+      // originating row's status here is left exactly as it was.
     } else if (res?.missingDocuments) {
       missingDocuments.value = res.missingDocuments;
       submitError.value = res?.message || "Missing mandatory documents";
@@ -538,8 +549,10 @@ async function submitToIsg() {
 // ── Easebuzz — real Create Sub-Merchant call ────────────────────────
 // Most fields come straight from the merchant record already loaded on this
 // page. category_code / business_type_code / entity_type aren't tracked in
-// Bucksbox at all (they're Easebuzz-specific classification codes), so
-// they're collected here rather than invented.
+// Bucksbox as Easebuzz-shaped codes, so they're auto-resolved below from the
+// merchant's actual MCC and business type rather than left for the
+// aggregator to pick (and possibly get wrong) — see easebuzzCategoryMatch /
+// easebuzzBusinessTypeMatch / easebuzzEntityTypeMatch.
 const easebuzzModal = reactive({ open: false });
 const easebuzzForm = reactive({ category_code: "", business_type_code: "", entity_type: "", gstin: "", primary_vpa: "" });
 const easebuzzFormError = ref("");
@@ -862,12 +875,72 @@ const EASEBUZZ_CATEGORY_CODES = [
   { code: "9402", label: "Postal services government only" },
 ];
 
+// Our BusinessType.type values (prisma/seed.js's BUSINESS_TYPES) mapped onto
+// Easebuzz's business_type_code / entity_type lists above — so the aggregator
+// never has to pick these by hand and risk mismatching what's actually on
+// file for the merchant.
+const BUSINESS_TYPE_TO_EASEBUZZ = {
+  INDIVIDUAL: { business_type_code: "1", entity_type: "0" },
+  SOLE_PROPRIETORSHIP: { business_type_code: "41", entity_type: "10" },
+  PARTNERSHIP: { business_type_code: "2", entity_type: "9" },
+  LLP: { business_type_code: "45", entity_type: "7" },
+  PRIVATE_LIMITED: { business_type_code: "3", entity_type: "11" },
+  PUBLIC_LIMITED: { business_type_code: "3", entity_type: "11" },
+  SOCIETY: { business_type_code: "44", entity_type: "4" },
+  TRUST: { business_type_code: "44", entity_type: "12" },
+  GOVERNMENT: { business_type_code: "4", entity_type: "13" },
+};
+
+// merchant.mcc.id is the MCC itself (prisma/schema.prisma's MCC.id) — pad to
+// Easebuzz's 4-digit code format (some MCCs, e.g. 0742, have a leading zero
+// SQL Int storage drops) and look it up directly, no picking involved.
+const easebuzzCategoryMatch = computed(() => {
+  const mccId = merchant.value?.mcc?.id;
+  if (mccId == null) return null;
+  const code = String(mccId).padStart(4, "0");
+  return EASEBUZZ_CATEGORY_CODES.find(c => c.code === code) || null;
+});
+
+const easebuzzBusinessTypeMatch = computed(() => {
+  const mapped = BUSINESS_TYPE_TO_EASEBUZZ[merchant.value?.businesstype?.type];
+  if (!mapped) return null;
+  return EASEBUZZ_BUSINESS_TYPE_CODES.find(c => c.code === mapped.business_type_code) || null;
+});
+
+const easebuzzEntityTypeMatch = computed(() => {
+  const mapped = BUSINESS_TYPE_TO_EASEBUZZ[merchant.value?.businesstype?.type];
+  if (!mapped) return null;
+  return EASEBUZZ_ENTITY_TYPES.find(c => c.code === mapped.entity_type) || null;
+});
+
+const easebuzzAutoFieldsResolved = computed(() =>
+  !!easebuzzCategoryMatch.value && !!easebuzzBusinessTypeMatch.value && !!easebuzzEntityTypeMatch.value
+);
+
+// Easebuzz's primary_vpa is the UPI handle to register for this sub-merchant
+// — generated from the merchant's own identity (name + a short id fragment)
+// rather than typed in, same reasoning as the auto-resolved fields above.
+function generatePrimaryVpa(m) {
+  const slug = (m?.dba_name || m?.business_name || m?.legal_name || "merchant")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .slice(0, 20) || "merchant";
+  const shortId = (m?.mid || m?.id || "")
+    .toString()
+    .replace(/[^a-z0-9]/gi, "")
+    .slice(-6)
+    .toLowerCase();
+  return `${slug}${shortId ? "." + shortId : ""}@bucksbox`;
+}
+
+const easebuzzGeneratedVpa = computed(() => generatePrimaryVpa(merchant.value));
+
 function openEasebuzzModal() {
-  easebuzzForm.category_code = "";
-  easebuzzForm.business_type_code = "";
-  easebuzzForm.entity_type = "";
+  easebuzzForm.category_code = easebuzzCategoryMatch.value?.code || "";
+  easebuzzForm.business_type_code = easebuzzBusinessTypeMatch.value?.code || "";
+  easebuzzForm.entity_type = easebuzzEntityTypeMatch.value?.code || "";
   easebuzzForm.gstin = merchant.value?.merchantgst?.gstin || "";
-  easebuzzForm.primary_vpa = "";
+  easebuzzForm.primary_vpa = easebuzzGeneratedVpa.value;
   easebuzzFormError.value = "";
   easebuzzModal.open = true;
 }
@@ -875,7 +948,7 @@ function openEasebuzzModal() {
 async function confirmEasebuzzSubmit() {
   easebuzzFormError.value = "";
   if (!easebuzzForm.category_code || !easebuzzForm.business_type_code || !easebuzzForm.entity_type) {
-    easebuzzFormError.value = "Category code, business type code and entity type are all required.";
+    easebuzzFormError.value = "Could not auto-resolve the category code, business type code or entity type from this merchant's profile. Update the merchant's MCC/business type first.";
     return;
   }
   easebuzzModal.open = false;
@@ -1089,6 +1162,14 @@ onMounted(fetchMerchant);
 }
 .onb-form-field select { appearance: auto; cursor: pointer; }
 .onb-form-field input:focus, .onb-form-field select:focus { border-color: #1142d4; box-shadow: 0 0 0 3px rgba(17,66,212,.1); }
+.onb-resolved-value {
+  border: 1px solid #e2e8f0; border-radius: 8px; padding: 9px 12px;
+  font-size: .85rem; color: #0f172a; font-weight: 600; background: #f8fafc; margin: 0;
+}
+.onb-resolved-value--missing {
+  display: flex; align-items: center; gap: 6px;
+  color: #b45309; background: #fffbeb; border-color: #fde68a; font-weight: 500;
+}
 .onb-req { color: #dc2626; }
 .onb-optional { font-weight: 400; color: #94a3b8; }
 .onb-btn-ghost {
