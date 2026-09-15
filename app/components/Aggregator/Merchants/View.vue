@@ -1230,8 +1230,8 @@ const walletMask = (a) => a ? '•••• ' + String(a).slice(-4) : '—';
 const wFmtDate   = (s) => s ? new Date(s).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const wFmtTime   = (s) => s ? new Date(s).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
 
-const walletTotalCredits = computed(() => walletHistory.value.filter(r => r.type === 'CREDIT').reduce((s, r) => s + (r.amount ?? 0), 0));
-const walletTotalDebits  = computed(() => walletHistory.value.filter(r => r.type === 'DEBIT').reduce((s, r) => s + (r.amount ?? 0), 0));
+const walletTotalCredits = computed(() => walletHistory.value.filter(r => r.type === 'CREDIT').reduce((s, r) => s + (Number(r.amount) ?? 0), 0));
+const walletTotalDebits  = computed(() => walletHistory.value.filter(r => r.type === 'DEBIT').reduce((s, r) => s + (Number(r.amount) ?? 0), 0));
 
 const fetchWalletBalance = async () => {
   if (!props.merchantId) return;
