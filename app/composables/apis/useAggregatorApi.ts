@@ -190,6 +190,35 @@ export function useAggregatorApi() {
         }
     };
 
+    // AEPS-only settlement settings — see Merchant.aepsSettleToVendor /
+    // VendorSettlementAccount.payoutMode / SettlementAccount.payoutMode.
+    const updateVendorAepsPayoutMode = async (id: string, payload: { payoutMode: "BANK" | "WALLET" }) => {
+        try {
+            const res = await post(`/aggregator/vendor/${id}/aeps-payout-mode`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor AEPS payout mode" };
+        }
+    };
+
+    const updateMerchantAepsSettleToVendor = async (id: string, payload: { aepsSettleToVendor: boolean }) => {
+        try {
+            const res = await post(`/aggregator/merchant/${id}/aeps-settle-to-vendor`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update merchant AEPS settlement party" };
+        }
+    };
+
+    const updateMerchantAepsPayoutMode = async (id: string, payload: { payoutMode: "BANK" | "WALLET" }) => {
+        try {
+            const res = await post(`/aggregator/merchant/${id}/aeps-payout-mode`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update merchant AEPS payout mode" };
+        }
+    };
+
     // Generic "Onboard" confirm for a merchant's service KYC row (any
     // service/interface without its own dedicated onboarding integration).
     const submitServiceKyc = async (serviceKycId: string) => {
@@ -371,6 +400,9 @@ export function useAggregatorApi() {
         updateVendorStatus,
         updateVendorMstatus,
         updateVendorRiskflag,
+        updateVendorAepsPayoutMode,
+        updateMerchantAepsSettleToVendor,
+        updateMerchantAepsPayoutMode,
         submitServiceKyc,
         getTransactionById,
         getDashboardAnalytics,

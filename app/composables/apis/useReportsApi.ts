@@ -13,6 +13,10 @@ export interface ReportFilters {
   txnType?: string;
   provider?: string;
   paymentMethod?: string;
+  // Free-text search across tr / rrn / transactionid / gatewayRefId
+  search?: string;
+  amountMin?: number | string;
+  amountMax?: number | string;
   page?: number;
   limit?: number;
   groupBy?: string;
