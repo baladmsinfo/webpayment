@@ -49,6 +49,9 @@ const {getWalletMe} = useUsersApi();
 const auth = useAuthStore();
 const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
 
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
+
 const Title = ref();
 
 const router = useRouter();
@@ -97,7 +100,7 @@ onMounted(async () => {
   await getWalletMe();
 
   docVerified.value = auth.walletProfile.data?.kyc;
-  Title.value = auth.walletProfile.data?.data?.dba_name || "Bucksbox";
+  Title.value = auth.walletProfile.data?.data?.dba_name || brandName;
 });
 </script>
 

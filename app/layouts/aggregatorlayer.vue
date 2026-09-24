@@ -31,6 +31,9 @@ const { getAggregator } = useAggregatorApi();
 const auth = useAuthStore();
 const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
 
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
+
 const Title = ref();
 
 const { getServices } = useOnboadingApi();
@@ -138,7 +141,7 @@ onMounted(async () => {
     }
   }  
   
-  Title.value = auth.aggregator?.name || "Bucksbox";
+  Title.value = auth.aggregator?.name || brandName;
 
   try {
     const res = await getServices()

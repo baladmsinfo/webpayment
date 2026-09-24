@@ -151,7 +151,9 @@ const { public: { BRAND_NAME } } = useRuntimeConfig();
 const brandName = BRAND_NAME || "Bucksbox";
 
 const props = defineProps({
-  title:  { type: String,  default: "BUCKSBOX" },
+  // Prop defaults are hoisted out of setup(), so they cannot use the local
+  // `brandName` const — read the runtime config inside the factory instead.
+  title:  { type: String,  default: () => useRuntimeConfig().public.BRAND_NAME || "Bucksbox" },
   color:  { type: String,  default: "primary" },
   menus:  { type: Array,   default: () => [] },
   goback: { type: Boolean, default: false },

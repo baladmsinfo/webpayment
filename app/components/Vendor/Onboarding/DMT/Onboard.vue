@@ -367,7 +367,12 @@ import { useRouter } from 'vue-router'
 import { useOnboadingApi } from '~/composables/apis/useOnboadingApi'
 import { useDmtBcApi } from '~/composables/apis/Usedmtbcapi'
 
-const props = defineProps({ merchantId: String })
+// finishPath: where the success screen's button goes (vendor list by default;
+// the merchant self-onboarding page passes its own KYC status page).
+const props = defineProps({
+  merchantId: String,
+  finishPath: { type: String, default: '/vendor/merchants' },
+})
 const router = useRouter()
 
 const { getMerchantForOnboarding } = useOnboadingApi()
@@ -457,7 +462,7 @@ function formatDate(d) {
 }
 
 function goToDashboard() {
-  router.push('/vendor/merchants')
+  router.push(props.finishPath)
 }
 
 function retryInit() {

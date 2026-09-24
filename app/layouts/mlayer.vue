@@ -31,8 +31,11 @@ import { useKycStatus } from "~/composables/useKycStatus";
 const { getProfile } = useUsersApi();
 const auth = useAuthStore();
 const route = useRoute();
+
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
 const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
-const { verifiedServices, hasAEPS, hasDMT, hasWallet, loadMerchantServices } = useMerchantServices();
+const { verifiedServices, allServices, hasWallet, loadMerchantServices, serviceKycState } = useMerchantServices();
 const { isKycPending, isKycSubmitted, loadKycStatus } = useKycStatus();
 
 const showKycPendingBanner   = computed(() => isKycPending.value   && route.path !== "/merchant/onboarding/isg");
@@ -54,7 +57,9 @@ function onResize() {
 }
 
 /* ── MENUS ── */
-const menus = ref([
+// Full menu before service filtering; buildMenus() derives the visible menu
+// from it whenever the merchant's service KYC statuses change.
+const BASE_MENUS = [
   {
     title: "Dashboard",
     icon: "mdi-view-dashboard-outline",
@@ -80,7 +85,7 @@ const menus = ref([
       { title: "Cash Withdrawal", icon: "mdi-cash-multiple", url: "/merchant/aeps/cash-withdrawal" },
       { title: "Balance Enquiry", icon: "mdi-wallet-outline", url: "/merchant/aeps/balance-enquiry" },
       { title: "Mini Statement", icon: "mdi-receipt-text-outline", url: "/merchant/aeps/mini-statement" },
-      { title: "Aadhaar Pay", icon: "mdi-fingerprint", url: "/merchant/aeps/aadhaar-pay" },
+      // { title: "Aadhaar Pay", icon: "mdi-fingerprint", url: "/merchant/aeps/aadhaar-pay" },
     ],
   },
   {
@@ -113,7 +118,9 @@ const menus = ref([
       },
     ]
   },
-])
+]
+
+const menus = ref([])
 
 const serviceIconMap = {
   DMT:  "mdi-bank-transfer",
@@ -128,6 +135,47 @@ const serviceHistoryOverride = {
   DMT: "/merchant/dmt/history",
 }
 
+// AEPS / DMT menus appear for any linked service, whatever its KYC status.
+// Until the service KYC is VERIFIED the menu opens the KYC status page
+// (complete KYC / awaiting approval) instead of the transaction pages.
+const SERVICE_MENUS = { "Money Transfer": "DMT", "AEPS Services": "AEPS" }
+
+function buildMenus() {
+  const base = JSON.parse(JSON.stringify(BASE_MENUS))
+  const services = verifiedServices.value
+
+  const txMenu = base.find(m => m.title === "Transactions")
+  if (txMenu && services.length) {
+    const uniqueServices = [...new Set(services.map(s => s.service))]
+    txMenu.children = uniqueServices.map((svc) => ({
+      title: `${svc} Transactions`,
+      icon:  serviceIconMap[svc] ?? "mdi-clipboard-list-outline",
+      url:   serviceHistoryOverride[svc] ?? `/merchant/payments/${svc.toLowerCase()}`,
+    }))
+  }
+
+  const settingsMenu = base.find(m => m.title === "Settings")
+  if (settingsMenu?.children && !hasWallet.value) {
+    settingsMenu.children = settingsMenu.children.filter(c => c.title !== "Wallet")
+  }
+
+  menus.value = base
+    .filter((m) => {
+      if (m.title === "Transactions") return services.length > 0
+      if (SERVICE_MENUS[m.title])     return serviceKycState(SERVICE_MENUS[m.title]) !== "NONE"
+      return true
+    })
+    .map((m) => {
+      const svc = SERVICE_MENUS[m.title]
+      if (!svc || serviceKycState(svc) === "VERIFIED") return m
+      const { children, ...rest } = m
+      return { ...rest, url: `/merchant/kyc/${svc.toLowerCase()}` }
+    })
+}
+
+// Re-derive when statuses change (e.g. after completing a KYC or "Check status").
+watch(allServices, buildMenus)
+
 onMounted(async () => {
   window.addEventListener("resize", onResize)
 
@@ -141,34 +189,12 @@ onMounted(async () => {
     }
   }
   
-  Title.value = auth.merchant?.legal_name || auth.merchant?.data?.legal_name || "Bucksbox";
+  Title.value = auth.merchant?.legal_name || auth.merchant?.data?.legal_name || brandName;
 
   await loadMerchantServices()
   await loadKycStatus()
 
-  const services = verifiedServices.value
-  const txMenu = menus.value.find(m => m.title === "Transactions")
-
-  if (txMenu && services.length) {
-    const uniqueServices = [...new Set(services.map(s => s.service))]
-    txMenu.children = uniqueServices.map((svc) => ({
-      title: `${svc} Transactions`,
-      icon:  serviceIconMap[svc] ?? "mdi-clipboard-list-outline",
-      url:   serviceHistoryOverride[svc] ?? `/merchant/payments/${svc.toLowerCase()}`,
-    }))
-  }
-
-  const settingsMenu = menus.value.find(m => m.title === "Settings")
-  if (settingsMenu?.children && !hasWallet.value) {
-    settingsMenu.children = settingsMenu.children.filter(c => c.title !== "Wallet")
-  }
-
-  menus.value = menus.value.filter((m) => {
-    if (m.title === "Transactions")    return services.length > 0
-    if (m.title === "Money Transfer")  return hasDMT.value
-    if (m.title === "AEPS Services")   return hasAEPS.value
-    return true
-  })
+  buildMenus()
 })
 
 onBeforeUnmount(() => window.removeEventListener("resize", onResize))
@@ -200,4 +226,5 @@ onBeforeUnmount(() => window.removeEventListener("resize", onResize))
 
 @media (min-width: 640px)  { .admin-main-inner { padding: 22px; } }
 @media (min-width: 1200px) { .admin-main-inner { padding: 28px 30px; } }
-</style>
+</style  buildMenus()
+>
