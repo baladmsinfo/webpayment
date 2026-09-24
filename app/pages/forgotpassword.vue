@@ -9,7 +9,7 @@
           <div class="brand-icon">
             <span class="mdi mdi-wallet-outline"></span>
           </div>
-          <span class="brand-name">BUCKSBOX</span>
+          <span class="brand-name">{{ brandName }}</span>
         </div>
 
         <!-- Illustration -->
@@ -54,7 +54,7 @@
           <div class="brand-icon brand-icon-solid">
             <span class="mdi mdi-wallet-outline"></span>
           </div>
-          <span class="brand-name brand-name-dark">BUCKSBOX</span>
+          <span class="brand-name brand-name-dark">{{ brandName }}</span>
         </div>
 
         <!-- Icon -->
@@ -170,6 +170,9 @@ import { useUsersApi } from "../composables/apis/useUsersApi";
 
 const { forgotPassword } = useUsersApi();
 const router = useRouter();
+
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
 
 /* ── State ── */
 const identifier      = ref('');

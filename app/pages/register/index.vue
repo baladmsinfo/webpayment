@@ -5,11 +5,11 @@
     <div class="reg-left">
       <div class="left-inner">
         <div class="left-brand">
-          <span class="brand-name">BUCKSBOX</span>
+          <span class="brand-name">{{ brandName }}</span>
         </div>
 
         <div class="left-copy">
-          <h2 class="left-headline">Become a<br />Bucksbox Merchant</h2>
+          <h2 class="left-headline">Become a<br />{{ brandName }} Merchant</h2>
           <p class="left-sub">
             Register once to unlock UPI, AEPS, DMT and BBPS collections from a single dashboard — built for
             businesses of every size.
@@ -43,7 +43,7 @@
         <!-- Mobile brand -->
         <div class="mobile-brand">
           <div class="brand-icon-solid"><span class="mdi mdi-shield-crown-outline"></span></div>
-          <span class="brand-name brand-name-dark">BUCKSBOX</span>
+          <span class="brand-name brand-name-dark">{{ brandName }}</span>
         </div>
 
         <!-- Header -->
@@ -524,6 +524,10 @@ import { useSetupServicesApi } from "~/composables/apis/useSetupServices";
 definePageMeta({ middleware: "guest" });
 
 const router = useRouter();
+
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
+
 const Onboarding = useOnboardingStore();
 const { businessTypeList, turnOverList } = storeToRefs(Onboarding);
 

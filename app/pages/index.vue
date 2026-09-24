@@ -9,7 +9,7 @@
                     <!-- <div class="brand-icon">
                         <span class="mdi mdi-shield-crown-outline"></span>
                     </div> -->
-                    <span class="brand-name">BUCKSBOX</span>
+                    <span class="brand-name">{{ brandName }}</span>
                 </div>
 
                 <div class="illustration-wrap">
@@ -40,10 +40,7 @@
 
                 <!-- Mobile brand -->
                 <div class="mobile-brand">
-                    <div class="brand-icon brand-icon-solid">
-                        <span class="mdi mdi-shield-crown-outline"></span>
-                    </div>
-                    <span class="brand-name brand-name-dark">BUCKSBOX</span>
+                    <span class="brand-name brand-name-dark">{{ brandName }}</span>
                 </div>
 
                 <!-- Heading -->
@@ -167,6 +164,9 @@ import { useRouter } from "vue-router";
 const { login, updateSessionDevice, updateSessionLocation } = useUsersApi();
 const auth = useAuthStore();
 const router = useRouter();
+
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
 
 function reportSessionContext() {
   // Fire-and-forget: send browser fingerprint, then try GPS
