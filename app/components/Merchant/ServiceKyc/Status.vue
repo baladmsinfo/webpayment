@@ -44,7 +44,7 @@
               <v-icon size="18" color="#475569">{{ u.icon }}</v-icon>{{ u.title }}
             </li>
           </ul>
-          <button class="skyc-btn" @click="router.push(meta.onboardPath)">
+          <button class="skyc-btn" :disabled="sdkOpening" @click="startOnboarding">
             <v-icon size="18">{{ state === 'REJECTED' ? 'mdi-refresh' : 'mdi-shield-check-outline' }}</v-icon>
             {{ state === 'REJECTED' ? `Re-submit ${meta.label} KYC` : `Complete ${meta.label} KYC` }}
           </button>
@@ -104,6 +104,10 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useMerchantServices } from "~/composables/useMerchantServices";
+import { useBucksbox } from "~/composables/useBucksbox";
+import { useSnackbar } from "~/composables/useSnackbar";
+import { useAuthStore } from "~/stores/auth";
+import { useUsersApi } from "~/composables/apis/useUsersApi";
 
 const props = defineProps({
   service: { type: String, required: true, validator: (v) => ["AEPS", "DMT"].includes(v) },
@@ -111,13 +115,19 @@ const props = defineProps({
 
 const router = useRouter();
 const { loadMerchantServices, serviceKycState } = useMerchantServices();
+const { open: openBucksbox } = useBucksbox();
+const { notify } = useSnackbar();
+const authStore = useAuthStore();
+const { getProfile } = useUsersApi();
 
 const loading = ref(true);
 const refreshing = ref(false);
+const sdkOpening = ref(false);
 
 const SERVICE_META = {
   AEPS: {
     label: "AEPS",
+    sdkService: "aeps-onboarding",
     servicePath: "/merchant/aeps",
     onboardPath: "/merchant/kyc/aeps",
     steps: [
@@ -135,6 +145,7 @@ const SERVICE_META = {
   },
   DMT: {
     label: "DMT",
+    sdkService: "dmt-onboarding",
     servicePath: "/merchant/dmt",
     onboardPath: "/merchant/kyc/dmt",
     steps: [
@@ -182,6 +193,35 @@ const view = computed(() => {
         message: `${l} has not been activated for your merchant account yet.` };
   }
 });
+
+// Opens the BucksBox SDK onboarding widget for this service (AEPS → aeps-onboarding,
+// DMT → dmt-onboarding); on success the KYC state is reloaded.
+async function startOnboarding() {
+  sdkOpening.value = true;
+  try {
+    // After login the store holds the merchant itself (merchant.id); after /merchant/me
+    // (getProfile) it holds the response body (merchant.data.id). Fetch it if missing.
+    const readMerchantId = () => authStore.merchant?.id || authStore.merchant?.data?.id;
+    if (!readMerchantId()) await getProfile();
+    const merchantId = readMerchantId();
+    if (!merchantId) throw new Error("Merchant details not loaded. Please sign in again.");
+
+    await openBucksbox({ service: meta.value.sdkService, merchantId }, async (result) => {
+      if (result.status === "success") {
+        notify(`${meta.value.label} KYC submitted`);
+        await refresh();
+      } else {
+        console.warn(`[bucksbox] ${meta.value.sdkService} failed`, result);
+        notify(result.message || `${meta.value.label} KYC could not be completed`, "error");
+      }
+    });
+  } catch (e) {
+    console.log(e)
+    notify(e?.message || "Unable to open KYC", "error");
+  } finally {
+    sdkOpening.value = false;
+  }
+}
 
 async function refresh() {
   refreshing.value = true;

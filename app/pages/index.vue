@@ -13,7 +13,7 @@
                 </div>
 
                 <div class="illustration-wrap">
-                    <img src="https://bucksbox-images.blr1.cdn.digitaloceanspaces.com/bucksbox.png"
+                    <img src="https://bucksbox-images.blr1.cdn.digitaloceanspaces.com/website/Kollect%20Pay.png"
                         alt="Platform Illustration" class="illustration-img" />
                 </div>
 
