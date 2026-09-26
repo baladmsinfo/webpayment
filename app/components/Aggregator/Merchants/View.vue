@@ -240,6 +240,48 @@
           </div>
         </div>
 
+        <!-- AEPS Settlement Settings -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon-dot" style="background:rgba(79,70,229,.1);color:#4f46e5"><span class="mdi mdi-bank-transfer"></span></div>
+            <h3 class="card-title">AEPS Settlement Settings</h3>
+          </div>
+          <div class="aeps-settings-body">
+            <div class="aeps-settings-row">
+              <div class="aeps-settings-field">
+                <label>Settlement Party</label>
+                <select v-model="merchant.aepsSettleToVendor" :disabled="!merchant.vendorId">
+                  <option :value="false">This merchant (default)</option>
+                  <option :value="true">Parent vendor</option>
+                </select>
+                <p v-if="!merchant.vendorId" class="text-xs" style="color:#94a3b8;margin-top:4px">No vendor assigned — cannot settle to vendor</p>
+              </div>
+              <button class="aeps-settings-save" :disabled="aepsSettingsSaving.party" @click="saveAepsSettleToVendor">
+                {{ aepsSettingsSaving.party ? 'Saving…' : 'Save' }}
+              </button>
+              <div class="aeps-settings-field">
+                <label>Payout Destination</label>
+                <select v-model="aepsPayoutModeLocal">
+                  <option value="BANK">Bank transfer (manual/batch settlement)</option>
+                  <option value="WALLET">Platform wallet (instant credit)</option>
+                </select>
+              </div>
+              <button class="aeps-settings-save" :disabled="aepsSettingsSaving.payout" @click="saveAepsPayoutMode">
+                {{ aepsSettingsSaving.payout ? 'Saving…' : 'Save' }}
+              </button>
+            </div>
+            <p class="text-xs" style="color:#64748b; margin-top:10px">
+              Only applies to AEPS. "Settlement Party" decides who receives the transaction amount + their own
+              commission for this merchant's AEPS transactions — this merchant, or its parent vendor if the vendor
+              actually operates/funds the terminal. "Payout Destination" controls whether the settling party's payout
+              is credited to their platform wallet instantly or left pending for manual/batch bank transfer.
+            </p>
+            <p v-if="aepsSettingsMessage.text" class="text-xs" :style="{ color: aepsSettingsMessage.isError ? '#dc2626' : '#059669', marginTop: '4px', fontWeight: 700 }">
+              {{ aepsSettingsMessage.text }}
+            </p>
+          </div>
+        </div>
+
         <!-- PAN -->
         <div class="card" v-if="merchant.merchantpan?.length">
           <div class="card-header">
@@ -1182,7 +1224,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 import { useIsgOnboardingApi } from "~/composables/apis/Useisgonboardingapi";
@@ -1194,7 +1236,7 @@ import { useAuthStore } from "~/stores/auth";
 
 const props = defineProps({ merchantId: String });
 const router = useRouter();
-const { getMerchantById } = useAggregatorApi();
+const { getMerchantById, updateMerchantAepsSettleToVendor, updateMerchantAepsPayoutMode } = useAggregatorApi();
 const { uploadDoc, complianceInit, deleteComplianceImage } = useIsgOnboardingApi();
 const { getTransactionsByMerchantId } = useUsersApi();
 const { updateMerchantStatus, updateMerchantMstatus, updateMerchantRiskflag } = useMerchantUpdateApi();
@@ -1206,6 +1248,34 @@ const merchant     = reactive({});
 const transactions = ref({ data: [], pagination: {} });
 const activeTab    = ref('info');
 const docDialog    = ref(false);
+
+// ── AEPS settlement settings ──────────────────────────────────────
+const aepsPayoutModeLocal = ref('BANK');
+const aepsSettingsSaving  = reactive({ party: false, payout: false });
+const aepsSettingsMessage = reactive({ text: '', isError: false });
+watch(() => merchant.settlementaccount?.payoutMode, (v) => { aepsPayoutModeLocal.value = v || 'BANK'; });
+
+const saveAepsSettleToVendor = async () => {
+  aepsSettingsSaving.party = true;
+  try {
+    const res = await updateMerchantAepsSettleToVendor(props.merchantId, { aepsSettleToVendor: !!merchant.aepsSettleToVendor });
+    aepsSettingsMessage.isError = res?.statusCode !== '00';
+    aepsSettingsMessage.text = res?.message || (aepsSettingsMessage.isError ? 'Failed to save' : 'Saved');
+  } finally {
+    aepsSettingsSaving.party = false;
+  }
+};
+
+const saveAepsPayoutMode = async () => {
+  aepsSettingsSaving.payout = true;
+  try {
+    const res = await updateMerchantAepsPayoutMode(props.merchantId, { payoutMode: aepsPayoutModeLocal.value });
+    aepsSettingsMessage.isError = res?.statusCode !== '00';
+    aepsSettingsMessage.text = res?.message || (aepsSettingsMessage.isError ? 'Failed to save' : 'Saved');
+  } finally {
+    aepsSettingsSaving.payout = false;
+  }
+};
 
 // ── Wallet ─────────────────────────────────────────────────────
 const { get: apiGet, post: apiPost } = useApi();
@@ -1881,6 +1951,22 @@ onMounted(async () => {
 .info-grid--3 .info-item:nth-child(3n) { border-right: none; }
 .info-item label { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .7px; display: block; margin-bottom: 4px; }
 .info-item p { font-size: 13px; font-weight: 500; color: #0f172a; }
+
+/* ── AEPS Settlement Settings ── */
+.aeps-settings-body { padding: 14px 18px; }
+.aeps-settings-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.aeps-settings-field { display: flex; flex-direction: column; gap: 4px; min-width: 220px; }
+.aeps-settings-field label { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .7px; }
+.aeps-settings-field select {
+  height: 36px; padding: 0 10px; border: 1.5px solid #e2e8f0; border-radius: 7px;
+  font-size: 13px; color: #0f172a; background: #fff;
+}
+.aeps-settings-field select:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+.aeps-settings-save {
+  height: 36px; padding: 0 16px; border: none; border-radius: 7px; background: #4f46e5; color: #fff;
+  font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.aeps-settings-save:disabled { background: #c7d2fe; cursor: not-allowed; }
 
 /* ── API Key ── */
 .api-key-row { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid #f1f5f9; background: #fafafa; flex-wrap: wrap; }

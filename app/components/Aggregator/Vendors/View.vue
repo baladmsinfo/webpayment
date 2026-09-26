@@ -339,6 +339,31 @@
           </div>
         </div>
 
+        <div class="card" v-if="vendorForm.settlementAccount">
+          <div class="card__head">
+            <div class="card__head-dot card__head-dot--indigo"></div>
+            <h3 class="card__title">AEPS Payout Mode</h3>
+          </div>
+          <div class="edit-form-grid">
+            <div class="edit-field">
+              <label>Payout Destination</label>
+              <select v-model="aepsPayoutMode.value">
+                <option value="BANK">Bank transfer (manual/batch settlement)</option>
+                <option value="WALLET">Platform wallet (instant credit)</option>
+              </select>
+            </div>
+            <button class="btn-primary" :disabled="aepsPayoutMode.saving" @click="saveVendorAepsPayoutMode"
+              style="align-self:flex-end; height:38px">
+              {{ aepsPayoutMode.saving ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+          <p class="text-xs" style="color:#64748b; margin-top:6px">
+            Only applies to AEPS. Controls how this vendor's settlement (transaction amount + their commission, when
+            they're the settling party) is disbursed — instantly to their platform wallet, or left pending for a
+            manual/batch bank transfer.
+          </p>
+        </div>
+
         <div class="card" v-if="vendorForm.address">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--sky"></div>
@@ -1022,30 +1047,51 @@
                       <!-- Split mode: show share inputs if this component has shares -->
                       <div v-else-if="comp.merchantShare != null || comp.distributorShare != null"
                         class="comp-block__shares">
-                        <div class="share-field">
-                          <label>Merchant %</label>
-                          <input type="number" v-model.number="comp.merchantShare" min="0" max="100" step="1" />
+                        <!-- % of pool vs flat ₹ per party — mirrors CommissionEngine's
+                             splitType handling (FIXED = flat rupee amount per recipient,
+                             taken off a shrinking pool; PERCENTAGE = % of the pool). -->
+                        <div class="modal-field" style="width:100%; margin-bottom:8px">
+                          <label class="toggle-label">
+                            <span>{{ comp.splitType === 'FIXED' ? 'Flat ₹ amount per party' : '% of commission pool' }}</span>
+                            <div class="toggle-wrap">
+                              <input type="checkbox" :checked="comp.splitType === 'FIXED'"
+                                @change="onToggleSplitType(comp, $event.target.checked)"
+                                class="toggle-input" :id="`cfgSplitType${idx}`" />
+                              <label :for="`cfgSplitType${idx}`" class="toggle-track"></label>
+                            </div>
+                          </label>
                         </div>
                         <div class="share-field">
-                          <label>Distributor %</label>
-                          <input type="number" v-model.number="comp.distributorShare" min="0" max="100" step="1" />
+                          <label>Merchant {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
+                          <input type="number" v-model.number="comp.merchantShare" min="0"
+                            :max="comp.splitType === 'FIXED' ? undefined : 100" step="0.01" />
                         </div>
                         <div class="share-field">
-                          <label>Super Dist %</label>
-                          <input type="number" v-model.number="comp.superDistributorShare" min="0" max="100" step="1" />
+                          <label>Distributor {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
+                          <input type="number" v-model.number="comp.distributorShare" min="0"
+                            :max="comp.splitType === 'FIXED' ? undefined : 100" step="0.01" />
                         </div>
                         <div class="share-field">
-                          <label>Aggregator %</label>
-                          <input type="number" v-model.number="comp.aggregatorShare" min="0" max="100" step="1" />
+                          <label>Super Dist {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
+                          <input type="number" v-model.number="comp.superDistributorShare" min="0"
+                            :max="comp.splitType === 'FIXED' ? undefined : 100" step="0.01" />
                         </div>
                         <div class="share-field">
-                          <label>Platform %</label>
-                          <input type="number" v-model.number="comp.platformShare" min="0" max="100" step="1"
-                            :disabled="true" :value="autoplatformShare(comp)" />
+                          <label>Aggregator {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
+                          <input type="number" v-model.number="comp.aggregatorShare" min="0"
+                            :max="comp.splitType === 'FIXED' ? undefined : 100" step="0.01" />
                         </div>
-                        <div class="share-total"
+                        <div class="share-field">
+                          <label>Platform {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
+                          <input v-if="comp.splitType === 'FIXED'" type="number" v-model.number="comp.platformShare" min="0" step="0.01" />
+                          <input v-else type="number" min="0" max="100" step="1" :disabled="true" :value="autoplatformShare(comp)" />
+                        </div>
+                        <div v-if="comp.splitType !== 'FIXED'" class="share-total"
                           :class="shareTotal(comp) === 100 ? 'share-total--ok' : 'share-total--err'">
                           Total: {{ shareTotal(comp) }}%
+                        </div>
+                        <div v-else class="share-total share-total--ok">
+                          Total: ₹{{ shareTotal(comp) }}
                         </div>
                       </div>
 
@@ -1092,8 +1138,13 @@
                           <input type="number" v-model.number="comp.minValue" min="0" step="0.01" />
                         </div>
                         <div class="share-field" v-if="comp.maxValue !== undefined">
-                          <label>Max Value</label>
-                          <input type="number" v-model.number="comp.maxValue" min="0" step="0.01" />
+                          <label>
+                            Max Value
+                            <span v-if="cfgForm.paymentMethod === 'AEPS' && (comp.name === 'INTERCHANGE' || comp.name === 'CUSTOMER_FEE')" class="hint-text">
+                              (NPCI/bank cap: ₹{{ AEPS_MAX_COMMISSION }} max)
+                            </span>
+                          </label>
+                          <input type="number" v-model.number="comp.maxValue" min="0" :max="cfgForm.paymentMethod === 'AEPS' ? AEPS_MAX_COMMISSION : undefined" step="0.01" />
                         </div>
                       </div>
                     </div>
@@ -1906,6 +1957,7 @@
                   <th>Status</th>
                   <th>Provider</th>
                   <th>Date</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -1917,6 +1969,15 @@
                   <td><span :class="['pill pill--sm', txnPill(t.status)]">{{ t.status }}</span></td>
                   <td>{{ t.provider }}</td>
                   <td>{{ formatDate(t.createdAt) }}</td>
+                  <td>
+                    <button class="icon-btn icon-btn--view" :disabled="!t.tr" @click="goToTransactionDetail(t.tr)" title="View Detail">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -2580,14 +2641,19 @@ const cfgComponentTemplates = {
   ],
   'AEPS:NSDL:MINI_STATEMENT': [
     {
+      // NPCI circular: Interchange ₹3, Bank ₹2, BC ₹1 (BC's ₹1 = ₹3 - ₹2,
+      // i.e. the pool AFTER bank's flat cut and BEFORE the GST component
+      // below extracts its 18% — mirrors CASH_WITHDRAWAL's "exclusive of
+      // GST" wording: the stated BC figure is gross-of-GST, split among
+      // parties below (not paid whole to a single receiver).
       name: 'INTERCHANGE', chargeType: 'FIXED', value: 3,
+      minValue: null, maxValue: 15,
       appliesOn: 'TRANSACTION',
       merchantShare: 60, distributorShare: 20,
       superDistributorShare: 10, platformShare: 10,
-      receiver: 'BC_NETWORK',
     },
     {
-      name: 'BANK_SHARE', chargeType: 'FIXED', value: 1.4,
+      name: 'BANK_SHARE', chargeType: 'FIXED', value: 2,
       appliesOn: 'TRANSACTION',
       merchantShare: null, distributorShare: null,
       superDistributorShare: null, platformShare: null,
@@ -2604,15 +2670,31 @@ const cfgComponentTemplates = {
   ],
   'AEPS:NSDL:CASH_WITHDRAWAL': [
     {
+      // NPCI circular: 0.5% of fund flow, capped at ₹15 per successful
+      // transaction — split among parties below (not paid whole to a
+      // single receiver). For amount ranges where 0.5% would always
+      // exceed ₹15 (e.g. a slab starting above ₹3,000), switch this
+      // component's Charge Type to FIXED and Value to 15 instead —
+      // matches the live "3001-10000 → flat ₹15" slab pattern.
       name: 'INTERCHANGE', chargeType: 'PERCENTAGE', value: 0.5,
       minValue: null, maxValue: 15,
       appliesOn: 'TRANSACTION',
-      merchantShare: 60, distributorShare: 20,
-      superDistributorShare: 10, platformShare: 10,
-      receiver: 'BC_NETWORK',
+      // Calibrated so that, once bank takes a clean 10% (i.e. above the
+      // ₹0.50 floor, roughly >₹1,000), distributor's commission works out
+      // to exactly 0.4% of the transaction amount (80% of interchange),
+      // and aggregator absorbs the rest of the pool — i.e. aggregator =
+      // interchange - bank - distributor, by construction:
+      //   remainingPool = interchange - bank = 90% of interchange
+      //   distributor = 88.89% of remainingPool = 80% of interchange = 0.4% of amount
+      //   aggregator  = 11.11% of remainingPool = 10% of interchange
+      merchantShare: 0, distributorShare: 88.89,
+      superDistributorShare: 0, aggregatorShare: 11.11, platformShare: 0,
     },
     {
-      name: 'BANK_SHARE', chargeType: 'PERCENTAGE', value: 15,
+      // NPCI circular: Bank's share = 10% of the interchange, minimum ₹0.50
+      // — the same rule at every amount; it just naturally resolves to the
+      // ₹0.50 floor below ~₹1,000 and to genuine 10% above that.
+      name: 'BANK_SHARE', chargeType: 'PERCENTAGE', value: 10,
       minValue: 0.5, maxValue: null,
       dependsOn: 'INTERCHANGE',
       appliesOn: 'TRANSACTION',
@@ -2620,22 +2702,23 @@ const cfgComponentTemplates = {
       superDistributorShare: null, platformShare: null,
       receiver: 'BANK',
     },
-    {
-      name: 'GST', chargeType: 'PERCENTAGE', value: 18,
-      dependsOn: 'INTERCHANGE',
-      appliesOn: 'TRANSACTION',
-      merchantShare: null, distributorShare: null,
-      superDistributorShare: null, platformShare: null,
-      receiver: 'GOVERNMENT',
-    },
+    // No GST component here by default — the distributor/aggregator split
+    // above is calibrated directly against (interchange - bank), and the
+    // "aggregator = interchange - bank - distributor" identity only holds
+    // when nothing else erodes that pool. Add a GST component only if this
+    // vendor's actual agreement requires withholding GST from the BC split
+    // — doing so will proportionally reduce both distributor and aggregator.
   ],
   'AEPS:NSDL:BALANCE_ENQUIRY': [
     {
+      // Balance enquiry is free by default (value 0) — still split-mode
+      // (not single-receiver) so raising this later behaves consistently
+      // with CASH_WITHDRAWAL / MINI_STATEMENT.
       name: 'INTERCHANGE', chargeType: 'FIXED', value: 0,
+      minValue: null, maxValue: 15,
       appliesOn: 'TRANSACTION',
       merchantShare: 60, distributorShare: 20,
       superDistributorShare: 10, platformShare: 10,
-      receiver: 'BC_NETWORK',
     },
     {
       name: 'BANK_SHARE', chargeType: 'FIXED', value: 0,
@@ -2759,6 +2842,28 @@ const shareTotal = (comp) => {
     + (comp.platformShare ?? 0)
 }
 
+// NPCI/bank mandated ceiling on the total AEPS interchange fee per
+// transaction — mirrors CommissionEngine.AEPScalculate's runtime clamp
+// and commission.service.js's validateAepsCap() so a misconfigured slab
+// is caught here before it's even sent to the backend.
+const AEPS_MAX_COMMISSION = 15
+
+const worstCaseAepsCharge = (comp, maxAmount) => {
+  let calculated
+  if (comp.chargeType === 'FIXED') {
+    calculated = Number(comp.value || 0)
+  } else {
+    calculated = (Number(maxAmount) * Number(comp.value || 0)) / 100
+    if (comp.minValue != null && calculated < Number(comp.minValue)) {
+      calculated = Number(comp.minValue)
+    }
+  }
+  if (comp.maxValue != null && calculated > Number(comp.maxValue)) {
+    calculated = Number(comp.maxValue)
+  }
+  return calculated
+}
+
 // Flip a component between "split among parties" and "pay to a single
 // receiver" — see isIncomeComponent above for which components this
 // applies to. Clears the fields that don't apply to the new mode so a
@@ -2779,6 +2884,22 @@ const onToggleSingleReceiver = (comp, checked) => {
     comp.aggregatorShare = 0
     comp.platformShare = 0
   }
+}
+
+// Flip how the split shares are interpreted — PERCENTAGE (% of the
+// commission pool, must total 100) vs FIXED (flat ₹ amount per party,
+// no total requirement — mirrors CommissionEngine's takeShare(), which
+// takes each FIXED share off a shrinking pool). Resets shares to 0 on
+// switch so a percentage value isn't misread as a rupee amount or vice
+// versa. Backend (commission.service.js validateShares) already skips
+// the 100%-total check for splitType === 'FIXED'.
+const onToggleSplitType = (comp, checked) => {
+  comp.splitType = checked ? 'FIXED' : 'PERCENTAGE'
+  comp.merchantShare = 0
+  comp.distributorShare = 0
+  comp.superDistributorShare = 0
+  comp.aggregatorShare = 0
+  comp.platformShare = 0
 }
 
 // Not every auto-populated template includes every component (e.g. UPI's
@@ -2877,11 +2998,38 @@ const saveCfg = async () => {
       }
       continue
     }
-    if (comp.merchantShare != null) {
+    if (comp.merchantShare != null && comp.splitType !== 'FIXED') {
       autoplatformShare(comp) // sync platformShare
       const total = shareTotal(comp)
       if (Math.abs(total - 100) > 0.01) {
         showSnack(`${comp.name}: shares must total 100% (currently ${total}%)`, 'error')
+        return
+      }
+    }
+    if (comp.merchantShare != null && comp.splitType === 'FIXED') {
+      const total = shareTotal(comp)
+      // Upper bound this component can ever produce — for FIXED chargeType
+      // it's the value itself; for PERCENTAGE/HYBRID it's maxValue if set.
+      // The real pool is smaller still once bank's share and GST come out.
+      const poolCap = comp.chargeType === 'FIXED' ? Number(comp.value || 0)
+        : (comp.maxValue != null ? Number(comp.maxValue) : null)
+      if (total > 0 && poolCap != null && total > poolCap + 0.01) {
+        showSnack(
+          `${comp.name}: flat party shares total ₹${total.toFixed(2)}, which exceeds the component's own value (₹${poolCap.toFixed(2)}) `
+          + `— the excess can never be paid out since bank's share and GST also come out of this before the split`,
+          'error'
+        )
+        return
+      }
+    }
+    if (cfgForm.paymentMethod === 'AEPS' && (comp.name === 'INTERCHANGE' || comp.name === 'CUSTOMER_FEE')) {
+      const worstCase = worstCaseAepsCharge(comp, cfgForm.maxAmount)
+      if (worstCase > AEPS_MAX_COMMISSION) {
+        showSnack(
+          `${comp.name}: AEPS commission cannot exceed the NPCI/bank cap of ₹${AEPS_MAX_COMMISSION} `
+          + `(currently up to ₹${worstCase.toFixed(2)} at max amount ₹${cfgForm.maxAmount}) — lower the value or set Max Value to ₹${AEPS_MAX_COMMISSION}`,
+          'error'
+        )
         return
       }
     }
@@ -3317,8 +3465,10 @@ const deleteCommissionSlab = async (slabId) => {
 
 const props = defineProps({ vendorId: String });
 const router = useRouter();
-const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag, getUnlinkedMerchants, linkMerchantsToVendor, uploadVendorDocumentImage, attachVendorDocument, deleteVendorDocumentImage } = useAggregatorApi();
+const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag, updateVendorAepsPayoutMode, getUnlinkedMerchants, linkMerchantsToVendor, uploadVendorDocumentImage, attachVendorDocument, deleteVendorDocumentImage } = useAggregatorApi();
 const { getAllTransactionsUnderVendor } = useUsersApi();
+
+function goToTransactionDetail(tr) { if (tr) router.push(`/aggregator/reports/view/${tr}`); }
 
 const vendorForm = reactive({});
 const transactions = ref({ data: [], pagination: {} });
@@ -3335,6 +3485,7 @@ const imgPreview = ref(false);
 const previewUrl = ref(null);
 const editMode = reactive({ contact: false, settlement: false, address: false });
 const snackbar = reactive({ show: false, message: '', color: 'success' });
+const aepsPayoutMode = reactive({ value: 'BANK', saving: false });
 
 const tabs = computed(() => [
   { key: 'info', label: 'Vendor Info', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>` },
@@ -3648,7 +3799,19 @@ const getVendor = async (id) => {
   try {
     const res = await getVendorById(id);
     Object.assign(vendorForm, res.data || {});
+    aepsPayoutMode.value = vendorForm.settlementAccount?.payoutMode || 'BANK';
   } catch { showSnack('Failed to load vendor data', 'error'); }
+};
+
+const saveVendorAepsPayoutMode = async () => {
+  aepsPayoutMode.saving = true;
+  try {
+    const res = await updateVendorAepsPayoutMode(props.vendorId, { payoutMode: aepsPayoutMode.value });
+    const ok = res?.statusCode === '00';
+    showSnack(ok ? res.message : (res?.message || 'Failed to update payout mode'), ok ? 'success' : 'error');
+  } finally {
+    aepsPayoutMode.saving = false;
+  }
 };
 
 // ── Link Merchant to Vendor ──────────────────────────────────────────
@@ -6152,6 +6315,20 @@ onMounted(() => {
   background: #fef2f2;
 }
 
+.icon-btn--view {
+  border-color: #bfdbfe;
+  color: #1142d4;
+}
+
+.icon-btn--view:hover {
+  background: #eff6ff;
+}
+
+.icon-btn--view:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
 /* Toggle */
 .toggle-label {
   display: flex;
@@ -6406,6 +6583,13 @@ onMounted(() => {
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: .5px;
+}
+
+.hint-text {
+  color: #dc2626;
+  text-transform: none;
+  font-weight: 600;
+  letter-spacing: normal;
 }
 
 .share-field input {
