@@ -280,9 +280,19 @@
             <div class="info-item"><label>Email Verified</label><p><span :class="['pill', merchant.user.isemailVerified ? 'pill--emerald' : 'pill--amber']">{{ merchant.user.isemailVerified ? 'Yes' : 'No' }}</span></p></div>
             <div class="info-item"><label>Joined</label><p>{{ fmtDate(merchant.user.createdAt) }}</p></div>
           </div>
-          <div class="api-key-row">
-            <span class="api-key-label"><span class="mdi mdi-key-outline"></span> API Key</span>
-            <span class="mono text-xs api-key-val">{{ merchant.user.apiKey?.slice(0,44) + '…' }}</span>
+          <div v-for="cred in credentialRows" :key="cred.key" class="api-key-row">
+            <span class="api-key-label"><span :class="['mdi', cred.icon]"></span> {{ cred.label }}</span>
+            <span class="mono text-xs api-key-val">
+              {{ cred.value ? (cred.secret && !showSaltKey ? '•'.repeat(24) : cred.value) : '—' }}
+            </span>
+            <button v-if="cred.secret && cred.value" class="copy-btn" :title="showSaltKey ? 'Hide' : 'Show'"
+              @click="showSaltKey = !showSaltKey">
+              <span :class="['mdi', showSaltKey ? 'mdi-eye-off-outline' : 'mdi-eye-outline']"></span>
+            </button>
+            <button v-if="cred.value" :class="['copy-btn', copiedKey === cred.key && 'copy-btn--done']"
+              :title="`Copy ${cred.label}`" @click="copyCredential(cred)">
+              <span :class="['mdi', copiedKey === cred.key ? 'mdi-check' : 'mdi-content-copy']"></span>
+            </button>
           </div>
         </div>
 
@@ -1328,6 +1338,38 @@ const showToast = (message, type = 'success') => {
   toastTimer = setTimeout(() => { toast.show = false; }, 3500);
 };
 
+// ── Merchant credentials (User Account card) ──
+const showSaltKey = ref(false);
+const copiedKey = ref(null);
+
+const credentialRows = computed(() => [
+  { key: 'merchantId', label: 'Merchant ID', icon: 'mdi-identifier', value: merchant.id },
+  { key: 'apiKey', label: 'API Key', icon: 'mdi-key-outline', value: merchant.user?.apiKey },
+  { key: 'saltKey', label: 'Salt Key', icon: 'mdi-lock-outline', value: merchant.user?.SaltAESKey, secret: true },
+]);
+
+const copyCredential = async (cred) => {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(cred.value);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = cred.value;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    copiedKey.value = cred.key;
+    showToast(`${cred.label} copied`);
+    setTimeout(() => { if (copiedKey.value === cred.key) copiedKey.value = null; }, 1500);
+  } catch {
+    showToast(`Failed to copy ${cred.label}`, 'error');
+  }
+};
+
 // ── Confirm dialog state ───────────────────────────────────────────
 const confirmDialog = reactive({
   open: false,
@@ -1842,8 +1884,12 @@ onMounted(async () => {
 
 /* ── API Key ── */
 .api-key-row { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid #f1f5f9; background: #fafafa; flex-wrap: wrap; }
-.api-key-label { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .7px; flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
-.api-key-val   { color: #475569; word-break: break-all; }
+.api-key-label { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .7px; flex-shrink: 0; display: flex; align-items: center; gap: 4px; width: 100px; }
+.api-key-val   { color: #475569; word-break: break-all; flex: 1; min-width: 0; }
+.api-key-row + .api-key-row { border-top-color: #f5f5f5; }
+.copy-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex-shrink: 0; border: 1px solid #e2e8f0; border-radius: 7px; background: #fff; color: #64748b; font-size: 14px; cursor: pointer; transition: all .15s; }
+.copy-btn:hover { border-color: #c7d2fe; color: #4f46e5; background: #eef2ff; }
+.copy-btn--done { border-color: #a7f3d0; color: #059669; background: #ecfdf5; }
 
 /* ── Pills & Flags ── */
 .pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }

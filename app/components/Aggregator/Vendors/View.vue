@@ -474,9 +474,37 @@
               <p>{{ formatDate(vendorForm.user.createdAt) }}</p>
             </div>
           </div>
-          <div class="api-key-bar">
-            <span class="api-key-bar__label">API Key</span>
-            <span class="font-mono text-xs">{{ vendorForm.user.apiKey?.slice(0, 32) + '…' }}</span>
+          <div v-for="cred in credentialRows" :key="cred.key" class="api-key-bar">
+            <span class="api-key-bar__label">{{ cred.label }}</span>
+            <span class="api-key-bar__value font-mono text-xs">
+              {{ cred.value ? (cred.secret && !showSaltKey ? '•'.repeat(24) : cred.value) : '—' }}
+            </span>
+            <button v-if="cred.secret && cred.value" class="copy-btn" :title="showSaltKey ? 'Hide' : 'Show'"
+              @click="showSaltKey = !showSaltKey">
+              <svg v-if="!showSaltKey" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </button>
+            <button v-if="cred.value" :class="['copy-btn', copiedKey === cred.key && 'copy-btn--done']"
+              :title="`Copy ${cred.label}`" @click="copyCredential(cred)">
+              <svg v-if="copiedKey !== cred.key" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -3584,6 +3612,38 @@ const showSnack = (msg, color = 'success') => {
   setTimeout(() => snackbar.show = false, 3200);
 };
 
+// ── Vendor credentials (User Account card) ───────────────────────────
+const showSaltKey = ref(false);
+const copiedKey = ref(null);
+
+const credentialRows = computed(() => [
+  { key: 'vendorId', label: 'Vendor ID', value: vendorForm.id },
+  { key: 'apiKey', label: 'API Key', value: vendorForm.user?.apiKey },
+  { key: 'saltKey', label: 'Salt Key', value: vendorForm.user?.SaltAESKey, secret: true },
+]);
+
+const copyCredential = async (cred) => {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(cred.value);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = cred.value;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    copiedKey.value = cred.key;
+    showSnack(`${cred.label} copied`, 'success');
+    setTimeout(() => { if (copiedKey.value === cred.key) copiedKey.value = null; }, 1500);
+  } catch {
+    showSnack(`Failed to copy ${cred.label}`, 'error');
+  }
+};
+
 const getVendor = async (id) => {
   try {
     const res = await getVendorById(id);
@@ -4296,6 +4356,45 @@ onMounted(() => {
   text-transform: uppercase;
   letter-spacing: .7px;
   flex-shrink: 0;
+  width: 72px;
+}
+
+.api-key-bar + .api-key-bar {
+  border-top-color: #f5f5f5;
+}
+
+.api-key-bar__value {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #334155;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.copy-btn:hover {
+  border-color: #c7d2fe;
+  color: #4f46e5;
+  background: #eef2ff;
+}
+
+.copy-btn--done {
+  border-color: #a7f3d0;
+  color: #059669;
+  background: #ecfdf5;
 }
 
 /* ADDRESS */

@@ -130,7 +130,7 @@ const SERVICE_META = {
       { title: "Cash Withdrawal", icon: "mdi-cash-multiple" },
       { title: "Balance Enquiry", icon: "mdi-wallet-outline" },
       { title: "Mini Statement", icon: "mdi-receipt-text-outline" },
-      { title: "Aadhaar Pay", icon: "mdi-fingerprint" },
+      // { title: "Aadhaar Pay", icon: "mdi-fingerprint" },
     ],
   },
   DMT: {
