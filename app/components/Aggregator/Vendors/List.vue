@@ -34,7 +34,7 @@
         <input
           v-model="search"
           class="search-input"
-          placeholder="Search by name or email…"
+          placeholder="Search by name, code, ID, email or mobile…"
           @focus="searchFocused = true"
           @blur="searchFocused = false"
         />
@@ -130,6 +130,9 @@
                     <div>
                       <p class="vendor-name">{{ item.name }}</p>
                       <p class="vendor-email th-hide-lg">{{ item.email }}</p>
+                      <p v-if="item.code || item.mobile_no" class="vendor-meta">
+                        {{ [item.code, item.mobile_no].filter(Boolean).join(' · ') }}
+                      </p>
                     </div>
                   </div>
                 </td>
@@ -308,7 +311,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, reactive } from 'vue';
+import { computed, onMounted, ref, reactive, watch } from 'vue';
 import { useVendorStore } from '~/stores/vendors';
 import { useAggregatorApi } from '~/composables/apis/useAggregatorApi';
 import { useRouter } from 'vue-router';
@@ -359,10 +362,7 @@ const vendors = computed(() => store.list || []);
 
 const filteredList = computed(() => {
   let list = vendors.value;
-  const q = search.value.toLowerCase();
-  if (q) list = list.filter((v: any) =>
-    (v.name||'').toLowerCase().includes(q) || (v.email||'').toLowerCase().includes(q)
-  );
+  // Text search runs server-side (see load) so it covers every page.
   if (filterMStatus.value) list = list.filter((v: any) => v.mstatus === filterMStatus.value);
   if (filterStatus.value)  list = list.filter((v: any) => String(v.status) === filterStatus.value);
   return list;
@@ -390,7 +390,7 @@ const pageWindow = computed(() => {
 async function load() {
   loading.value = true;
   try {
-    const res = await getVendors({ page: page.value, limit: limit.value });
+    const res = await getVendors({ page: page.value, limit: limit.value, search: search.value });
     store.setVendors({
       list: res.data, active: res.active || 0,
       total: res.pagination.total, page: res.pagination.page,
@@ -398,6 +398,12 @@ async function load() {
     });
   } finally { loading.value = false; }
 }
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+watch(search, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { page.value = 1; load(); }, 350);
+});
 
 async function refresh() { await load(); }
 const onPageChange  = (p: number) => { page.value = p; load(); };
@@ -531,6 +537,7 @@ onMounted(load);
 }
 .vendor-name  { font-size: 13px; font-weight: 700; color: #1e293b; white-space: nowrap; }
 .vendor-email { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+.vendor-meta  { font-size: 11px; color: #64748b; margin-top: 2px; font-family: 'DM Mono', monospace; }
 .email-val    { font-size: 12px; color: #475569; }
 
 .btn-add {
