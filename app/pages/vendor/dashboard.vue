@@ -195,8 +195,20 @@
           </div>
           <span class="stl-badge badge-amber">{{ stats.settlement.pending.count }} pending</span>
         </div>
-        <div class="stl-amount">₹{{ fmtAmt(stats.settlement.pending.netSettlement || stats.settlement.pending.amount) }}</div>
-        <p class="stl-sub">Across all merchants · awaiting bank transfer</p>
+        <!-- One settlement row per transaction, paid to ONE party: the vendor
+             only for settle-to-vendor merchants, otherwise the merchant. -->
+        <template v-if="stats.settlement.pendingToVendor">
+          <div class="stl-amount">₹{{ fmtAmt(stats.settlement.pendingToVendor.netSettlement || stats.settlement.pendingToVendor.amount) }}</div>
+          <p class="stl-sub">Payable to you · {{ stats.settlement.pendingToVendor.count }} txn(s)</p>
+          <p class="stl-sub">
+            ₹{{ fmtAmt(stats.settlement.pendingToMerchants.netSettlement || stats.settlement.pendingToMerchants.amount) }}
+            payable directly to your merchants · {{ stats.settlement.pendingToMerchants.count }} txn(s)
+          </p>
+        </template>
+        <template v-else>
+          <div class="stl-amount">₹{{ fmtAmt(stats.settlement.pending.netSettlement || stats.settlement.pending.amount) }}</div>
+          <p class="stl-sub">Across all merchants · awaiting bank transfer</p>
+        </template>
       </div>
 
       <div class="card stl-card">
@@ -229,7 +241,9 @@
               <span class="chip chip-xs" :class="stlChip(s.status)">{{ s.status }}</span>
               <div>
                 <p class="stl-row-merchant">{{ s.transaction?.merchant?.legal_name ?? '—' }}</p>
-                <p class="stl-row-ref mono">{{ s.settlementRef ?? '—' }}</p>
+                <p class="stl-row-ref mono">
+                  {{ s.payee === 'VENDOR' ? 'To you' : 'To merchant' }} · {{ s.settlementRef ?? '—' }}
+                </p>
               </div>
             </div>
             <div class="stl-row-right">

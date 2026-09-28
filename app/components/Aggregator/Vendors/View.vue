@@ -339,6 +339,37 @@
           </div>
         </div>
 
+        <div class="card">
+          <div class="card__head">
+            <div class="card__head-dot card__head-dot--indigo"></div>
+            <h3 class="card__title">AEPS Settlement Party</h3>
+          </div>
+          <div class="edit-form-grid">
+            <div class="edit-field">
+              <label>Transaction amount is settled to</label>
+              <select v-model="aepsSettlementParty.value">
+                <option value="REQUEST_ROLE">By request role (default)</option>
+                <option value="VENDOR">Always this vendor</option>
+                <option value="MERCHANT">Always the merchant</option>
+              </select>
+            </div>
+            <button class="btn-primary" :disabled="aepsSettlementParty.saving" @click="saveVendorAepsSettlementParty"
+              style="align-self:flex-end; height:38px">
+              {{ aepsSettlementParty.saving ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+          <p class="text-xs" style="color:#64748b; margin-top:6px">
+            Applies to AEPS transactions of all this vendor's merchants, each paid to that party's own settlement
+            account. <b>By request role</b>: transactions the vendor initiates on a merchant's behalf settle to the
+            vendor, transactions the merchant initiates settle to the merchant. <b>Always</b> options override that,
+            whoever initiates. Commission is unaffected — every linked party gets its share in real time.
+          </p>
+          <p v-if="aepsSettlementParty.value !== 'MERCHANT' && !vendorForm.settlementAccount" class="text-xs"
+            style="color:#d97706; margin-top:4px; font-weight:700">
+            This vendor has no settlement account yet — add one so vendor settlements can be paid out.
+          </p>
+        </div>
+
         <div class="card" v-if="vendorForm.settlementAccount">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--indigo"></div>
@@ -358,9 +389,8 @@
             </button>
           </div>
           <p class="text-xs" style="color:#64748b; margin-top:6px">
-            Only applies to AEPS. Controls how this vendor's settlement (transaction amount + their commission, when
-            they're the settling party) is disbursed — instantly to their platform wallet, or left pending for a
-            manual/batch bank transfer.
+            Only applies to AEPS. How the vendor's own settlements (see Settlement Party above) are paid after
+            provider recon — credited to its platform wallet, or by batch bank transfer to its settlement account.
           </p>
         </div>
 
@@ -814,10 +844,12 @@
                         <th>Applies On</th>
                         <th>Depends On</th>
                         <th>Receiver</th>
-                        <th>Merchant %</th>
-                        <th>Distributor %</th>
-                        <th>Super Dist %</th>
-                        <th>Platform %</th>
+                        <th>Merchant</th>
+                        <th>Distributor</th>
+                        <th>Super Dist</th>
+                        <th>Vendor</th>
+                        <th>Aggregator</th>
+                        <th>Platform</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -839,16 +871,7 @@
                           <span :class="['pill pill--sm', receiverPillClass(comp.receiver)]">{{ comp.receiver ?? '—'
                           }}</span>
                         </td>
-                        <td class="font-mono text-xs">{{ comp.merchantShare != null ? comp.merchantShare + '%' : '—' }}
-                        </td>
-                        <td class="font-mono text-xs">{{ comp.distributorShare != null ? comp.distributorShare + '%' :
-                          '—' }}
-                        </td>
-                        <td class="font-mono text-xs">{{ comp.superDistributorShare != null ? comp.superDistributorShare
-                          + '%'
-                          : '—' }}</td>
-                        <td class="font-mono text-xs">{{ comp.platformShare != null ? comp.platformShare + '%' : '—' }}
-                        </td>
+                        <td v-for="f in SHARE_FIELDS" :key="f.key" class="font-mono text-xs">{{ fmtShare(comp, f.key) }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -1017,7 +1040,7 @@
                       </div>
 
                       <!-- Split mode: show share inputs if this component has shares -->
-                      <div v-else-if="comp.merchantShare != null || comp.distributorShare != null"
+                      <div v-else-if="hasShareFields(comp)"
                         class="comp-block__shares">
                         <!-- % of pool vs flat ₹ per party — mirrors CommissionEngine's
                              splitType handling (FIXED = flat rupee amount per recipient,
@@ -1033,24 +1056,12 @@
                             </div>
                           </label>
                         </div>
-                        <div class="share-field">
-                          <label>Merchant {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
-                          <input type="number" v-model.number="comp.merchantShare" min="0"
-                            :max="comp.splitType === 'FIXED' ? undefined : 100" step="0.01" />
-                        </div>
-                        <div class="share-field">
-                          <label>Distributor {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
-                          <input type="number" v-model.number="comp.distributorShare" min="0"
-                            :max="comp.splitType === 'FIXED' ? undefined : 100" step="0.01" />
-                        </div>
-                        <div class="share-field">
-                          <label>Super Dist {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
-                          <input type="number" v-model.number="comp.superDistributorShare" min="0"
-                            :max="comp.splitType === 'FIXED' ? undefined : 100" step="0.01" />
-                        </div>
-                        <div class="share-field">
-                          <label>Aggregator {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
-                          <input type="number" v-model.number="comp.aggregatorShare" min="0"
+                        <!-- Every party linked to the merchant earns its own share,
+                             credited to its own wallet — whether the merchant or
+                             its vendor initiated the transaction. -->
+                        <div v-for="f in PARTY_SHARE_FIELDS" :key="f.key" class="share-field">
+                          <label>{{ f.label }} {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
+                          <input type="number" v-model.number="comp[f.key]" min="0"
                             :max="comp.splitType === 'FIXED' ? undefined : 100" step="0.01" />
                         </div>
                         <div class="share-field">
@@ -2791,27 +2802,54 @@ watch(
     const tpl = cfgComponentTemplates[key]
     // Deep clone so edits don't mutate the template
     cfgForm.components = tpl
-      ? JSON.parse(JSON.stringify(tpl)).map((c) => ({ ...c, __singleReceiver: false }))
+      ? JSON.parse(JSON.stringify(tpl)).map((c) => normalizeComponent({ ...c, __singleReceiver: false }))
       : []
   }
 )
 
-// Auto-compute platform share (100 - others, now including aggregator)
+// Commission split parties — mirrors CommissionComponent's share columns and
+// CommissionEngine's buckets. Platform takes whatever the others leave in
+// percentage mode.
+const PARTY_SHARE_FIELDS = [
+  { key: 'merchantShare',         label: 'Merchant' },
+  { key: 'distributorShare',      label: 'Distributor' },
+  { key: 'superDistributorShare', label: 'Super Dist' },
+  { key: 'vendorShare',           label: 'Vendor' },
+  { key: 'aggregatorShare',       label: 'Aggregator' },
+]
+const SHARE_FIELDS = [...PARTY_SHARE_FIELDS, { key: 'platformShare', label: 'Platform' }]
+
+const round2 = (n) => Math.round(n * 100) / 100
+
+const hasShareFields = (comp) => SHARE_FIELDS.some((f) => comp[f.key] != null)
+
+const fmtShare = (comp, key) => {
+  const v = comp[key]
+  if (v == null) return '—'
+  return comp.splitType === 'FIXED' ? '₹' + v : v + '%'
+}
+
+// Auto-compute platform share (100 - every other party)
 const autoplatformShare = (comp) => {
-  const others = (comp.merchantShare ?? 0)
-    + (comp.distributorShare ?? 0)
-    + (comp.superDistributorShare ?? 0)
-    + (comp.aggregatorShare ?? 0)
-  comp.platformShare = Math.max(0, 100 - others)
+  const others = PARTY_SHARE_FIELDS.reduce((s, f) => s + (comp[f.key] ?? 0), 0)
+  comp.platformShare = Math.max(0, round2(100 - others))
   return comp.platformShare
 }
 
-const shareTotal = (comp) => {
-  return (comp.merchantShare ?? 0)
-    + (comp.distributorShare ?? 0)
-    + (comp.superDistributorShare ?? 0)
-    + (comp.aggregatorShare ?? 0)
-    + (comp.platformShare ?? 0)
+const shareTotal = (comp) => round2(SHARE_FIELDS.reduce((s, f) => s + (comp[f.key] ?? 0), 0))
+
+const setShares = (comp, value) => {
+  for (const f of SHARE_FIELDS) comp[f.key] = value
+}
+
+// Templates and configs saved before vendor/aggregator shares existed may
+// lack those keys — give split-mode components a 0 so the input shows.
+const normalizeComponent = (c) => {
+  const split = hasShareFields(c)
+  for (const f of SHARE_FIELDS) {
+    if (c[f.key] === undefined) c[f.key] = split ? 0 : null
+  }
+  return c
 }
 
 // NPCI/bank mandated ceiling on the total AEPS interchange fee per
@@ -2843,18 +2881,10 @@ const worstCaseAepsCharge = (comp, maxAmount) => {
 const onToggleSingleReceiver = (comp, checked) => {
   comp.__singleReceiver = checked
   if (checked) {
-    comp.merchantShare = null
-    comp.distributorShare = null
-    comp.superDistributorShare = null
-    comp.aggregatorShare = null
-    comp.platformShare = null
+    setShares(comp, null)
   } else {
     comp.receiver = ''
-    comp.merchantShare = 0
-    comp.distributorShare = 0
-    comp.superDistributorShare = 0
-    comp.aggregatorShare = 0
-    comp.platformShare = 0
+    setShares(comp, 0)
   }
 }
 
@@ -2867,11 +2897,7 @@ const onToggleSingleReceiver = (comp, checked) => {
 // the 100%-total check for splitType === 'FIXED'.
 const onToggleSplitType = (comp, checked) => {
   comp.splitType = checked ? 'FIXED' : 'PERCENTAGE'
-  comp.merchantShare = 0
-  comp.distributorShare = 0
-  comp.superDistributorShare = 0
-  comp.aggregatorShare = 0
-  comp.platformShare = 0
+  setShares(comp, 0)
 }
 
 // Not every auto-populated template includes every component (e.g. UPI's
@@ -2886,7 +2912,7 @@ const addComponent = () => {
     minValue: null, maxValue: null,
     appliesOn: 'TRANSACTION',
     merchantShare: null, distributorShare: null,
-    superDistributorShare: null, aggregatorShare: null, platformShare: null,
+    superDistributorShare: null, vendorShare: null, aggregatorShare: null, platformShare: null,
     receiver: cfgDefaultReceiverByType[newComponentType.value] || '',
     __singleReceiver: false,
   })
@@ -2922,9 +2948,8 @@ const openEditConfig = (cfg) => {
     isDefault: cfg.isDefault,
     components: (cfg.components || []).map((c) => {
       const { id, commissionConfigId, ...rest } = c
-      const hasShares = ['merchantShare', 'distributorShare', 'superDistributorShare', 'aggregatorShare', 'platformShare']
-        .some((f) => rest[f] != null && Number(rest[f]) > 0)
-      return { ...rest, __singleReceiver: !!rest.receiver && !hasShares }
+      const hasShares = SHARE_FIELDS.some((f) => rest[f.key] != null && Number(rest[f.key]) > 0)
+      return normalizeComponent({ ...rest, __singleReceiver: !!rest.receiver && !hasShares })
     }),
   })
   cfgModal.mode = 'edit'
@@ -2970,7 +2995,7 @@ const saveCfg = async () => {
       }
       continue
     }
-    if (comp.merchantShare != null && comp.splitType !== 'FIXED') {
+    if (hasShareFields(comp) && comp.splitType !== 'FIXED') {
       autoplatformShare(comp) // sync platformShare
       const total = shareTotal(comp)
       if (Math.abs(total - 100) > 0.01) {
@@ -2978,7 +3003,7 @@ const saveCfg = async () => {
         return
       }
     }
-    if (comp.merchantShare != null && comp.splitType === 'FIXED') {
+    if (hasShareFields(comp) && comp.splitType === 'FIXED') {
       const total = shareTotal(comp)
       // Upper bound this component can ever produce — for FIXED chargeType
       // it's the value itself; for PERCENTAGE/HYBRID it's maxValue if set.
@@ -3037,15 +3062,15 @@ const saveCfg = async () => {
       : await createCommissionConfig(payload)
     const ok = res?.statusCode === '00' || res?.id
 
-    showSnack(ok ? 'Config saved successfully' : (res?.message || 'Failed to save'), ok ? 'success' : 'error')
+    showSnack(ok ? 'Config saved successfully' : (res?.message || res?.error || 'Failed to save'), ok ? 'success' : 'error')
     if (ok) {
       closeCfgModal()
       getVendor(props.vendorId)
     }
   } catch (err) {
-    const ErrMessage = err.response.data.message
-    showSnack(ErrMessage || 'Failed to save config', 'error')
-    closeCfgModal();
+    // Keep the modal open so the aggregator can correct the config.
+    const data = err?.response?.data
+    showSnack(data?.message || data?.error || err?.message || 'Failed to save config', 'error')
   } finally {
     cfgSaving.value = false
   }
@@ -3437,7 +3462,7 @@ const deleteCommissionSlab = async (slabId) => {
 
 const props = defineProps({ vendorId: String });
 const router = useRouter();
-const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag, updateVendorAepsPayoutMode, getUnlinkedMerchants, linkMerchantsToVendor, uploadVendorDocumentImage, attachVendorDocument, deleteVendorDocumentImage } = useAggregatorApi();
+const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag, updateVendorAepsPayoutMode, updateVendorAepsSettlementParty, getUnlinkedMerchants, linkMerchantsToVendor, uploadVendorDocumentImage, attachVendorDocument, deleteVendorDocumentImage } = useAggregatorApi();
 const { getAllTransactionsUnderVendor } = useUsersApi();
 
 function goToTransactionDetail(tr) { if (tr) router.push(`/aggregator/reports/view/${tr}`); }
@@ -3458,6 +3483,7 @@ const previewUrl = ref(null);
 const editMode = reactive({ contact: false, settlement: false, address: false });
 const snackbar = reactive({ show: false, message: '', color: 'success' });
 const aepsPayoutMode = reactive({ value: 'BANK', saving: false });
+const aepsSettlementParty = reactive({ value: 'REQUEST_ROLE', saving: false });
 
 const tabs = computed(() => [
   { key: 'info', label: 'Vendor Info', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>` },
@@ -3740,7 +3766,20 @@ const getVendor = async (id) => {
     const res = await getVendorById(id);
     Object.assign(vendorForm, res.data || {});
     aepsPayoutMode.value = vendorForm.settlementAccount?.payoutMode || 'BANK';
+    aepsSettlementParty.value = vendorForm.aepsSettlementParty || 'REQUEST_ROLE';
   } catch { showSnack('Failed to load vendor data', 'error'); }
+};
+
+const saveVendorAepsSettlementParty = async () => {
+  aepsSettlementParty.saving = true;
+  try {
+    const res = await updateVendorAepsSettlementParty(props.vendorId, { aepsSettlementParty: aepsSettlementParty.value });
+    const ok = res?.statusCode === '00';
+    if (ok) vendorForm.aepsSettlementParty = aepsSettlementParty.value;
+    showSnack(ok ? res.message : (res?.message || 'Failed to update settlement party'), ok ? 'success' : 'error');
+  } finally {
+    aepsSettlementParty.saving = false;
+  }
 };
 
 const saveVendorAepsPayoutMode = async () => {

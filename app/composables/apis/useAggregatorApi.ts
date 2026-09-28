@@ -201,6 +201,21 @@ export function useAggregatorApi() {
         }
     };
 
+    // Who receives AEPS transaction amounts for this vendor's merchants —
+    // REQUEST_ROLE (default: vendor-initiated → vendor, merchant-initiated →
+    // merchant), or always VENDOR / always MERCHANT.
+    const updateVendorAepsSettlementParty = async (
+        id: string,
+        payload: { aepsSettlementParty: "REQUEST_ROLE" | "VENDOR" | "MERCHANT" },
+    ) => {
+        try {
+            const res = await post(`/aggregator/vendor/${id}/aeps-settlement-party`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor AEPS settlement party" };
+        }
+    };
+
     const updateMerchantAepsSettleToVendor = async (id: string, payload: { aepsSettleToVendor: boolean }) => {
         try {
             const res = await post(`/aggregator/merchant/${id}/aeps-settle-to-vendor`, payload);
@@ -401,6 +416,7 @@ export function useAggregatorApi() {
         updateVendorMstatus,
         updateVendorRiskflag,
         updateVendorAepsPayoutMode,
+        updateVendorAepsSettlementParty,
         updateMerchantAepsSettleToVendor,
         updateMerchantAepsPayoutMode,
         submitServiceKyc,

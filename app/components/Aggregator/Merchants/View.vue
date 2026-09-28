@@ -250,15 +250,13 @@
             <div class="aeps-settings-row">
               <div class="aeps-settings-field">
                 <label>Settlement Party</label>
-                <select v-model="merchant.aepsSettleToVendor" :disabled="!merchant.vendorId">
-                  <option :value="false">This merchant (default)</option>
-                  <option :value="true">Parent vendor</option>
-                </select>
-                <p v-if="!merchant.vendorId" class="text-xs" style="color:#94a3b8;margin-top:4px">No vendor assigned — cannot settle to vendor</p>
+                <p class="text-xs" style="color:#334155;margin-top:6px;line-height:1.5">
+                  Set on the vendor (Vendor → AEPS Settlement Party). By default it follows who initiates:<br>
+                  <b>Merchant</b> → this merchant's settlement account<br>
+                  <b>Vendor</b> (on this merchant's behalf) → the vendor's settlement account<br>
+                  The aggregator can instead fix it to always the vendor or always the merchant.
+                </p>
               </div>
-              <button class="aeps-settings-save" :disabled="aepsSettingsSaving.party" @click="saveAepsSettleToVendor">
-                {{ aepsSettingsSaving.party ? 'Saving…' : 'Save' }}
-              </button>
               <div class="aeps-settings-field">
                 <label>Payout Destination</label>
                 <select v-model="aepsPayoutModeLocal">
@@ -271,10 +269,11 @@
               </button>
             </div>
             <p class="text-xs" style="color:#64748b; margin-top:10px">
-              Only applies to AEPS. "Settlement Party" decides who receives the transaction amount + their own
-              commission for this merchant's AEPS transactions — this merchant, or its parent vendor if the vendor
-              actually operates/funds the terminal. "Payout Destination" controls whether the settling party's payout
-              is credited to their platform wallet instantly or left pending for manual/batch bank transfer.
+              Only applies to AEPS. The transaction amount is settled to ONE party after provider recon — this
+              merchant for transactions it initiates, or its vendor for transactions the vendor initiates on its behalf.
+              Commission is separate: every party linked to the merchant is credited its share in real time.
+              "Payout Destination" controls whether this merchant's settlements are credited to its platform wallet or
+              paid by batch bank transfer.
             </p>
             <p v-if="aepsSettingsMessage.text" class="text-xs" :style="{ color: aepsSettingsMessage.isError ? '#dc2626' : '#059669', marginTop: '4px', fontWeight: 700 }">
               {{ aepsSettingsMessage.text }}
@@ -468,7 +467,7 @@
           </div>
           <div class="table-scroll" v-if="merchant.commissionconfig?.length">
             <table class="data-table">
-              <thead><tr><th>Method</th><th>Provider</th><th>Txn Type</th><th>Min ₹</th><th>Max ₹</th><th>Merchant</th><th>Vendor</th><th>Aggregator</th><th>Bank</th><th>Active</th></tr></thead>
+              <thead><tr><th>Method</th><th>Provider</th><th>Txn Type</th><th>Min ₹</th><th>Max ₹</th><th>Level</th><th>Income</th><th>Split</th><th>Active</th></tr></thead>
               <tbody>
                 <tr v-for="c in merchant.commissionconfig" :key="c.id">
                   <td><span class="pill pill--sm pill--indigo">{{ c.paymentMethod }}</span></td>
@@ -476,10 +475,20 @@
                   <td><span class="pill pill--sm pill--slate">{{ c.txnType }}</span></td>
                   <td>₹ {{ Number(c.minAmount).toLocaleString('en-IN') }}</td>
                   <td>₹ {{ Number(c.maxAmount).toLocaleString('en-IN') }}</td>
-                  <td class="rate-cell">{{ c.merchantRate }}{{ c.merchantRateType === 'PERCENTAGE' ? '%' : ' ₹' }}<br><span class="rate-type">{{ c.merchantRateType }}</span></td>
-                  <td class="rate-cell">{{ c.vendorRate }}{{ c.vendorRateType === 'PERCENTAGE' ? '%' : ' ₹' }}<br><span class="rate-type">{{ c.vendorRateType }}</span></td>
-                  <td class="rate-cell">{{ c.aggregatorRate }}{{ c.aggregatorRateType === 'PERCENTAGE' ? '%' : ' ₹' }}<br><span class="rate-type">{{ c.aggregatorRateType }}</span></td>
-                  <td class="rate-cell">{{ c.bankRate }}{{ c.bankRateType === 'PERCENTAGE' ? '%' : ' ₹' }}<br><span class="rate-type">{{ c.bankRateType }}</span></td>
+                  <td><span class="pill pill--sm pill--slate">{{ c.level }}</span></td>
+                  <td class="rate-cell">
+                    <template v-if="incomeComponent(c)">
+                      {{ incomeComponent(c).chargeType === 'PERCENTAGE' ? incomeComponent(c).value + '%' : '₹' + incomeComponent(c).value }}<br>
+                      <span class="rate-type">{{ incomeComponent(c).name }}</span>
+                    </template>
+                    <template v-else>—</template>
+                  </td>
+                  <td class="rate-cell">
+                    <span v-for="s in commissionSplit(c)" :key="s.label" style="display:inline-block;margin-right:8px">
+                      {{ s.value }}<br><span class="rate-type">{{ s.label }}</span>
+                    </span>
+                    <template v-if="!commissionSplit(c).length">—</template>
+                  </td>
                   <td><span :class="['pill pill--sm', c.active ? 'pill--emerald' : 'pill--red']">{{ c.active ? 'Yes' : 'No' }}</span></td>
                 </tr>
               </tbody>
@@ -1226,7 +1235,7 @@ import { useAuthStore } from "~/stores/auth";
 
 const props = defineProps({ merchantId: String });
 const router = useRouter();
-const { getMerchantById, updateMerchantAepsSettleToVendor, updateMerchantAepsPayoutMode } = useAggregatorApi();
+const { getMerchantById, updateMerchantAepsPayoutMode } = useAggregatorApi();
 const { uploadDoc, complianceInit, deleteComplianceImage } = useIsgOnboardingApi();
 const { getTransactionsByMerchantId } = useUsersApi();
 const { updateMerchantStatus, updateMerchantMstatus, updateMerchantRiskflag } = useMerchantUpdateApi();
@@ -1245,17 +1254,6 @@ const aepsSettingsSaving  = reactive({ party: false, payout: false });
 const aepsSettingsMessage = reactive({ text: '', isError: false });
 watch(() => merchant.settlementaccount?.payoutMode, (v) => { aepsPayoutModeLocal.value = v || 'BANK'; });
 
-const saveAepsSettleToVendor = async () => {
-  aepsSettingsSaving.party = true;
-  try {
-    const res = await updateMerchantAepsSettleToVendor(props.merchantId, { aepsSettleToVendor: !!merchant.aepsSettleToVendor });
-    aepsSettingsMessage.isError = res?.statusCode !== '00';
-    aepsSettingsMessage.text = res?.message || (aepsSettingsMessage.isError ? 'Failed to save' : 'Saved');
-  } finally {
-    aepsSettingsSaving.party = false;
-  }
-};
-
 const saveAepsPayoutMode = async () => {
   aepsSettingsSaving.payout = true;
   try {
@@ -1269,6 +1267,27 @@ const saveAepsPayoutMode = async () => {
 
 // ── Wallet ─────────────────────────────────────────────────────
 const { get: apiGet, post: apiPost } = useApi();
+
+// Commission slab display — the income component (INTERCHANGE / CUSTOMER_FEE)
+// carries the split across every party linked to this merchant.
+const incomeComponent = (cfg) =>
+  (cfg.components || []).find((x) => x.name === 'INTERCHANGE' || x.name === 'CUSTOMER_FEE') || null;
+
+const SPLIT_PARTIES = [
+  ['merchantShare', 'Merchant'], ['distributorShare', 'Distributor'], ['superDistributorShare', 'Super Dist'],
+  ['vendorShare', 'Vendor'], ['aggregatorShare', 'Aggregator'], ['platformShare', 'Platform'],
+];
+
+const commissionSplit = (cfg) => {
+  const comp = incomeComponent(cfg);
+  if (!comp) return [];
+  if (comp.receiver && !SPLIT_PARTIES.some(([k]) => Number(comp[k]) > 0)) {
+    return [{ label: comp.receiver, value: '100%' }];
+  }
+  return SPLIT_PARTIES
+    .filter(([k]) => Number(comp[k]) > 0)
+    .map(([k, label]) => ({ label, value: comp.splitType === 'FIXED' ? '₹' + comp[k] : comp[k] + '%' }));
+};
 
 const walletData           = ref({ walletId: null, balance: 0, walletActive: false, settlementAccount: null });
 const walletHistory        = ref([]);
