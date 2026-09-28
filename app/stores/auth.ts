@@ -2,6 +2,8 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     merchant: null as Record<string, any> | null,
     merchantServices: [] as Array<Record<string, any>>,
+    // Every service KYC row regardless of status (merchantServices = VERIFIED only).
+    merchantServicesAll: [] as Array<Record<string, any>>,
     merchantServicesLoaded: false,
     kycCompliant: null as boolean | null,
     kycStatusLoaded: false,
@@ -56,8 +58,9 @@ export const useAuthStore = defineStore("auth", {
     setMerchant(payload: any) {
       this.merchant = payload;
     },
-    setMerchantServices(services: Array<Record<string, any>>) {
+    setMerchantServices(services: Array<Record<string, any>>, all: Array<Record<string, any>> = services) {
       this.merchantServices = services;
+      this.merchantServicesAll = all;
       this.merchantServicesLoaded = true;
     },
     setKycCompliant(compliant: boolean) {

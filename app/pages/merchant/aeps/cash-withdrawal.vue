@@ -6,7 +6,7 @@
       v-if="step === 'form'"
       with-amount
       amount-label="Withdrawal Amount"
-      :max-amount="walletBalance"
+      :max-amount="AEPS_MAX_TXN_AMOUNT"
       @continue="onFormContinue"
     />
 
@@ -47,7 +47,9 @@ const step = ref("form"); // form -> biometric -> result
 // read/refresh through the WalletStrip's own instance (via template ref) rather than
 // maintaining a second, disconnected balance fetch that the strip on screen never sees.
 const walletStripRef = ref(null);
-const walletBalance = computed(() => walletStripRef.value?.balanceData?.balance ?? 0);
+// AEPS debits the CUSTOMER's bank account — the merchant wallet balance is
+// never a precondition. The strip above is display only (commission lands there).
+const AEPS_MAX_TXN_AMOUNT = 10000;
 
 const subtitle = computed(() => ({
   form: "Step 1 of 3 · Customer & amount",

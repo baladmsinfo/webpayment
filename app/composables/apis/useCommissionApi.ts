@@ -1,5 +1,39 @@
 // src/composables/apis/useCommissionApi.ts
+//
+// Merchant-specific commission config (component model — same shape as the
+// aggregator's vendor configs, see useVendorCommissionConfigApi). Allowed for
+// admin, the merchant's aggregator and the merchant's own vendor.
 import { useApi } from './useApi'
+
+export interface CommissionComponentInput {
+  name:                   string
+  chargeType:             'FIXED' | 'PERCENTAGE' | 'HYBRID'
+  value:                  number
+  minValue?:              number | null
+  maxValue?:              number | null
+  appliesOn:              'TRANSACTION' | 'VALIDATION' | 'REGISTRATION'
+  dependsOn?:             string | null
+  receiver?:              string | null
+  splitType?:             'PERCENTAGE' | 'FIXED'
+  merchantShare?:         number | null
+  distributorShare?:      number | null
+  superDistributorShare?: number | null
+  vendorShare?:           number | null
+  aggregatorShare?:       number | null
+  platformShare?:         number | null
+}
+
+export interface MerchantCommissionConfigInput {
+  paymentMethod:      string
+  provider:           string
+  txnType:            string
+  minAmount:          number
+  maxAmount:          number
+  minGmv?:            number | null
+  maxGmv?:            number | null
+  instantCommission?: boolean
+  components:         CommissionComponentInput[]
+}
 
 export function useCommissionApi() {
   const { get, post, put, del } = useApi()
@@ -18,24 +52,9 @@ export function useCommissionApi() {
   }
 
   /**
-   * POST — create a new commission config slab for a merchant
+   * POST — create a merchant-specific commission config slab
    */
-  const createCommissionConfig = async (merchantId: string, payload: {
-    paymentMethod:      string
-    provider:           string
-    txnType:            string
-    minAmount:          number
-    maxAmount:          number
-    merchantRate:       number
-    merchantRateType:   string
-    vendorRate:         number
-    vendorRateType:     string
-    aggregatorRate:     number
-    aggregatorRateType: string
-    bankRate:           number
-    bankRateType:       string
-    active?:            boolean
-  }) => {
+  const createCommissionConfig = async (merchantId: string, payload: MerchantCommissionConfigInput) => {
     try {
       const res = await post(`/merchant-commision/${merchantId}/commission`, payload)
       return res.data
@@ -46,27 +65,12 @@ export function useCommissionApi() {
   }
 
   /**
-   * PUT — update an existing commission config slab
+   * PUT — update a slab (components are replaced as a whole)
    */
   const updateCommissionConfig = async (
     merchantId: string,
     configId: string,
-    payload: Partial<{
-      paymentMethod:      string
-      provider:           string
-      txnType:            string
-      minAmount:          number
-      maxAmount:          number
-      merchantRate:       number
-      merchantRateType:   string
-      vendorRate:         number
-      vendorRateType:     string
-      aggregatorRate:     number
-      aggregatorRateType: string
-      bankRate:           number
-      bankRateType:       string
-      active:             boolean
-    }>
+    payload: Partial<MerchantCommissionConfigInput> & { components: CommissionComponentInput[] }
   ) => {
     try {
       const res = await put(`/merchant-commision/${merchantId}/commission/${configId}`, payload)
@@ -78,7 +82,7 @@ export function useCommissionApi() {
   }
 
   /**
-   * DELETE — remove a commission config slab
+   * DELETE — disable a slab (kept for audit)
    */
   const deleteCommissionConfig = async (merchantId: string, configId: string) => {
     try {

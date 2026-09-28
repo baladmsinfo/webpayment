@@ -5,11 +5,11 @@
     <div class="reg-left">
       <div class="left-inner">
         <div class="left-brand">
-          <span class="brand-name">BUCKSBOX</span>
+          <span class="brand-name">{{ brandName }}</span>
         </div>
 
         <div class="left-copy">
-          <h2 class="left-headline">Become a<br />Bucksbox Partner</h2>
+          <h2 class="left-headline">Become a<br />{{ brandName }} Partner</h2>
           <p class="left-sub">
             Register as a partner to onboard merchants, track commissions and grow your network — all from a
             single dashboard.
@@ -43,7 +43,7 @@
         <!-- Mobile brand -->
         <div class="mobile-brand">
           <div class="brand-icon-solid"><span class="mdi mdi-account-tie-outline"></span></div>
-          <span class="brand-name brand-name-dark">BUCKSBOX</span>
+          <span class="brand-name brand-name-dark">{{ brandName }}</span>
         </div>
 
         <!-- Header -->
@@ -385,6 +385,10 @@ import { useUsersApi } from "@/composables/apis/useUsersApi";
 import { useSetupServicesApi } from "~/composables/apis/useSetupServices";
 
 const router = useRouter();
+
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
+
 const { pincodeSearch } = useOnboadingApi();
 const { registerVendor } = useUsersApi();
 const { getPublicServiceCatalog } = useSetupServicesApi();

@@ -52,6 +52,16 @@
       </div>
 
       <div class="filter-fields">
+        <!-- Search (Reference / RRN / Gateway Ref) -->
+        <div class="filter-field-group">
+          <label class="filter-label">Search Reference / RRN</label>
+          <div class="filter-input-wrap" :class="{ focused: focuses.search }">
+            <span class="mdi mdi-magnify filter-field-icon"></span>
+            <input v-model="filters.search" type="text" class="filter-input" placeholder="Ref, RRN, gateway ref…"
+              @focus="focuses.search = true" @blur="focuses.search = false" @keyup.enter="applyFilters" />
+          </div>
+        </div>
+
         <!-- From Date -->
         <div class="filter-field-group">
           <label class="filter-label">From Date</label>
@@ -158,6 +168,34 @@
             <option value="">All Providers</option>
             <option v-for="p in providerOptions" :key="p" :value="p">{{ p }}</option>
           </select>
+        </div>
+
+        <!-- Payment Method (backend defaults to DMT if left blank) -->
+        <div class="filter-field-group">
+          <label class="filter-label">Payment Method</label>
+          <select class="filter-select" v-model="filters.paymentMethod">
+            <option v-for="p in paymentMethodOptions" :key="p.value" :value="p.value">{{ p.label }}</option>
+          </select>
+        </div>
+
+        <!-- Amount Min -->
+        <div class="filter-field-group">
+          <label class="filter-label">Amount Min</label>
+          <div class="filter-input-wrap" :class="{ focused: focuses.amountMin }">
+            <span class="mdi mdi-currency-inr filter-field-icon"></span>
+            <input v-model.number="filters.amountMin" type="number" min="0" class="filter-input" placeholder="0"
+              @focus="focuses.amountMin = true" @blur="focuses.amountMin = false" @keyup.enter="applyFilters" />
+          </div>
+        </div>
+
+        <!-- Amount Max -->
+        <div class="filter-field-group">
+          <label class="filter-label">Amount Max</label>
+          <div class="filter-input-wrap" :class="{ focused: focuses.amountMax }">
+            <span class="mdi mdi-currency-inr filter-field-icon"></span>
+            <input v-model.number="filters.amountMax" type="number" min="0" class="filter-input" placeholder="No limit"
+              @focus="focuses.amountMax = true" @blur="focuses.amountMax = false" @keyup.enter="applyFilters" />
+          </div>
         </div>
       </div>
     </div>
@@ -461,6 +499,18 @@ const { getMerchants, getVendors } = useAggregatorApi();
 /* ── Static options ── */
 const providerOptions = ["ISG", "MOS", "WORLD", "BUCKSBOX", "AXIS", "NSDL", "FINO", "CANARA"];
 const txnTypeOptions = ["CASH_WITHDRAWAL", "BALANCE_ENQUIRY", "MINI_STATEMENT", "CASH_DEPOSIT", "DMT", "PUS", "PURCHASE", "PAYIN", "ADD_MONEY", "TOPUP", "TRANSFER", "CARD_MAINTENANCE_FEE"];
+// Backend defaults to DMT when paymentMethod is omitted — default the
+// dropdown to the same so the scope is explicit and visible, not an
+// invisible server-side default. "All" sends no paymentMethod at all.
+const paymentMethodOptions = [
+  { value: "DMT", label: "DMT" },
+  { value: "", label: "All Payment Methods" },
+  { value: "AEPS", label: "AEPS" },
+  { value: "UPI", label: "UPI" },
+  { value: "CARD", label: "CARD" },
+  { value: "NETBANKING", label: "NETBANKING" },
+  { value: "WALLET", label: "WALLET" },
+];
 
 const tabs = [
   { key: "overview", label: "Overview", icon: "mdi-view-dashboard-outline" },
@@ -478,7 +528,7 @@ const activeTab = ref<TabKey>("overview");
 const loadedTabs = reactive<Record<string, boolean>>({});
 
 /* ── Filters ── */
-const focuses = reactive({ from: false, to: false });
+const focuses = reactive({ from: false, to: false, search: false, amountMin: false, amountMax: false });
 const today = new Date();
 const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 const toISO = (d: Date) => d.toISOString().slice(0, 10);
@@ -492,6 +542,10 @@ const filters = reactive({
   settlementStatus: "",
   txnType: "",
   provider: "",
+  paymentMethod: "DMT",
+  search: "",
+  amountMin: null as number | null,
+  amountMax: null as number | null,
 });
 
 const commonParams = computed(() => ({
@@ -503,6 +557,10 @@ const commonParams = computed(() => ({
   settlementStatus: filters.settlementStatus || undefined,
   txnType: filters.txnType || undefined,
   provider: filters.provider || undefined,
+  paymentMethod: filters.paymentMethod || undefined,
+  search: filters.search || undefined,
+  amountMin: filters.amountMin ?? undefined,
+  amountMax: filters.amountMax ?? undefined,
 }));
 
 /* ── Merchant / Vendor dropdowns ── */
@@ -746,6 +804,8 @@ function clearFilters() {
   filters.merchantId = null; merchantSearch.value = "";
   filters.vendorId = null; vendorSearch.value = "";
   filters.status = ""; filters.settlementStatus = ""; filters.txnType = ""; filters.provider = "";
+  filters.paymentMethod = "DMT";
+  filters.search = ""; filters.amountMin = null; filters.amountMax = null;
   applyFilters();
 }
 
@@ -782,26 +842,61 @@ async function exportOverviewCsv() {
       const res = await getTransactions({ ...commonParams.value, page: p, limit: pageSize });
       if (res?.statusCode === "00") rows = rows.concat(res.data?.transactions || []);
     }
-    downloadCsv("transactions", rows.map((t: any) => ({
-      reference: t.tr || t.transactionid,
+    // Full accounting-grade row — every reference needed to trace this
+    // transaction back to NSDL/the bank, plus the complete per-recipient
+    // commission split, not just the aggregate totals shown in the table.
+    downloadCsv("dmt-transactions", rows.map((t: any) => ({
+      reference: t.tr,
+      transactionId: t.transactionid,
+      rrn: t.rrn,
+      gatewayRefId: t.gatewayRefId,
       merchant: merchantName(t.merchantId),
+      merchantId: t.merchantId,
       vendor: vendorName(t.vendorId),
+      vendorId: t.vendorId,
+      aggregatorId: t.aggregatorId,
+      terminalId: t.terminalId,
       amount: t.amount,
       provider: t.provider,
+      paymentMethod: t.paymentMethod,
+      txnType: t.txnType,
       status: t.status,
       settlementStatus: t.settlementStatus,
+      totalfee: t.totalfee,
+      baseCommission: t.baseCommission,
+      merchantCommission: t.merchantCommission,
+      vendorCommission: t.vendorCommission,
+      aggregatorCommission: t.aggregatorCommission,
+      bankCommission: t.bankCommission,
+      superDistributorCommission: t.superDistributorCommission,
       totalCommission: t.totalCommission,
       gstAmount: t.gstAmount,
       netAmount: t.netAmount,
       createdAt: t.createdAt,
     })), [
-      { key: "reference", label: "Reference" },
+      { key: "reference", label: "Reference (tr)" },
+      { key: "transactionId", label: "Transaction ID" },
+      { key: "rrn", label: "RRN" },
+      { key: "gatewayRefId", label: "Gateway Ref" },
       { key: "merchant", label: "Merchant" },
+      { key: "merchantId", label: "Merchant ID" },
       { key: "vendor", label: "Vendor" },
+      { key: "vendorId", label: "Vendor ID" },
+      { key: "aggregatorId", label: "Aggregator ID" },
+      { key: "terminalId", label: "Terminal ID" },
       { key: "amount", label: "Amount" },
       { key: "provider", label: "Provider" },
+      { key: "paymentMethod", label: "Payment Method" },
+      { key: "txnType", label: "Txn Type" },
       { key: "status", label: "Status" },
       { key: "settlementStatus", label: "Settlement Status" },
+      { key: "totalfee", label: "Total Fee" },
+      { key: "baseCommission", label: "Base Commission" },
+      { key: "merchantCommission", label: "Merchant Commission" },
+      { key: "vendorCommission", label: "Vendor Commission" },
+      { key: "aggregatorCommission", label: "Aggregator Commission" },
+      { key: "bankCommission", label: "Bank Commission" },
+      { key: "superDistributorCommission", label: "Super Distributor Commission" },
       { key: "totalCommission", label: "Total Commission" },
       { key: "gstAmount", label: "GST" },
       { key: "netAmount", label: "Net Amount" },

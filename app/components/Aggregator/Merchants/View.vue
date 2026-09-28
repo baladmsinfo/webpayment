@@ -240,6 +240,47 @@
           </div>
         </div>
 
+        <!-- AEPS Settlement Settings -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon-dot" style="background:rgba(79,70,229,.1);color:#4f46e5"><span class="mdi mdi-bank-transfer"></span></div>
+            <h3 class="card-title">AEPS Settlement Settings</h3>
+          </div>
+          <div class="aeps-settings-body">
+            <div class="aeps-settings-row">
+              <div class="aeps-settings-field">
+                <label>Settlement Party</label>
+                <p class="text-xs" style="color:#334155;margin-top:6px;line-height:1.5">
+                  Set on the vendor (Vendor → AEPS Settlement Party). By default it follows who initiates:<br>
+                  <b>Merchant</b> → this merchant's settlement account<br>
+                  <b>Vendor</b> (on this merchant's behalf) → the vendor's settlement account<br>
+                  The aggregator can instead fix it to always the vendor or always the merchant.
+                </p>
+              </div>
+              <div class="aeps-settings-field">
+                <label>Payout Destination</label>
+                <select v-model="aepsPayoutModeLocal">
+                  <option value="BANK">Bank transfer (manual/batch settlement)</option>
+                  <option value="WALLET">Platform wallet (instant credit)</option>
+                </select>
+              </div>
+              <button class="aeps-settings-save" :disabled="aepsSettingsSaving.payout" @click="saveAepsPayoutMode">
+                {{ aepsSettingsSaving.payout ? 'Saving…' : 'Save' }}
+              </button>
+            </div>
+            <p class="text-xs" style="color:#64748b; margin-top:10px">
+              Only applies to AEPS. The transaction amount is settled to ONE party after provider recon — this
+              merchant for transactions it initiates, or its vendor for transactions the vendor initiates on its behalf.
+              Commission is separate: every party linked to the merchant is credited its share in real time.
+              "Payout Destination" controls whether this merchant's settlements are credited to its platform wallet or
+              paid by batch bank transfer.
+            </p>
+            <p v-if="aepsSettingsMessage.text" class="text-xs" :style="{ color: aepsSettingsMessage.isError ? '#dc2626' : '#059669', marginTop: '4px', fontWeight: 700 }">
+              {{ aepsSettingsMessage.text }}
+            </p>
+          </div>
+        </div>
+
         <!-- PAN -->
         <div class="card" v-if="merchant.merchantpan?.length">
           <div class="card-header">
@@ -280,9 +321,19 @@
             <div class="info-item"><label>Email Verified</label><p><span :class="['pill', merchant.user.isemailVerified ? 'pill--emerald' : 'pill--amber']">{{ merchant.user.isemailVerified ? 'Yes' : 'No' }}</span></p></div>
             <div class="info-item"><label>Joined</label><p>{{ fmtDate(merchant.user.createdAt) }}</p></div>
           </div>
-          <div class="api-key-row">
-            <span class="api-key-label"><span class="mdi mdi-key-outline"></span> API Key</span>
-            <span class="mono text-xs api-key-val">{{ merchant.user.apiKey?.slice(0,44) + '…' }}</span>
+          <div v-for="cred in credentialRows" :key="cred.key" class="api-key-row">
+            <span class="api-key-label"><span :class="['mdi', cred.icon]"></span> {{ cred.label }}</span>
+            <span class="mono text-xs api-key-val">
+              {{ cred.value ? (cred.secret && !showSaltKey ? '•'.repeat(24) : cred.value) : '—' }}
+            </span>
+            <button v-if="cred.secret && cred.value" class="copy-btn" :title="showSaltKey ? 'Hide' : 'Show'"
+              @click="showSaltKey = !showSaltKey">
+              <span :class="['mdi', showSaltKey ? 'mdi-eye-off-outline' : 'mdi-eye-outline']"></span>
+            </button>
+            <button v-if="cred.value" :class="['copy-btn', copiedKey === cred.key && 'copy-btn--done']"
+              :title="`Copy ${cred.label}`" @click="copyCredential(cred)">
+              <span :class="['mdi', copiedKey === cred.key ? 'mdi-check' : 'mdi-content-copy']"></span>
+            </button>
           </div>
         </div>
 
@@ -426,7 +477,7 @@
           </div>
           <div class="table-scroll" v-if="merchant.commissionconfig?.length">
             <table class="data-table">
-              <thead><tr><th>Method</th><th>Provider</th><th>Txn Type</th><th>Min ₹</th><th>Max ₹</th><th>Merchant</th><th>Vendor</th><th>Aggregator</th><th>Bank</th><th>Active</th></tr></thead>
+              <thead><tr><th>Method</th><th>Provider</th><th>Txn Type</th><th>Min ₹</th><th>Max ₹</th><th>Level</th><th>Income</th><th>Split</th><th>Active</th></tr></thead>
               <tbody>
                 <tr v-for="c in merchant.commissionconfig" :key="c.id">
                   <td><span class="pill pill--sm pill--indigo">{{ c.paymentMethod }}</span></td>
@@ -434,10 +485,20 @@
                   <td><span class="pill pill--sm pill--slate">{{ c.txnType }}</span></td>
                   <td>₹ {{ Number(c.minAmount).toLocaleString('en-IN') }}</td>
                   <td>₹ {{ Number(c.maxAmount).toLocaleString('en-IN') }}</td>
-                  <td class="rate-cell">{{ c.merchantRate }}{{ c.merchantRateType === 'PERCENTAGE' ? '%' : ' ₹' }}<br><span class="rate-type">{{ c.merchantRateType }}</span></td>
-                  <td class="rate-cell">{{ c.vendorRate }}{{ c.vendorRateType === 'PERCENTAGE' ? '%' : ' ₹' }}<br><span class="rate-type">{{ c.vendorRateType }}</span></td>
-                  <td class="rate-cell">{{ c.aggregatorRate }}{{ c.aggregatorRateType === 'PERCENTAGE' ? '%' : ' ₹' }}<br><span class="rate-type">{{ c.aggregatorRateType }}</span></td>
-                  <td class="rate-cell">{{ c.bankRate }}{{ c.bankRateType === 'PERCENTAGE' ? '%' : ' ₹' }}<br><span class="rate-type">{{ c.bankRateType }}</span></td>
+                  <td><span class="pill pill--sm pill--slate">{{ c.level }}</span></td>
+                  <td class="rate-cell">
+                    <template v-if="incomeComponent(c)">
+                      {{ incomeComponent(c).chargeType === 'PERCENTAGE' ? incomeComponent(c).value + '%' : '₹' + incomeComponent(c).value }}<br>
+                      <span class="rate-type">{{ incomeComponent(c).name }}</span>
+                    </template>
+                    <template v-else>—</template>
+                  </td>
+                  <td class="rate-cell">
+                    <span v-for="s in commissionSplit(c)" :key="s.label" style="display:inline-block;margin-right:8px">
+                      {{ s.value }}<br><span class="rate-type">{{ s.label }}</span>
+                    </span>
+                    <template v-if="!commissionSplit(c).length">—</template>
+                  </td>
                   <td><span :class="['pill pill--sm', c.active ? 'pill--emerald' : 'pill--red']">{{ c.active ? 'Yes' : 'No' }}</span></td>
                 </tr>
               </tbody>
@@ -1172,7 +1233,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 import { useIsgOnboardingApi } from "~/composables/apis/Useisgonboardingapi";
@@ -1184,7 +1245,7 @@ import { useAuthStore } from "~/stores/auth";
 
 const props = defineProps({ merchantId: String });
 const router = useRouter();
-const { getMerchantById } = useAggregatorApi();
+const { getMerchantById, updateMerchantAepsPayoutMode } = useAggregatorApi();
 const { uploadDoc, complianceInit, deleteComplianceImage } = useIsgOnboardingApi();
 const { getTransactionsByMerchantId } = useUsersApi();
 const { updateMerchantStatus, updateMerchantMstatus, updateMerchantRiskflag } = useMerchantUpdateApi();
@@ -1197,8 +1258,46 @@ const transactions = ref({ data: [], pagination: {} });
 const activeTab    = ref('info');
 const docDialog    = ref(false);
 
+// ── AEPS settlement settings ──────────────────────────────────────
+const aepsPayoutModeLocal = ref('BANK');
+const aepsSettingsSaving  = reactive({ party: false, payout: false });
+const aepsSettingsMessage = reactive({ text: '', isError: false });
+watch(() => merchant.settlementaccount?.payoutMode, (v) => { aepsPayoutModeLocal.value = v || 'BANK'; });
+
+const saveAepsPayoutMode = async () => {
+  aepsSettingsSaving.payout = true;
+  try {
+    const res = await updateMerchantAepsPayoutMode(props.merchantId, { payoutMode: aepsPayoutModeLocal.value });
+    aepsSettingsMessage.isError = res?.statusCode !== '00';
+    aepsSettingsMessage.text = res?.message || (aepsSettingsMessage.isError ? 'Failed to save' : 'Saved');
+  } finally {
+    aepsSettingsSaving.payout = false;
+  }
+};
+
 // ── Wallet ─────────────────────────────────────────────────────
 const { get: apiGet, post: apiPost } = useApi();
+
+// Commission slab display — the income component (INTERCHANGE / CUSTOMER_FEE)
+// carries the split across every party linked to this merchant.
+const incomeComponent = (cfg) =>
+  (cfg.components || []).find((x) => x.name === 'INTERCHANGE' || x.name === 'CUSTOMER_FEE') || null;
+
+const SPLIT_PARTIES = [
+  ['merchantShare', 'Merchant'], ['distributorShare', 'Distributor'], ['superDistributorShare', 'Super Dist'],
+  ['vendorShare', 'Vendor'], ['aggregatorShare', 'Aggregator'], ['platformShare', 'Platform'],
+];
+
+const commissionSplit = (cfg) => {
+  const comp = incomeComponent(cfg);
+  if (!comp) return [];
+  if (comp.receiver && !SPLIT_PARTIES.some(([k]) => Number(comp[k]) > 0)) {
+    return [{ label: comp.receiver, value: '100%' }];
+  }
+  return SPLIT_PARTIES
+    .filter(([k]) => Number(comp[k]) > 0)
+    .map(([k, label]) => ({ label, value: comp.splitType === 'FIXED' ? '₹' + comp[k] : comp[k] + '%' }));
+};
 
 const walletData           = ref({ walletId: null, balance: 0, walletActive: false, settlementAccount: null });
 const walletHistory        = ref([]);
@@ -1326,6 +1425,38 @@ const showToast = (message, type = 'success') => {
   toast.type = type;
   toast.show = true;
   toastTimer = setTimeout(() => { toast.show = false; }, 3500);
+};
+
+// ── Merchant credentials (User Account card) ──
+const showSaltKey = ref(false);
+const copiedKey = ref(null);
+
+const credentialRows = computed(() => [
+  { key: 'merchantId', label: 'Merchant ID', icon: 'mdi-identifier', value: merchant.id },
+  { key: 'apiKey', label: 'API Key', icon: 'mdi-key-outline', value: merchant.user?.apiKey },
+  { key: 'saltKey', label: 'Salt Key', icon: 'mdi-lock-outline', value: merchant.user?.SaltAESKey, secret: true },
+]);
+
+const copyCredential = async (cred) => {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(cred.value);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = cred.value;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    copiedKey.value = cred.key;
+    showToast(`${cred.label} copied`);
+    setTimeout(() => { if (copiedKey.value === cred.key) copiedKey.value = null; }, 1500);
+  } catch {
+    showToast(`Failed to copy ${cred.label}`, 'error');
+  }
 };
 
 // ── Confirm dialog state ───────────────────────────────────────────
@@ -1840,10 +1971,30 @@ onMounted(async () => {
 .info-item label { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .7px; display: block; margin-bottom: 4px; }
 .info-item p { font-size: 13px; font-weight: 500; color: #0f172a; }
 
+/* ── AEPS Settlement Settings ── */
+.aeps-settings-body { padding: 14px 18px; }
+.aeps-settings-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.aeps-settings-field { display: flex; flex-direction: column; gap: 4px; min-width: 220px; }
+.aeps-settings-field label { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .7px; }
+.aeps-settings-field select {
+  height: 36px; padding: 0 10px; border: 1.5px solid #e2e8f0; border-radius: 7px;
+  font-size: 13px; color: #0f172a; background: #fff;
+}
+.aeps-settings-field select:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+.aeps-settings-save {
+  height: 36px; padding: 0 16px; border: none; border-radius: 7px; background: #4f46e5; color: #fff;
+  font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.aeps-settings-save:disabled { background: #c7d2fe; cursor: not-allowed; }
+
 /* ── API Key ── */
 .api-key-row { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid #f1f5f9; background: #fafafa; flex-wrap: wrap; }
-.api-key-label { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .7px; flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
-.api-key-val   { color: #475569; word-break: break-all; }
+.api-key-label { font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .7px; flex-shrink: 0; display: flex; align-items: center; gap: 4px; width: 100px; }
+.api-key-val   { color: #475569; word-break: break-all; flex: 1; min-width: 0; }
+.api-key-row + .api-key-row { border-top-color: #f5f5f5; }
+.copy-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex-shrink: 0; border: 1px solid #e2e8f0; border-radius: 7px; background: #fff; color: #64748b; font-size: 14px; cursor: pointer; transition: all .15s; }
+.copy-btn:hover { border-color: #c7d2fe; color: #4f46e5; background: #eef2ff; }
+.copy-btn--done { border-color: #a7f3d0; color: #059669; background: #ecfdf5; }
 
 /* ── Pills & Flags ── */
 .pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }

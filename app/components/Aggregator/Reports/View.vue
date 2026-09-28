@@ -111,7 +111,9 @@
             <div class="field-row"><span class="field-lbl">Aggregator Commission</span><span class="field-val mono">₹{{ fmt(txn.aggregatorCommission) }}</span></div>
             <div class="field-row"><span class="field-lbl">Bank Commission</span><span class="field-val mono">₹{{ fmt(txn.bankCommission) }}</span></div>
             <div class="field-row"><span class="field-lbl">Super Distributor Commission</span><span class="field-val mono">₹{{ fmt(txn.superDistributorCommission) }}</span></div>
-            <div class="field-row"><span class="field-lbl">Total Commission</span><span class="field-val mono">₹{{ fmt(txn.totalCommission) }}</span></div>
+            <div class="field-row"><span class="field-lbl">Total Payout Commission (excl. GST)</span><span class="field-val mono">₹{{ fmt(commissionExclGst) }}</span></div>
+            <div class="field-row"><span class="field-lbl">Total Payout Commission (incl. GST)</span><span class="field-val mono">₹{{ fmt(commissionInclGst) }}</span></div>
+            <div class="field-row"><span class="field-lbl">Total Commission (NSDL Charge Recon)</span><span class="field-val mono">₹{{ fmt(txn.totalCommission) }}</span></div>
           </div>
         </div>
 
@@ -123,6 +125,23 @@
             <div class="field-row"><span class="field-lbl">Net Settlement</span><span class="field-val mono">₹{{ fmt(txn.settlement.netSettlement) }}</span></div>
             <div class="field-row"><span class="field-lbl">Ref</span><span class="field-val mono">{{ txn.settlement.settlementRef ?? '—' }}</span></div>
             <div class="field-row"><span class="field-lbl">Settled At</span><span class="field-val">{{ fmtDate(txn.settlement.settledAt) }}</span></div>
+          </div>
+        </div>
+
+        <!-- Reconciliation -->
+        <div class="info-card" v-if="txn.reconciliation">
+          <div class="card-hdr"><span class="mdi mdi-check-decagram-outline card-hdr-icon" style="color:#059669"></span>Reconciliation</div>
+          <div class="field-list">
+            <div class="field-row">
+              <span class="field-lbl">GL Posted</span>
+              <span class="field-val"><span class="chip chip-sm" :class="txn.reconciliation.posted ? 'chip-green' : 'chip-amber'">{{ txn.reconciliation.posted ? 'Posted' : 'Pending' }}</span></span>
+            </div>
+            <div class="field-row">
+              <span class="field-lbl">Settled</span>
+              <span class="field-val"><span class="chip chip-sm" :class="txn.reconciliation.settled ? 'chip-green' : 'chip-amber'">{{ txn.reconciliation.settled ? 'Settled' : 'Pending' }}</span></span>
+            </div>
+            <div class="field-row"><span class="field-lbl">Reconciled At</span><span class="field-val">{{ fmtDate(txn.reconciliation.reconciledAt) }}</span></div>
+            <div class="field-row"><span class="field-lbl">Notes</span><span class="field-val">{{ txn.reconciliation.notes ?? '—' }}</span></div>
           </div>
         </div>
 
@@ -179,6 +198,38 @@ const snapshotFields = computed(() => {
   if (!snap) return {};
   const { id, transactionId, createdAt, updatedAt, ...rest } = snap;
   return rest;
+});
+
+// Sum of what's actually paid out to the hierarchy (merchant/vendor/
+// aggregator/bank/superDistributor) — raw, before any recipient GST
+// gross-up. Distinct from txn.totalCommission, which reconciles to the
+// full NSDL charge (customerFee + gstAmount), not the sum of payouts.
+const commissionExclGst = computed(() => {
+  if (!txn.value) return 0;
+  return (
+    Number(txn.value.merchantCommission || 0) +
+    Number(txn.value.vendorCommission || 0) +
+    Number(txn.value.aggregatorCommission || 0) +
+    Number(txn.value.bankCommission || 0) +
+    Number(txn.value.superDistributorCommission || 0)
+  );
+});
+
+// Same total, plus the 18% GST gross-up actually credited to VENDOR/
+// MERCHANT/SUPER_DISTRIBUTOR wallets (Commission.worker.js) — AGGREGATOR
+// and BANK are never grossed up, so their *GstAmount breakdown is always
+// 0. Pulled from commissionSnapshot's per-recipient GST breakdown, the
+// same figures actually used when crediting wallets.
+const commissionInclGst = computed(() => {
+  const snap = txn.value?.commissionSnapshot;
+  const gst = snap
+    ? Number(snap.merchantGstAmount || 0) +
+      Number(snap.vendorGstAmount || 0) +
+      Number(snap.superDistributorGstAmount || 0) +
+      Number(snap.aggregatorGstAmount || 0) +
+      Number(snap.bankGstAmount || 0)
+    : 0;
+  return commissionExclGst.value + gst;
 });
 
 const humanize = (key: string) => key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());

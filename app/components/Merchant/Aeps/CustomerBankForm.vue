@@ -62,7 +62,9 @@ import { BX } from "~/utils/dmtTheme";
 const props = defineProps({
   withAmount: { type: Boolean, default: false },
   amountLabel: { type: String, default: "Amount" },
-  maxAmount: { type: Number, default: 0 }, // wallet balance ceiling — 0 disables the check
+  // Per-transaction AEPS limit (NOT the merchant wallet — AEPS money moves from
+  // the customer's bank account). 0 disables the check.
+  maxAmount: { type: Number, default: 0 },
   withBank: { type: Boolean, default: true }, // reqAuth (agent-auth.vue) sends a fixed IIN server-side — no bank to pick
 });
 const emit = defineEmits(["continue"]);
@@ -93,7 +95,7 @@ const onContinue = () => {
   if (props.withAmount) {
     amount = Number(String(amountInput.value).replace(/[^0-9]/g, "")) || 0;
     if (amount <= 0) { amountError.value = "Enter an amount"; return; }
-    if (props.maxAmount > 0 && amount > props.maxAmount) { amountError.value = "Amount exceeds your wallet balance"; return; }
+    if (props.maxAmount > 0 && amount > props.maxAmount) { amountError.value = `Maximum ₹${props.maxAmount.toLocaleString("en-IN")} per AEPS transaction`; return; }
   }
 
   emit("continue", {

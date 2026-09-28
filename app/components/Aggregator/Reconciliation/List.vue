@@ -57,6 +57,17 @@
         </div>
       </div>
       <div class="filter-fields-row">
+        <!-- Search (Reference / RRN / Gateway Ref) -->
+        <div class="filter-field-group">
+          <label class="filter-label">Search Reference / RRN</label>
+          <div class="filter-input-wrap" :class="{ focused: focuses.search }">
+            <span class="mdi mdi-magnify filter-field-icon"></span>
+            <input v-model="filters.search" type="text" class="filter-input" placeholder="Ref, RRN, gateway ref…"
+              @focus="focuses.search = true" @blur="focuses.search = false" @keyup.enter="applyFilters" />
+          </div>
+        </div>
+
+        <!-- From Date -->
         <div class="filter-field-group">
           <label class="filter-label">From Date</label>
           <div class="filter-input-wrap" :class="{ focused: focuses.from }">
@@ -65,12 +76,128 @@
               @focus="focuses.from = true" @blur="focuses.from = false" />
           </div>
         </div>
+
+        <!-- To Date -->
         <div class="filter-field-group">
           <label class="filter-label">To Date</label>
           <div class="filter-input-wrap" :class="{ focused: focuses.to }">
             <span class="mdi mdi-calendar-end-outline filter-field-icon"></span>
             <input v-model="filters.toDate" type="date" class="filter-input"
               @focus="focuses.to = true" @blur="focuses.to = false" />
+          </div>
+        </div>
+
+        <!-- Merchant Autocomplete -->
+        <div class="filter-field-group">
+          <label class="filter-label">Merchant</label>
+          <div class="entity-dropdown-wrap">
+            <div class="filter-input-wrap entity-input-wrap" :class="{ focused: merchantDropOpen }" @click="merchantDropOpen = !merchantDropOpen">
+              <span class="mdi mdi-store-outline filter-field-icon"></span>
+              <input v-model="merchantSearch" class="filter-input" placeholder="All merchants"
+                @focus="merchantDropOpen = true" @input="merchantDropOpen = true" @blur="onMerchantBlur" autocomplete="off" />
+              <button v-if="filters.merchantId" class="search-clear" @mousedown.prevent="clearMerchant"><span class="mdi mdi-close-circle"></span></button>
+              <span class="mdi mdi-chevron-down entity-chevron" :class="{ open: merchantDropOpen }"></span>
+            </div>
+            <div class="entity-drop" v-if="merchantDropOpen && filteredMerchants.length">
+              <div class="entity-drop-item" v-for="m in filteredMerchants" :key="m.id" @mousedown.prevent="selectMerchant(m)" :class="{ 'drop-item-active': filters.merchantId === m.id }">
+                <div>
+                  <p class="drop-name">{{ m.legal_name || m.business_name }}</p>
+                  <p class="drop-sub">{{ m.mid }}</p>
+                </div>
+                <span v-if="filters.merchantId === m.id" class="mdi mdi-check drop-check"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vendor Autocomplete -->
+        <div class="filter-field-group">
+          <label class="filter-label">Vendor</label>
+          <div class="entity-dropdown-wrap">
+            <div class="filter-input-wrap entity-input-wrap" :class="{ focused: vendorDropOpen }" @click="vendorDropOpen = !vendorDropOpen">
+              <span class="mdi mdi-factory filter-field-icon"></span>
+              <input v-model="vendorSearch" class="filter-input" placeholder="All vendors"
+                @focus="vendorDropOpen = true" @input="vendorDropOpen = true" @blur="onVendorBlur" autocomplete="off" />
+              <button v-if="filters.vendorId" class="search-clear" @mousedown.prevent="clearVendor"><span class="mdi mdi-close-circle"></span></button>
+              <span class="mdi mdi-chevron-down entity-chevron" :class="{ open: vendorDropOpen }"></span>
+            </div>
+            <div class="entity-drop" v-if="vendorDropOpen && filteredVendors.length">
+              <div class="entity-drop-item" v-for="v in filteredVendors" :key="v.id" @mousedown.prevent="selectVendor(v)" :class="{ 'drop-item-active': filters.vendorId === v.id }">
+                <div>
+                  <p class="drop-name">{{ v.name }}</p>
+                  <p class="drop-sub">{{ v.code }}</p>
+                </div>
+                <span v-if="filters.vendorId === v.id" class="mdi mdi-check drop-check"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="filter-field-group">
+          <label class="filter-label">Status</label>
+          <select class="filter-select" v-model="filters.status">
+            <option value="">All Statuses</option>
+            <option value="SUCCESS">Success</option>
+            <option value="FAILED">Failed</option>
+            <option value="PENDING">Pending</option>
+          </select>
+        </div>
+
+        <!-- Settlement Status -->
+        <div class="filter-field-group">
+          <label class="filter-label">Settlement Status</label>
+          <select class="filter-select" v-model="filters.settlementStatus">
+            <option value="">All</option>
+            <option value="PENDING">Pending</option>
+            <option value="SUCCESS">Success</option>
+            <option value="FAILED">Failed</option>
+          </select>
+        </div>
+
+        <!-- Txn Type -->
+        <div class="filter-field-group">
+          <label class="filter-label">Txn Type</label>
+          <select class="filter-select" v-model="filters.txnType">
+            <option value="">All Types</option>
+            <option v-for="t in txnTypeOptions" :key="t" :value="t">{{ t }}</option>
+          </select>
+        </div>
+
+        <!-- Provider -->
+        <div class="filter-field-group">
+          <label class="filter-label">Provider</label>
+          <select class="filter-select" v-model="filters.provider">
+            <option value="">All Providers</option>
+            <option v-for="p in providerOptions" :key="p" :value="p">{{ p }}</option>
+          </select>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="filter-field-group">
+          <label class="filter-label">Payment Method</label>
+          <select class="filter-select" v-model="filters.paymentMethod">
+            <option v-for="p in paymentMethodOptions" :key="p.value" :value="p.value">{{ p.label }}</option>
+          </select>
+        </div>
+
+        <!-- Amount Min -->
+        <div class="filter-field-group">
+          <label class="filter-label">Amount Min</label>
+          <div class="filter-input-wrap" :class="{ focused: focuses.amountMin }">
+            <span class="mdi mdi-currency-inr filter-field-icon"></span>
+            <input v-model.number="filters.amountMin" type="number" min="0" class="filter-input" placeholder="0"
+              @focus="focuses.amountMin = true" @blur="focuses.amountMin = false" @keyup.enter="applyFilters" />
+          </div>
+        </div>
+
+        <!-- Amount Max -->
+        <div class="filter-field-group">
+          <label class="filter-label">Amount Max</label>
+          <div class="filter-input-wrap" :class="{ focused: focuses.amountMax }">
+            <span class="mdi mdi-currency-inr filter-field-icon"></span>
+            <input v-model.number="filters.amountMax" type="number" min="0" class="filter-input" placeholder="No limit"
+              @focus="focuses.amountMax = true" @blur="focuses.amountMax = false" @keyup.enter="applyFilters" />
           </div>
         </div>
       </div>
@@ -85,11 +212,14 @@
               <th class="th-sno">S.No</th>
               <th>Transaction ID</th>
               <th class="th-hide-sm">Payment Method</th>
+              <th class="th-hide-sm">Merchant</th>
+              <th class="th-hide-sm">Vendor</th>
               <th>Amount</th>
               <th class="th-hide-md">Net Settlement</th>
               <th>GL Posted</th>
               <th>Settled</th>
               <th class="th-hide-md">Reconciled At</th>
+              <th class="th-action">Action</th>
             </tr>
           </thead>
           <tbody v-if="loading">
@@ -97,11 +227,14 @@
               <td><div class="skel skel-sm"></div></td>
               <td><div class="skel skel-line-lg"></div><div class="skel skel-line-sm mt-1"></div></td>
               <td class="th-hide-sm"><div class="skel skel-chip"></div></td>
+              <td class="th-hide-sm"><div class="skel skel-line-md"></div></td>
+              <td class="th-hide-sm"><div class="skel skel-line-md"></div></td>
               <td><div class="skel skel-line-md"></div></td>
               <td class="th-hide-md"><div class="skel skel-line-md"></div></td>
               <td><div class="skel skel-chip"></div></td>
               <td><div class="skel skel-chip"></div></td>
               <td class="th-hide-md"><div class="skel skel-line-md"></div></td>
+              <td><div class="skel skel-chip"></div></td>
             </tr>
           </tbody>
           <tbody v-else>
@@ -119,6 +252,8 @@
               <td class="th-hide-sm">
                 <span class="chip chip-blue">{{ item.transaction?.paymentMethod || '—' }}</span>
               </td>
+              <td class="th-hide-sm"><p class="merchant-name">{{ merchantName(item.transaction?.merchantId) }}</p></td>
+              <td class="th-hide-sm"><p class="merchant-name">{{ vendorName(item.transaction?.vendorId) }}</p></td>
               <td><span class="amount-val">₹{{ fmtAmt(item.transaction?.amount) }}</span></td>
               <td class="th-hide-md"><span class="amount-val net-amt">₹{{ fmtAmt(item.transaction?.settlement?.netSettlement) }}</span></td>
               <td><span class="chip" :class="item.posted ? 'chip-green' : 'chip-amber'"><span class="chip-dot"></span>{{ item.posted ? 'Posted' : 'Pending' }}</span></td>
@@ -130,9 +265,12 @@
                 </div>
                 <span v-else class="text-muted">—</span>
               </td>
+              <td>
+                <button class="btn-view" title="View Detail" :disabled="!item.transaction?.tr" @click="goToDetail(item.transaction?.tr)"><span class="mdi mdi-eye-outline"></span></button>
+              </td>
             </tr>
             <tr v-if="matched.length === 0">
-              <td colspan="8" class="empty-td">
+              <td colspan="11" class="empty-td">
                 <div class="empty-state">
                   <div class="empty-icon"><span class="mdi mdi-check-all"></span></div>
                   <p class="empty-title">No reconciled transactions</p>
@@ -167,10 +305,12 @@
               <th class="th-sno">S.No</th>
               <th>Transaction ID</th>
               <th class="th-hide-sm">Merchant</th>
+              <th class="th-hide-sm">Vendor</th>
               <th>Amount</th>
               <th>GL Posted</th>
               <th>Settled</th>
               <th class="th-hide-md">Date</th>
+              <th class="th-action">Action</th>
             </tr>
           </thead>
           <tbody v-if="excLoading">
@@ -178,10 +318,12 @@
               <td><div class="skel skel-sm"></div></td>
               <td><div class="skel skel-line-lg"></div></td>
               <td class="th-hide-sm"><div class="skel skel-line-md"></div></td>
+              <td class="th-hide-sm"><div class="skel skel-line-md"></div></td>
               <td><div class="skel skel-line-md"></div></td>
               <td><div class="skel skel-chip"></div></td>
               <td><div class="skel skel-chip"></div></td>
               <td class="th-hide-md"><div class="skel skel-line-md"></div></td>
+              <td><div class="skel skel-chip"></div></td>
             </tr>
           </tbody>
           <tbody v-else>
@@ -193,7 +335,8 @@
                   <p class="txn-id">{{ item.transactionId }}</p>
                 </div>
               </td>
-              <td class="th-hide-sm"><p class="merchant-name">{{ item.transaction?.merchantId || '—' }}</p></td>
+              <td class="th-hide-sm"><p class="merchant-name">{{ merchantName(item.transaction?.merchantId) }}</p></td>
+              <td class="th-hide-sm"><p class="merchant-name">{{ vendorName(item.transaction?.vendorId) }}</p></td>
               <td><span class="amount-val">₹{{ fmtAmt(item.transaction?.amount) }}</span></td>
               <td><span class="chip" :class="item.posted ? 'chip-green' : 'chip-red'"><span class="chip-dot"></span>{{ item.posted ? 'Yes' : 'No' }}</span></td>
               <td><span class="chip" :class="item.settled ? 'chip-green' : 'chip-red'"><span class="chip-dot"></span>{{ item.settled ? 'Yes' : 'No' }}</span></td>
@@ -202,9 +345,12 @@
                   <span class="date-main">{{ formatDate(item.transaction?.createdAt) }}</span>
                 </div>
               </td>
+              <td>
+                <button class="btn-view" title="View Detail" :disabled="!item.transaction?.tr" @click="goToDetail(item.transaction?.tr)"><span class="mdi mdi-eye-outline"></span></button>
+              </td>
             </tr>
             <tr v-if="exceptions.length === 0">
-              <td colspan="7" class="empty-td">
+              <td colspan="9" class="empty-td">
                 <div class="empty-state">
                   <div class="empty-icon"><span class="mdi mdi-check-circle-outline"></span></div>
                   <p class="empty-title">No exceptions found</p>
@@ -363,9 +509,82 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from "vue";
+import { useRouter } from "vue-router";
 import { useReconciliationApi } from "@/composables/apis/useReconciliationApi";
+import { useAggregatorApi } from "~/composables/apis/useAggregatorApi";
 
+const router = useRouter();
 const { getReconciliationStatus, getMatchedTransactions, getExceptions, getReconciliationBatches, runReconciliationBatch } = useReconciliationApi();
+const { getMerchants, getVendors } = useAggregatorApi();
+
+/* ── Static options (same as Reports page) ── */
+const providerOptions = ["ISG", "MOS", "WORLD", "BUCKSBOX", "AXIS", "NSDL", "FINO", "CANARA"];
+const txnTypeOptions = ["CASH_WITHDRAWAL", "BALANCE_ENQUIRY", "MINI_STATEMENT", "CASH_DEPOSIT", "DMT", "PUS", "PURCHASE", "PAYIN", "ADD_MONEY", "TOPUP", "TRANSFER", "CARD_MAINTENANCE_FEE"];
+const paymentMethodOptions = [
+  { value: "", label: "All Payment Methods" },
+  { value: "DMT", label: "DMT" },
+  { value: "AEPS", label: "AEPS" },
+  { value: "UPI", label: "UPI" },
+  { value: "CARD", label: "CARD" },
+  { value: "NETBANKING", label: "NETBANKING" },
+  { value: "WALLET", label: "WALLET" },
+];
+
+/* ── Merchant / Vendor lookups + filter dropdowns (same pattern as Reports) ── */
+const merchants = ref<any[]>([]);
+const vendors = ref<any[]>([]);
+const merchantSearch = ref("");
+const vendorSearch = ref("");
+const merchantDropOpen = ref(false);
+const vendorDropOpen = ref(false);
+
+const merchantNameById = computed(() => {
+  const map: Record<string, string> = {};
+  for (const m of merchants.value) map[m.id] = m.legal_name || m.business_name || m.mid;
+  return map;
+});
+const vendorNameById = computed(() => {
+  const map: Record<string, string> = {};
+  for (const v of vendors.value) map[v.id] = v.name;
+  return map;
+});
+const merchantName = (id: string) => id ? (merchantNameById.value[id] || id) : "—";
+const vendorName = (id: string) => id ? (vendorNameById.value[id] || id) : "—";
+
+const filteredMerchants = computed(() => {
+  const q = merchantSearch.value.toLowerCase();
+  if (!q) return merchants.value.slice(0, 40);
+  return merchants.value.filter((m: any) =>
+    (m.legal_name || "").toLowerCase().includes(q) || (m.business_name || "").toLowerCase().includes(q) || (m.mid || "").toLowerCase().includes(q)
+  ).slice(0, 20);
+});
+const filteredVendors = computed(() => {
+  const q = vendorSearch.value.toLowerCase();
+  if (!q) return vendors.value.slice(0, 40);
+  return vendors.value.filter((v: any) => (v.name || "").toLowerCase().includes(q) || (v.code || "").toLowerCase().includes(q)).slice(0, 20);
+});
+
+function selectMerchant(m: any) { filters.merchantId = m.id; merchantSearch.value = m.legal_name || m.business_name; merchantDropOpen.value = false; }
+function clearMerchant() { filters.merchantId = null; merchantSearch.value = ""; }
+function onMerchantBlur() { setTimeout(() => { merchantDropOpen.value = false; }, 150); }
+
+function selectVendor(v: any) { filters.vendorId = v.id; vendorSearch.value = v.name; vendorDropOpen.value = false; }
+function clearVendor() { filters.vendorId = null; vendorSearch.value = ""; }
+function onVendorBlur() { setTimeout(() => { vendorDropOpen.value = false; }, 150); }
+
+async function loadEntityLists() {
+  try {
+    const [mRes, vRes] = await Promise.all([
+      getMerchants({ page: 1, limit: 1000 }),
+      getVendors({ page: 1, limit: 1000 }),
+    ]);
+    merchants.value = mRes?.data || [];
+    vendors.value = vRes?.data || [];
+  } catch (e) {
+    console.error("Failed to load merchant/vendor lists", e);
+  }
+}
+function goToDetail(tr?: string) { if (tr) router.push(`/aggregator/reports/view/${tr}`); }
 
 /* ── State ── */
 const loading    = ref(false);
@@ -382,9 +601,41 @@ const page = ref(1); const limit = ref(10); const limitVal = ref(10); const tota
 const excPage = ref(1); const excLimit = ref(10); const excLimitVal = ref(10); const excTotal = ref(0);
 const batchPage = ref(1); const batchLimit = ref(10); const batchLimitVal = ref(10); const batchTotal = ref(0);
 
-const focuses  = reactive({ from: false, to: false });
+const focuses  = reactive({ from: false, to: false, search: false, amountMin: false, amountMax: false });
 const mFocuses = reactive({ from: false, to: false, rem: false });
-const filters  = ref({ fromDate: null as string|null, toDate: null as string|null });
+
+// Same filter set + shape as the Reports page (List.vue) — reviewed and
+// applied here so settlement/recon can be filtered exactly like the
+// transaction report an accountant already uses.
+const filters = reactive({
+  fromDate: null as string | null,
+  toDate: null as string | null,
+  merchantId: null as string | null,
+  vendorId: null as string | null,
+  status: "",
+  settlementStatus: "",
+  txnType: "",
+  provider: "",
+  paymentMethod: "",
+  search: "",
+  amountMin: null as number | null,
+  amountMax: null as number | null,
+});
+
+const commonParams = computed(() => ({
+  from: filters.fromDate || undefined,
+  to: filters.toDate || undefined,
+  merchantId: filters.merchantId || undefined,
+  vendorId: filters.vendorId || undefined,
+  status: filters.status || undefined,
+  settlementStatus: filters.settlementStatus || undefined,
+  txnType: filters.txnType || undefined,
+  provider: filters.provider || undefined,
+  paymentMethod: filters.paymentMethod || undefined,
+  search: filters.search || undefined,
+  amountMin: filters.amountMin ?? undefined,
+  amountMax: filters.amountMax ?? undefined,
+}));
 
 const runModal   = ref(false);
 const runLoading = ref(false);
@@ -423,13 +674,13 @@ const batchPageWindow = computed(() => { const c = batchPage.value, t = batchTot
 
 /* ── API ── */
 async function loadStatus() {
-  try { const res = await getReconciliationStatus(); status.value = res.data; } catch {}
+  try { const res = await getReconciliationStatus(commonParams.value); status.value = res.data; } catch {}
 }
 
 async function loadMatched() {
   loading.value = true;
   try {
-    const res = await getMatchedTransactions({ page: page.value, limit: limit.value, fromDate: filters.value.fromDate ?? undefined, toDate: filters.value.toDate ?? undefined });
+    const res = await getMatchedTransactions({ ...commonParams.value, page: page.value, limit: limit.value });
     matched.value = res.data    || [];
     total.value   = res.meta?.total || 0;
   } finally { loading.value = false; }
@@ -438,7 +689,7 @@ async function loadMatched() {
 async function loadExceptions() {
   excLoading.value = true;
   try {
-    const res = await getExceptions({ page: excPage.value, limit: excLimit.value });
+    const res = await getExceptions({ ...commonParams.value, page: excPage.value, limit: excLimit.value });
     exceptions.value = res.data?.unreconciled?.records || [];
     excTotal.value   = res.data?.unreconciled?.total   || 0;
   } finally { excLoading.value = false; }
@@ -464,8 +715,20 @@ async function refresh() {
   await Promise.all([loadStatus(), loadMatched()]);
 }
 
-function applyFilters() { page.value = 1; if (activeTab.value === 'matched') loadMatched(); }
-function clearFilters()  { filters.value = { fromDate: null, toDate: null }; applyFilters(); }
+function applyFilters() {
+  page.value = 1; excPage.value = 1;
+  loadStatus();
+  if (activeTab.value === 'matched')    loadMatched();
+  if (activeTab.value === 'exceptions') loadExceptions();
+}
+function clearFilters() {
+  filters.fromDate = null; filters.toDate = null;
+  filters.merchantId = null; merchantSearch.value = "";
+  filters.vendorId = null; vendorSearch.value = "";
+  filters.status = ""; filters.settlementStatus = ""; filters.txnType = ""; filters.provider = "";
+  filters.paymentMethod = ""; filters.search = ""; filters.amountMin = null; filters.amountMax = null;
+  applyFilters();
+}
 function onPageChange(p: number)  { page.value = p; loadMatched(); }
 function onLimitChange(l: number) { limit.value = l; page.value = 1; loadMatched(); }
 function onExcPageChange(p: number)  { excPage.value = p; loadExceptions(); }
@@ -500,7 +763,7 @@ async function doRunBatch() {
   } finally { runLoading.value = false; }
 }
 
-onMounted(() => { loadStatus(); loadMatched(); });
+onMounted(() => { loadStatus(); loadMatched(); loadEntityLists(); });
 </script>
 
 <style scoped>
@@ -540,7 +803,9 @@ onMounted(() => { loadStatus(); loadMatched(); });
 .btn-apply:hover { filter: brightness(1.07); }
 .btn-apply:disabled { opacity: .6; cursor: not-allowed; }
 .filter-fields-row { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 16px 18px; }
-@media(min-width:640px) { .filter-fields-row { grid-template-columns: repeat(2,1fr); } }
+@media(min-width:640px)  { .filter-fields-row { grid-template-columns: repeat(2,1fr); } }
+@media(min-width:1024px) { .filter-fields-row { grid-template-columns: repeat(3,1fr); } }
+@media(min-width:1280px) { .filter-fields-row { grid-template-columns: repeat(4,1fr); } }
 .filter-field-group { display: flex; flex-direction: column; gap: 5px; }
 .filter-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .07em; }
 .filter-input-wrap { display: flex; align-items: center; gap: 8px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 9px; padding: 0 10px; height: 42px; transition: border-color .15s, box-shadow .15s; }
@@ -548,6 +813,22 @@ onMounted(() => { loadStatus(); loadMatched(); });
 .filter-field-icon { font-size: 16px; color: #94a3b8; flex-shrink: 0; }
 .filter-input { flex: 1; border: none; background: transparent; font-size: 13px; color: #334155; outline: none; font-family: 'DM Sans', sans-serif; }
 .filter-input::placeholder { color: #94a3b8; }
+.filter-select { height: 42px; padding: 0 12px; border-radius: 9px; border: 1.5px solid #e2e8f0; background: #f8fafc; font-size: 13px; color: #475569; font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none; transition: border-color .15s; width: 100%; }
+.filter-select:focus { border-color: #1142d4; }
+.entity-dropdown-wrap { position: relative; }
+.entity-input-wrap { cursor: pointer; }
+.entity-chevron { font-size: 18px; color: #94a3b8; transition: transform .2s; flex-shrink: 0; }
+.entity-chevron.open { transform: rotate(180deg); }
+.entity-drop { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 50; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.1); max-height: 240px; overflow-y: auto; }
+.entity-drop-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; cursor: pointer; transition: background .12s; border-bottom: 1px solid #f8fafc; }
+.entity-drop-item:last-child { border-bottom: none; }
+.entity-drop-item:hover { background: #f8fafc; }
+.drop-item-active { background: rgba(17,66,212,.05) !important; }
+.drop-name { font-size: 12px; font-weight: 700; color: #1e293b; }
+.drop-sub  { font-size: 10px; color: #94a3b8; font-family: 'DM Mono', monospace; }
+.drop-check { font-size: 15px; color: #1142d4; margin-left: auto; flex-shrink: 0; }
+.search-clear { background: none; border: none; cursor: pointer; font-size: 16px; color: #cbd5e1; display: flex; align-items: center; transition: color .13s; }
+.search-clear:hover { color: #94a3b8; }
 .filter-input[type="date"] { min-width: 0; }
 .table-card { background: #fff; border: 1px solid #e8edf3; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,.04); }
 .table-wrap  { overflow-x: auto; }
@@ -555,6 +836,10 @@ onMounted(() => { loadStatus(); loadMatched(); });
 .data-table thead tr { background: #f8fafc; border-bottom: 1px solid #e8edf3; }
 .data-table th { padding: 11px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
 .th-sno { width: 56px; text-align: center; }
+.th-action { width: 56px; text-align: center; }
+.btn-view { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #64748b; cursor: pointer; margin: 0 auto; transition: all .13s; }
+.btn-view:hover:not(:disabled) { background: #1142d4; color: #fff; border-color: #1142d4; }
+.btn-view:disabled { opacity: .4; cursor: not-allowed; }
 .data-row { border-bottom: 1px solid #f8fafc; transition: background .12s; }
 .data-row:hover { background: #f8fafc; }
 .data-row:last-child { border-bottom: none; }

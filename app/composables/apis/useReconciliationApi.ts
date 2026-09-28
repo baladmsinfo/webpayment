@@ -1,40 +1,48 @@
 import { useApi } from "./useApi";
 
+// Same filter shape as ReportFilters (useReportsApi.ts) — the reconciliation
+// list is filtered exactly like the transaction reports list, by design.
+export interface ReconciliationFilters {
+  from?: string;
+  to?: string;
+  merchantId?: string | null;
+  vendorId?: string | null;
+  aggregatorId?: string | null;
+  status?: string;
+  settlementStatus?: string;
+  txnType?: string;
+  provider?: string;
+  paymentMethod?: string;
+  search?: string;
+  amountMin?: number | string;
+  amountMax?: number | string;
+  page?: number;
+  limit?: number;
+}
+
 export function useReconciliationApi() {
   const { get, post } = useApi();
 
-  const getReconciliationStatus = async () => {
-    const res = await get("/reconciliation/status");
+  const buildQuery = (params: Record<string, any> = {}) => {
+    const q = new URLSearchParams();
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== "") q.set(key, String(val));
+    });
+    return q.toString();
+  };
+
+  const getReconciliationStatus = async (params: ReconciliationFilters = {}) => {
+    const res = await get(`/reconciliation/status?${buildQuery(params)}`);
     return res.data;
   };
 
-  const getMatchedTransactions = async (params: {
-    page?: number;
-    limit?: number;
-    fromDate?: string;
-    toDate?: string;
-  } = {}) => {
-    const q = new URLSearchParams();
-    if (params.page)     q.set("page",     String(params.page));
-    if (params.limit)    q.set("limit",    String(params.limit));
-    if (params.fromDate) q.set("fromDate", params.fromDate);
-    if (params.toDate)   q.set("toDate",   params.toDate);
-    const res = await get(`/reconciliation/matched?${q.toString()}`);
+  const getMatchedTransactions = async (params: ReconciliationFilters = {}) => {
+    const res = await get(`/reconciliation/matched?${buildQuery(params)}`);
     return res.data;
   };
 
-  const getExceptions = async (params: {
-    page?: number;
-    limit?: number;
-    type?: string;
-    resolution?: string;
-  } = {}) => {
-    const q = new URLSearchParams();
-    if (params.page)       q.set("page",       String(params.page));
-    if (params.limit)      q.set("limit",       String(params.limit));
-    if (params.type)       q.set("type",        params.type);
-    if (params.resolution) q.set("resolution",  params.resolution);
-    const res = await get(`/reconciliation/exceptions?${q.toString()}`);
+  const getExceptions = async (params: ReconciliationFilters & { type?: string; resolution?: string } = {}) => {
+    const res = await get(`/reconciliation/exceptions?${buildQuery(params)}`);
     return res.data;
   };
 
@@ -43,11 +51,7 @@ export function useReconciliationApi() {
     limit?: number;
     status?: string;
   } = {}) => {
-    const q = new URLSearchParams();
-    if (params.page)   q.set("page",   String(params.page));
-    if (params.limit)  q.set("limit",  String(params.limit));
-    if (params.status) q.set("status", params.status);
-    const res = await get(`/reconciliation/batches?${q.toString()}`);
+    const res = await get(`/reconciliation/batches?${buildQuery(params)}`);
     return res.data;
   };
 

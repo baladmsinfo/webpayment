@@ -4,6 +4,10 @@
 .nuxt
 .nitro
 .cache
+.mcp.json
+.mcp.json*
+.env
+.env*
 dist
 
 # Node dependencies

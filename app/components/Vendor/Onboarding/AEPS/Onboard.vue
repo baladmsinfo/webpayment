@@ -939,7 +939,12 @@ const kycStatus = reactive({
   store_img_status: route.query.store_img_status || "PENDING",
 });
 
-const props = defineProps({ merchantId: String });
+// successPath: where to go after biometric verification (vendor success page
+// by default; the merchant self-onboarding page passes its own KYC page).
+const props = defineProps({
+  merchantId: String,
+  successPath: { type: String, default: "/vendor/onboarding/aeps/success" },
+});
 
 const snackbar = reactive({ show: false, message: "", color: "success" });
 
@@ -1464,7 +1469,7 @@ const next = async () => {
         );
 
         setTimeout(() =>{
-          router.push("/vendor/onboarding/aeps/success");
+          router.push(props.successPath);
         }, 2000);
         
       } else {

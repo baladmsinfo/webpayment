@@ -339,6 +339,61 @@
           </div>
         </div>
 
+        <div class="card">
+          <div class="card__head">
+            <div class="card__head-dot card__head-dot--indigo"></div>
+            <h3 class="card__title">AEPS Settlement Party</h3>
+          </div>
+          <div class="edit-form-grid">
+            <div class="edit-field">
+              <label>Transaction amount is settled to</label>
+              <select v-model="aepsSettlementParty.value">
+                <option value="REQUEST_ROLE">By request role (default)</option>
+                <option value="VENDOR">Always this vendor</option>
+                <option value="MERCHANT">Always the merchant</option>
+              </select>
+            </div>
+            <button class="btn-primary" :disabled="aepsSettlementParty.saving" @click="saveVendorAepsSettlementParty"
+              style="align-self:flex-end; height:38px">
+              {{ aepsSettlementParty.saving ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+          <p class="text-xs" style="color:#64748b; margin-top:6px">
+            Applies to AEPS transactions of all this vendor's merchants, each paid to that party's own settlement
+            account. <b>By request role</b>: transactions the vendor initiates on a merchant's behalf settle to the
+            vendor, transactions the merchant initiates settle to the merchant. <b>Always</b> options override that,
+            whoever initiates. Commission is unaffected — every linked party gets its share in real time.
+          </p>
+          <p v-if="aepsSettlementParty.value !== 'MERCHANT' && !vendorForm.settlementAccount" class="text-xs"
+            style="color:#d97706; margin-top:4px; font-weight:700">
+            This vendor has no settlement account yet — add one so vendor settlements can be paid out.
+          </p>
+        </div>
+
+        <div class="card" v-if="vendorForm.settlementAccount">
+          <div class="card__head">
+            <div class="card__head-dot card__head-dot--indigo"></div>
+            <h3 class="card__title">AEPS Payout Mode</h3>
+          </div>
+          <div class="edit-form-grid">
+            <div class="edit-field">
+              <label>Payout Destination</label>
+              <select v-model="aepsPayoutMode.value">
+                <option value="BANK">Bank transfer (manual/batch settlement)</option>
+                <option value="WALLET">Platform wallet (instant credit)</option>
+              </select>
+            </div>
+            <button class="btn-primary" :disabled="aepsPayoutMode.saving" @click="saveVendorAepsPayoutMode"
+              style="align-self:flex-end; height:38px">
+              {{ aepsPayoutMode.saving ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+          <p class="text-xs" style="color:#64748b; margin-top:6px">
+            Only applies to AEPS. How the vendor's own settlements (see Settlement Party above) are paid after
+            provider recon — credited to its platform wallet, or by batch bank transfer to its settlement account.
+          </p>
+        </div>
+
         <div class="card" v-if="vendorForm.address">
           <div class="card__head">
             <div class="card__head-dot card__head-dot--sky"></div>
@@ -474,9 +529,37 @@
               <p>{{ formatDate(vendorForm.user.createdAt) }}</p>
             </div>
           </div>
-          <div class="api-key-bar">
-            <span class="api-key-bar__label">API Key</span>
-            <span class="font-mono text-xs">{{ vendorForm.user.apiKey?.slice(0, 32) + '…' }}</span>
+          <div v-for="cred in credentialRows" :key="cred.key" class="api-key-bar">
+            <span class="api-key-bar__label">{{ cred.label }}</span>
+            <span class="api-key-bar__value font-mono text-xs">
+              {{ cred.value ? (cred.secret && !showSaltKey ? '•'.repeat(24) : cred.value) : '—' }}
+            </span>
+            <button v-if="cred.secret && cred.value" class="copy-btn" :title="showSaltKey ? 'Hide' : 'Show'"
+              @click="showSaltKey = !showSaltKey">
+              <svg v-if="!showSaltKey" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </button>
+            <button v-if="cred.value" :class="['copy-btn', copiedKey === cred.key && 'copy-btn--done']"
+              :title="`Copy ${cred.label}`" @click="copyCredential(cred)">
+              <svg v-if="copiedKey !== cred.key" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -789,10 +872,12 @@
                         <th>Applies On</th>
                         <th>Depends On</th>
                         <th>Receiver</th>
-                        <th>Merchant %</th>
-                        <th>Distributor %</th>
-                        <th>Super Dist %</th>
-                        <th>Platform %</th>
+                        <th>Merchant</th>
+                        <th>Distributor</th>
+                        <th>Super Dist</th>
+                        <th>Vendor</th>
+                        <th>Aggregator</th>
+                        <th>Platform</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -814,16 +899,7 @@
                           <span :class="['pill pill--sm', receiverPillClass(comp.receiver)]">{{ comp.receiver ?? '—'
                           }}</span>
                         </td>
-                        <td class="font-mono text-xs">{{ comp.merchantShare != null ? comp.merchantShare + '%' : '—' }}
-                        </td>
-                        <td class="font-mono text-xs">{{ comp.distributorShare != null ? comp.distributorShare + '%' :
-                          '—' }}
-                        </td>
-                        <td class="font-mono text-xs">{{ comp.superDistributorShare != null ? comp.superDistributorShare
-                          + '%'
-                          : '—' }}</td>
-                        <td class="font-mono text-xs">{{ comp.platformShare != null ? comp.platformShare + '%' : '—' }}
-                        </td>
+                        <td v-for="f in SHARE_FIELDS" :key="f.key" class="font-mono text-xs">{{ fmtShare(comp, f.key) }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -992,32 +1068,41 @@
                       </div>
 
                       <!-- Split mode: show share inputs if this component has shares -->
-                      <div v-else-if="comp.merchantShare != null || comp.distributorShare != null"
+                      <div v-else-if="hasShareFields(comp)"
                         class="comp-block__shares">
-                        <div class="share-field">
-                          <label>Merchant %</label>
-                          <input type="number" v-model.number="comp.merchantShare" min="0" max="100" step="1" />
+                        <!-- % of pool vs flat ₹ per party — mirrors CommissionEngine's
+                             splitType handling (FIXED = flat rupee amount per recipient,
+                             taken off a shrinking pool; PERCENTAGE = % of the pool). -->
+                        <div class="modal-field" style="width:100%; margin-bottom:8px">
+                          <label class="toggle-label">
+                            <span>{{ comp.splitType === 'FIXED' ? 'Flat ₹ amount per party' : '% of commission pool' }}</span>
+                            <div class="toggle-wrap">
+                              <input type="checkbox" :checked="comp.splitType === 'FIXED'"
+                                @change="onToggleSplitType(comp, $event.target.checked)"
+                                class="toggle-input" :id="`cfgSplitType${idx}`" />
+                              <label :for="`cfgSplitType${idx}`" class="toggle-track"></label>
+                            </div>
+                          </label>
+                        </div>
+                        <!-- Every party linked to the merchant earns its own share,
+                             credited to its own wallet — whether the merchant or
+                             its vendor initiated the transaction. -->
+                        <div v-for="f in PARTY_SHARE_FIELDS" :key="f.key" class="share-field">
+                          <label>{{ f.label }} {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
+                          <input type="number" v-model.number="comp[f.key]" min="0"
+                            :max="comp.splitType === 'FIXED' ? undefined : 100" step="0.01" />
                         </div>
                         <div class="share-field">
-                          <label>Distributor %</label>
-                          <input type="number" v-model.number="comp.distributorShare" min="0" max="100" step="1" />
+                          <label>Platform {{ comp.splitType === 'FIXED' ? '₹' : '%' }}</label>
+                          <input v-if="comp.splitType === 'FIXED'" type="number" v-model.number="comp.platformShare" min="0" step="0.01" />
+                          <input v-else type="number" min="0" max="100" step="1" :disabled="true" :value="autoplatformShare(comp)" />
                         </div>
-                        <div class="share-field">
-                          <label>Super Dist %</label>
-                          <input type="number" v-model.number="comp.superDistributorShare" min="0" max="100" step="1" />
-                        </div>
-                        <div class="share-field">
-                          <label>Aggregator %</label>
-                          <input type="number" v-model.number="comp.aggregatorShare" min="0" max="100" step="1" />
-                        </div>
-                        <div class="share-field">
-                          <label>Platform %</label>
-                          <input type="number" v-model.number="comp.platformShare" min="0" max="100" step="1"
-                            :disabled="true" :value="autoplatformShare(comp)" />
-                        </div>
-                        <div class="share-total"
+                        <div v-if="comp.splitType !== 'FIXED'" class="share-total"
                           :class="shareTotal(comp) === 100 ? 'share-total--ok' : 'share-total--err'">
                           Total: {{ shareTotal(comp) }}%
+                        </div>
+                        <div v-else class="share-total share-total--ok">
+                          Total: ₹{{ shareTotal(comp) }}
                         </div>
                       </div>
 
@@ -1064,8 +1149,13 @@
                           <input type="number" v-model.number="comp.minValue" min="0" step="0.01" />
                         </div>
                         <div class="share-field" v-if="comp.maxValue !== undefined">
-                          <label>Max Value</label>
-                          <input type="number" v-model.number="comp.maxValue" min="0" step="0.01" />
+                          <label>
+                            Max Value
+                            <span v-if="cfgForm.paymentMethod === 'AEPS' && (comp.name === 'INTERCHANGE' || comp.name === 'CUSTOMER_FEE')" class="hint-text">
+                              (NPCI/bank cap: ₹{{ AEPS_MAX_COMMISSION }} max)
+                            </span>
+                          </label>
+                          <input type="number" v-model.number="comp.maxValue" min="0" :max="cfgForm.paymentMethod === 'AEPS' ? AEPS_MAX_COMMISSION : undefined" step="0.01" />
                         </div>
                       </div>
                     </div>
@@ -1878,6 +1968,7 @@
                   <th>Status</th>
                   <th>Provider</th>
                   <th>Date</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -1889,6 +1980,15 @@
                   <td><span :class="['pill pill--sm', txnPill(t.status)]">{{ t.status }}</span></td>
                   <td>{{ t.provider }}</td>
                   <td>{{ formatDate(t.createdAt) }}</td>
+                  <td>
+                    <button class="icon-btn icon-btn--view" :disabled="!t.tr" @click="goToTransactionDetail(t.tr)" title="View Detail">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -2552,14 +2652,19 @@ const cfgComponentTemplates = {
   ],
   'AEPS:NSDL:MINI_STATEMENT': [
     {
+      // NPCI circular: Interchange ₹3, Bank ₹2, BC ₹1 (BC's ₹1 = ₹3 - ₹2,
+      // i.e. the pool AFTER bank's flat cut and BEFORE the GST component
+      // below extracts its 18% — mirrors CASH_WITHDRAWAL's "exclusive of
+      // GST" wording: the stated BC figure is gross-of-GST, split among
+      // parties below (not paid whole to a single receiver).
       name: 'INTERCHANGE', chargeType: 'FIXED', value: 3,
+      minValue: null, maxValue: 15,
       appliesOn: 'TRANSACTION',
       merchantShare: 60, distributorShare: 20,
       superDistributorShare: 10, platformShare: 10,
-      receiver: 'BC_NETWORK',
     },
     {
-      name: 'BANK_SHARE', chargeType: 'FIXED', value: 1.4,
+      name: 'BANK_SHARE', chargeType: 'FIXED', value: 2,
       appliesOn: 'TRANSACTION',
       merchantShare: null, distributorShare: null,
       superDistributorShare: null, platformShare: null,
@@ -2576,15 +2681,31 @@ const cfgComponentTemplates = {
   ],
   'AEPS:NSDL:CASH_WITHDRAWAL': [
     {
+      // NPCI circular: 0.5% of fund flow, capped at ₹15 per successful
+      // transaction — split among parties below (not paid whole to a
+      // single receiver). For amount ranges where 0.5% would always
+      // exceed ₹15 (e.g. a slab starting above ₹3,000), switch this
+      // component's Charge Type to FIXED and Value to 15 instead —
+      // matches the live "3001-10000 → flat ₹15" slab pattern.
       name: 'INTERCHANGE', chargeType: 'PERCENTAGE', value: 0.5,
       minValue: null, maxValue: 15,
       appliesOn: 'TRANSACTION',
-      merchantShare: 60, distributorShare: 20,
-      superDistributorShare: 10, platformShare: 10,
-      receiver: 'BC_NETWORK',
+      // Calibrated so that, once bank takes a clean 10% (i.e. above the
+      // ₹0.50 floor, roughly >₹1,000), distributor's commission works out
+      // to exactly 0.4% of the transaction amount (80% of interchange),
+      // and aggregator absorbs the rest of the pool — i.e. aggregator =
+      // interchange - bank - distributor, by construction:
+      //   remainingPool = interchange - bank = 90% of interchange
+      //   distributor = 88.89% of remainingPool = 80% of interchange = 0.4% of amount
+      //   aggregator  = 11.11% of remainingPool = 10% of interchange
+      merchantShare: 0, distributorShare: 88.89,
+      superDistributorShare: 0, aggregatorShare: 11.11, platformShare: 0,
     },
     {
-      name: 'BANK_SHARE', chargeType: 'PERCENTAGE', value: 15,
+      // NPCI circular: Bank's share = 10% of the interchange, minimum ₹0.50
+      // — the same rule at every amount; it just naturally resolves to the
+      // ₹0.50 floor below ~₹1,000 and to genuine 10% above that.
+      name: 'BANK_SHARE', chargeType: 'PERCENTAGE', value: 10,
       minValue: 0.5, maxValue: null,
       dependsOn: 'INTERCHANGE',
       appliesOn: 'TRANSACTION',
@@ -2592,22 +2713,23 @@ const cfgComponentTemplates = {
       superDistributorShare: null, platformShare: null,
       receiver: 'BANK',
     },
-    {
-      name: 'GST', chargeType: 'PERCENTAGE', value: 18,
-      dependsOn: 'INTERCHANGE',
-      appliesOn: 'TRANSACTION',
-      merchantShare: null, distributorShare: null,
-      superDistributorShare: null, platformShare: null,
-      receiver: 'GOVERNMENT',
-    },
+    // No GST component here by default — the distributor/aggregator split
+    // above is calibrated directly against (interchange - bank), and the
+    // "aggregator = interchange - bank - distributor" identity only holds
+    // when nothing else erodes that pool. Add a GST component only if this
+    // vendor's actual agreement requires withholding GST from the BC split
+    // — doing so will proportionally reduce both distributor and aggregator.
   ],
   'AEPS:NSDL:BALANCE_ENQUIRY': [
     {
+      // Balance enquiry is free by default (value 0) — still split-mode
+      // (not single-receiver) so raising this later behaves consistently
+      // with CASH_WITHDRAWAL / MINI_STATEMENT.
       name: 'INTERCHANGE', chargeType: 'FIXED', value: 0,
+      minValue: null, maxValue: 15,
       appliesOn: 'TRANSACTION',
       merchantShare: 60, distributorShare: 20,
       superDistributorShare: 10, platformShare: 10,
-      receiver: 'BC_NETWORK',
     },
     {
       name: 'BANK_SHARE', chargeType: 'FIXED', value: 0,
@@ -2708,27 +2830,76 @@ watch(
     const tpl = cfgComponentTemplates[key]
     // Deep clone so edits don't mutate the template
     cfgForm.components = tpl
-      ? JSON.parse(JSON.stringify(tpl)).map((c) => ({ ...c, __singleReceiver: false }))
+      ? JSON.parse(JSON.stringify(tpl)).map((c) => normalizeComponent({ ...c, __singleReceiver: false }))
       : []
   }
 )
 
-// Auto-compute platform share (100 - others, now including aggregator)
+// Commission split parties — mirrors CommissionComponent's share columns and
+// CommissionEngine's buckets. Platform takes whatever the others leave in
+// percentage mode.
+const PARTY_SHARE_FIELDS = [
+  { key: 'merchantShare',         label: 'Merchant' },
+  { key: 'distributorShare',      label: 'Distributor' },
+  { key: 'superDistributorShare', label: 'Super Dist' },
+  { key: 'vendorShare',           label: 'Vendor' },
+  { key: 'aggregatorShare',       label: 'Aggregator' },
+]
+const SHARE_FIELDS = [...PARTY_SHARE_FIELDS, { key: 'platformShare', label: 'Platform' }]
+
+const round2 = (n) => Math.round(n * 100) / 100
+
+const hasShareFields = (comp) => SHARE_FIELDS.some((f) => comp[f.key] != null)
+
+const fmtShare = (comp, key) => {
+  const v = comp[key]
+  if (v == null) return '—'
+  return comp.splitType === 'FIXED' ? '₹' + v : v + '%'
+}
+
+// Auto-compute platform share (100 - every other party)
 const autoplatformShare = (comp) => {
-  const others = (comp.merchantShare ?? 0)
-    + (comp.distributorShare ?? 0)
-    + (comp.superDistributorShare ?? 0)
-    + (comp.aggregatorShare ?? 0)
-  comp.platformShare = Math.max(0, 100 - others)
+  const others = PARTY_SHARE_FIELDS.reduce((s, f) => s + (comp[f.key] ?? 0), 0)
+  comp.platformShare = Math.max(0, round2(100 - others))
   return comp.platformShare
 }
 
-const shareTotal = (comp) => {
-  return (comp.merchantShare ?? 0)
-    + (comp.distributorShare ?? 0)
-    + (comp.superDistributorShare ?? 0)
-    + (comp.aggregatorShare ?? 0)
-    + (comp.platformShare ?? 0)
+const shareTotal = (comp) => round2(SHARE_FIELDS.reduce((s, f) => s + (comp[f.key] ?? 0), 0))
+
+const setShares = (comp, value) => {
+  for (const f of SHARE_FIELDS) comp[f.key] = value
+}
+
+// Templates and configs saved before vendor/aggregator shares existed may
+// lack those keys — give split-mode components a 0 so the input shows.
+const normalizeComponent = (c) => {
+  const split = hasShareFields(c)
+  for (const f of SHARE_FIELDS) {
+    if (c[f.key] === undefined) c[f.key] = split ? 0 : null
+  }
+  return c
+}
+
+// NPCI/bank mandated ceiling on the total AEPS interchange fee per
+// transaction — mirrors CommissionEngine.AEPScalculate's runtime clamp
+// and commission.service.js's validateAepsCap() so a misconfigured slab
+// is caught here before it's even sent to the backend.
+const AEPS_MAX_COMMISSION = 15
+
+const worstCaseAepsCharge = (comp, maxAmount) => {
+  let calculated
+  if (comp.chargeType === 'FIXED') {
+    calculated = Number(comp.value || 0)
+  } else {
+    calculated = (Number(maxAmount) * Number(comp.value || 0)) / 100
+    if (comp.minValue != null && calculated < Number(comp.minValue)) {
+      calculated = Number(comp.minValue)
+    }
+  }
+  if (comp.maxValue != null && calculated > Number(comp.maxValue)) {
+    calculated = Number(comp.maxValue)
+  }
+  return calculated
 }
 
 // Flip a component between "split among parties" and "pay to a single
@@ -2738,19 +2909,23 @@ const shareTotal = (comp) => {
 const onToggleSingleReceiver = (comp, checked) => {
   comp.__singleReceiver = checked
   if (checked) {
-    comp.merchantShare = null
-    comp.distributorShare = null
-    comp.superDistributorShare = null
-    comp.aggregatorShare = null
-    comp.platformShare = null
+    setShares(comp, null)
   } else {
     comp.receiver = ''
-    comp.merchantShare = 0
-    comp.distributorShare = 0
-    comp.superDistributorShare = 0
-    comp.aggregatorShare = 0
-    comp.platformShare = 0
+    setShares(comp, 0)
   }
+}
+
+// Flip how the split shares are interpreted — PERCENTAGE (% of the
+// commission pool, must total 100) vs FIXED (flat ₹ amount per party,
+// no total requirement — mirrors CommissionEngine's takeShare(), which
+// takes each FIXED share off a shrinking pool). Resets shares to 0 on
+// switch so a percentage value isn't misread as a rupee amount or vice
+// versa. Backend (commission.service.js validateShares) already skips
+// the 100%-total check for splitType === 'FIXED'.
+const onToggleSplitType = (comp, checked) => {
+  comp.splitType = checked ? 'FIXED' : 'PERCENTAGE'
+  setShares(comp, 0)
 }
 
 // Not every auto-populated template includes every component (e.g. UPI's
@@ -2765,7 +2940,7 @@ const addComponent = () => {
     minValue: null, maxValue: null,
     appliesOn: 'TRANSACTION',
     merchantShare: null, distributorShare: null,
-    superDistributorShare: null, aggregatorShare: null, platformShare: null,
+    superDistributorShare: null, vendorShare: null, aggregatorShare: null, platformShare: null,
     receiver: cfgDefaultReceiverByType[newComponentType.value] || '',
     __singleReceiver: false,
   })
@@ -2801,9 +2976,8 @@ const openEditConfig = (cfg) => {
     isDefault: cfg.isDefault,
     components: (cfg.components || []).map((c) => {
       const { id, commissionConfigId, ...rest } = c
-      const hasShares = ['merchantShare', 'distributorShare', 'superDistributorShare', 'aggregatorShare', 'platformShare']
-        .some((f) => rest[f] != null && Number(rest[f]) > 0)
-      return { ...rest, __singleReceiver: !!rest.receiver && !hasShares }
+      const hasShares = SHARE_FIELDS.some((f) => rest[f.key] != null && Number(rest[f.key]) > 0)
+      return normalizeComponent({ ...rest, __singleReceiver: !!rest.receiver && !hasShares })
     }),
   })
   cfgModal.mode = 'edit'
@@ -2849,11 +3023,38 @@ const saveCfg = async () => {
       }
       continue
     }
-    if (comp.merchantShare != null) {
+    if (hasShareFields(comp) && comp.splitType !== 'FIXED') {
       autoplatformShare(comp) // sync platformShare
       const total = shareTotal(comp)
       if (Math.abs(total - 100) > 0.01) {
         showSnack(`${comp.name}: shares must total 100% (currently ${total}%)`, 'error')
+        return
+      }
+    }
+    if (hasShareFields(comp) && comp.splitType === 'FIXED') {
+      const total = shareTotal(comp)
+      // Upper bound this component can ever produce — for FIXED chargeType
+      // it's the value itself; for PERCENTAGE/HYBRID it's maxValue if set.
+      // The real pool is smaller still once bank's share and GST come out.
+      const poolCap = comp.chargeType === 'FIXED' ? Number(comp.value || 0)
+        : (comp.maxValue != null ? Number(comp.maxValue) : null)
+      if (total > 0 && poolCap != null && total > poolCap + 0.01) {
+        showSnack(
+          `${comp.name}: flat party shares total ₹${total.toFixed(2)}, which exceeds the component's own value (₹${poolCap.toFixed(2)}) `
+          + `— the excess can never be paid out since bank's share and GST also come out of this before the split`,
+          'error'
+        )
+        return
+      }
+    }
+    if (cfgForm.paymentMethod === 'AEPS' && (comp.name === 'INTERCHANGE' || comp.name === 'CUSTOMER_FEE')) {
+      const worstCase = worstCaseAepsCharge(comp, cfgForm.maxAmount)
+      if (worstCase > AEPS_MAX_COMMISSION) {
+        showSnack(
+          `${comp.name}: AEPS commission cannot exceed the NPCI/bank cap of ₹${AEPS_MAX_COMMISSION} `
+          + `(currently up to ₹${worstCase.toFixed(2)} at max amount ₹${cfgForm.maxAmount}) — lower the value or set Max Value to ₹${AEPS_MAX_COMMISSION}`,
+          'error'
+        )
         return
       }
     }
@@ -2889,15 +3090,15 @@ const saveCfg = async () => {
       : await createCommissionConfig(payload)
     const ok = res?.statusCode === '00' || res?.id
 
-    showSnack(ok ? 'Config saved successfully' : (res?.message || 'Failed to save'), ok ? 'success' : 'error')
+    showSnack(ok ? 'Config saved successfully' : (res?.message || res?.error || 'Failed to save'), ok ? 'success' : 'error')
     if (ok) {
       closeCfgModal()
       getVendor(props.vendorId)
     }
   } catch (err) {
-    const ErrMessage = err.response.data.message
-    showSnack(ErrMessage || 'Failed to save config', 'error')
-    closeCfgModal();
+    // Keep the modal open so the aggregator can correct the config.
+    const data = err?.response?.data
+    showSnack(data?.message || data?.error || err?.message || 'Failed to save config', 'error')
   } finally {
     cfgSaving.value = false
   }
@@ -3289,8 +3490,10 @@ const deleteCommissionSlab = async (slabId) => {
 
 const props = defineProps({ vendorId: String });
 const router = useRouter();
-const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag, getUnlinkedMerchants, linkMerchantsToVendor, uploadVendorDocumentImage, attachVendorDocument, deleteVendorDocumentImage } = useAggregatorApi();
+const { getVendorById, verifyOnboarding, updateVendorMstatus, updateVendorStatus, updateVendorRiskflag, updateVendorAepsPayoutMode, updateVendorAepsSettlementParty, getUnlinkedMerchants, linkMerchantsToVendor, uploadVendorDocumentImage, attachVendorDocument, deleteVendorDocumentImage } = useAggregatorApi();
 const { getAllTransactionsUnderVendor } = useUsersApi();
+
+function goToTransactionDetail(tr) { if (tr) router.push(`/aggregator/reports/view/${tr}`); }
 
 const vendorForm = reactive({});
 const transactions = ref({ data: [], pagination: {} });
@@ -3307,6 +3510,8 @@ const imgPreview = ref(false);
 const previewUrl = ref(null);
 const editMode = reactive({ contact: false, settlement: false, address: false });
 const snackbar = reactive({ show: false, message: '', color: 'success' });
+const aepsPayoutMode = reactive({ value: 'BANK', saving: false });
+const aepsSettlementParty = reactive({ value: 'REQUEST_ROLE', saving: false });
 
 const tabs = computed(() => [
   { key: 'info', label: 'Vendor Info', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>` },
@@ -3584,11 +3789,68 @@ const showSnack = (msg, color = 'success') => {
   setTimeout(() => snackbar.show = false, 3200);
 };
 
+// ── Vendor credentials (User Account card) ───────────────────────────
+const showSaltKey = ref(false);
+const copiedKey = ref(null);
+
+const credentialRows = computed(() => [
+  { key: 'vendorId', label: 'Vendor ID', value: vendorForm.id },
+  { key: 'apiKey', label: 'API Key', value: vendorForm.user?.apiKey },
+  { key: 'saltKey', label: 'Salt Key', value: vendorForm.user?.SaltAESKey, secret: true },
+]);
+
+const copyCredential = async (cred) => {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(cred.value);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = cred.value;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    copiedKey.value = cred.key;
+    showSnack(`${cred.label} copied`, 'success');
+    setTimeout(() => { if (copiedKey.value === cred.key) copiedKey.value = null; }, 1500);
+  } catch {
+    showSnack(`Failed to copy ${cred.label}`, 'error');
+  }
+};
+
 const getVendor = async (id) => {
   try {
     const res = await getVendorById(id);
     Object.assign(vendorForm, res.data || {});
+    aepsPayoutMode.value = vendorForm.settlementAccount?.payoutMode || 'BANK';
+    aepsSettlementParty.value = vendorForm.aepsSettlementParty || 'REQUEST_ROLE';
   } catch { showSnack('Failed to load vendor data', 'error'); }
+};
+
+const saveVendorAepsSettlementParty = async () => {
+  aepsSettlementParty.saving = true;
+  try {
+    const res = await updateVendorAepsSettlementParty(props.vendorId, { aepsSettlementParty: aepsSettlementParty.value });
+    const ok = res?.statusCode === '00';
+    if (ok) vendorForm.aepsSettlementParty = aepsSettlementParty.value;
+    showSnack(ok ? res.message : (res?.message || 'Failed to update settlement party'), ok ? 'success' : 'error');
+  } finally {
+    aepsSettlementParty.saving = false;
+  }
+};
+
+const saveVendorAepsPayoutMode = async () => {
+  aepsPayoutMode.saving = true;
+  try {
+    const res = await updateVendorAepsPayoutMode(props.vendorId, { payoutMode: aepsPayoutMode.value });
+    const ok = res?.statusCode === '00';
+    showSnack(ok ? res.message : (res?.message || 'Failed to update payout mode'), ok ? 'success' : 'error');
+  } finally {
+    aepsPayoutMode.saving = false;
+  }
 };
 
 // ── Link Merchant to Vendor ──────────────────────────────────────────
@@ -4296,6 +4558,45 @@ onMounted(() => {
   text-transform: uppercase;
   letter-spacing: .7px;
   flex-shrink: 0;
+  width: 72px;
+}
+
+.api-key-bar + .api-key-bar {
+  border-top-color: #f5f5f5;
+}
+
+.api-key-bar__value {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #334155;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.copy-btn:hover {
+  border-color: #c7d2fe;
+  color: #4f46e5;
+  background: #eef2ff;
+}
+
+.copy-btn--done {
+  border-color: #a7f3d0;
+  color: #059669;
+  background: #ecfdf5;
 }
 
 /* ADDRESS */
@@ -6053,6 +6354,20 @@ onMounted(() => {
   background: #fef2f2;
 }
 
+.icon-btn--view {
+  border-color: #bfdbfe;
+  color: #1142d4;
+}
+
+.icon-btn--view:hover {
+  background: #eff6ff;
+}
+
+.icon-btn--view:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
 /* Toggle */
 .toggle-label {
   display: flex;
@@ -6307,6 +6622,13 @@ onMounted(() => {
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: .5px;
+}
+
+.hint-text {
+  color: #dc2626;
+  text-transform: none;
+  font-weight: 600;
+  letter-spacing: normal;
 }
 
 .share-field input {

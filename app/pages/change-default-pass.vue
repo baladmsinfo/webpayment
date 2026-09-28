@@ -9,7 +9,7 @@
           <div class="brand-icon">
             <span class="mdi mdi-wallet-outline"></span>
           </div>
-          <span class="brand-name">BUCKSBOX</span>
+          <span class="brand-name">{{ brandName }}</span>
         </div>
 
         <!-- Illustration -->
@@ -61,7 +61,7 @@
           <div class="brand-icon brand-icon-solid">
             <span class="mdi mdi-wallet-outline"></span>
           </div>
-          <span class="brand-name brand-name-dark">BUCKSBOX</span>
+          <span class="brand-name brand-name-dark">{{ brandName }}</span>
         </div>
 
         <!-- First-login badge -->
@@ -250,6 +250,9 @@ const props = defineProps({
 
 const { changeDefaultPassword } = useUsersApi();
 const router = useRouter();
+
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
 
 /* ── Role → dashboard route map ── */
 const ROLE_ROUTES = {

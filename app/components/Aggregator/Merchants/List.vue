@@ -34,7 +34,7 @@
         <input
           v-model="search"
           class="search-input"
-          placeholder="Search by name or MID…"
+          placeholder="Search by name, MID, ID, email or mobile…"
           @focus="searchFocused = true"
           @blur="searchFocused = false"
         />
@@ -130,6 +130,9 @@
                   <div>
                     <p class="merchant-name">{{ item.dba_name || item.business_name || item.legal_name }}</p>
                     <p class="merchant-mid th-hide-lg">{{ item.mid }}</p>
+                    <p v-if="item.email || item.mobile_no" class="merchant-contact">
+                      {{ [item.email, item.mobile_no].filter(Boolean).join(' · ') }}
+                    </p>
                   </div>
                 </div>
               </td>
@@ -243,7 +246,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMerchantsStore } from '~/stores/merchants';
 import { useAggregatorApi } from '~/composables/apis/useAggregatorApi';
@@ -289,11 +292,7 @@ const statusClass = (s: any) => ({
 /* ── Filtered list ── */
 const filteredList = computed(() => {
   let list = store.list || [];
-  const q = search.value.toLowerCase();
-  if (q) list = list.filter((m: any) =>
-    (m.legal_name||'').toLowerCase().includes(q) ||
-    (m.mid||'').toLowerCase().includes(q)
-  );
+  // Text search runs server-side (see loadMerchants) so it covers every page.
   if (filterMStatus.value) list = list.filter((m: any) => m.mstatus === filterMStatus.value);
   if (filterStatus.value)  list = list.filter((m: any) => formatStatus(m.status) === filterStatus.value);
   if (filterKycPending.value)  list = list.filter((m: any) => (filterKycPending.value === 'has') === ((m.kycPendingCount || 0) > 0));
@@ -326,9 +325,15 @@ const pageWindow = computed(() => {
 /* ── API ── */
 async function loadMerchants() {
   loading.value = true;
-  try { await getMerchants({ page: page.value, limit: limit.value }); }
+  try { await getMerchants({ page: page.value, limit: limit.value, search: search.value }); }
   finally { loading.value = false; }
 }
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+watch(search, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { page.value = 1; loadMerchants(); }, 350);
+});
 async function refresh() { await loadMerchants(); }
 function onPageChange(p: number)  { page.value = p;     loadMerchants(); }
 function onLimitChange(l: number) { limit.value = l; page.value = 1; loadMerchants(); }
@@ -461,6 +466,7 @@ onMounted(() => loadMerchants());
 }
 .merchant-name { font-size: 13px; font-weight: 700; color: #1e293b; white-space: nowrap; }
 .merchant-mid  { font-size: 11px; color: #94a3b8; font-family: 'DM Mono', monospace; margin-top: 2px; }
+.merchant-contact { font-size: 11px; color: #64748b; margin-top: 2px; }
 
 .mid-val { font-family: 'DM Mono', monospace; font-size: 12px; color: #475569; }
 

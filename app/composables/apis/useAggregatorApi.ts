@@ -40,8 +40,9 @@ export function useAggregatorApi() {
         return res.data;
     };
 
-    const getMerchants = async ({ page = 1, limit = 10 }) => {
-        const res = await get(`/aggregator/merchants?page=${page}&limit=${limit}`);
+    const getMerchants = async ({ page = 1, limit = 10, search = '' }: { page?: number | string; limit?: number | string; search?: string }) => {
+        const q = search?.trim() ? `&search=${encodeURIComponent(search.trim())}` : '';
+        const res = await get(`/aggregator/merchants?page=${page}&limit=${limit}${q}`);
 
         merchant.setMerchants({
             list: res.data.data,
@@ -61,8 +62,9 @@ export function useAggregatorApi() {
         return res.data;
     };
 
-    const getVendors = async ({ page = 1, limit = 10 }) => {
-        const res = await get(`/aggregator/vendors?page=${page}&limit=${limit}`);
+    const getVendors = async ({ page = 1, limit = 10, search = '' }: { page?: number | string; limit?: number | string; search?: string }) => {
+        const q = search?.trim() ? `&search=${encodeURIComponent(search.trim())}` : '';
+        const res = await get(`/aggregator/vendors?page=${page}&limit=${limit}${q}`);
 
         vendor.setVendors({
             list: res.data.data,
@@ -187,6 +189,50 @@ export function useAggregatorApi() {
             return res.data;
         } catch (err: any) {
             return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor risk flag" };
+        }
+    };
+
+    // AEPS-only settlement settings — see Merchant.aepsSettleToVendor /
+    // VendorSettlementAccount.payoutMode / SettlementAccount.payoutMode.
+    const updateVendorAepsPayoutMode = async (id: string, payload: { payoutMode: "BANK" | "WALLET" }) => {
+        try {
+            const res = await post(`/aggregator/vendor/${id}/aeps-payout-mode`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor AEPS payout mode" };
+        }
+    };
+
+    // Who receives AEPS transaction amounts for this vendor's merchants —
+    // REQUEST_ROLE (default: vendor-initiated → vendor, merchant-initiated →
+    // merchant), or always VENDOR / always MERCHANT.
+    const updateVendorAepsSettlementParty = async (
+        id: string,
+        payload: { aepsSettlementParty: "REQUEST_ROLE" | "VENDOR" | "MERCHANT" },
+    ) => {
+        try {
+            const res = await post(`/aggregator/vendor/${id}/aeps-settlement-party`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update vendor AEPS settlement party" };
+        }
+    };
+
+    const updateMerchantAepsSettleToVendor = async (id: string, payload: { aepsSettleToVendor: boolean }) => {
+        try {
+            const res = await post(`/aggregator/merchant/${id}/aeps-settle-to-vendor`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update merchant AEPS settlement party" };
+        }
+    };
+
+    const updateMerchantAepsPayoutMode = async (id: string, payload: { payoutMode: "BANK" | "WALLET" }) => {
+        try {
+            const res = await post(`/aggregator/merchant/${id}/aeps-payout-mode`, payload);
+            return res.data;
+        } catch (err: any) {
+            return err?.response?.data ?? { statusCode: "99", message: "Failed to update merchant AEPS payout mode" };
         }
     };
 
@@ -371,6 +417,10 @@ export function useAggregatorApi() {
         updateVendorStatus,
         updateVendorMstatus,
         updateVendorRiskflag,
+        updateVendorAepsPayoutMode,
+        updateVendorAepsSettlementParty,
+        updateMerchantAepsSettleToVendor,
+        updateMerchantAepsPayoutMode,
         submitServiceKyc,
         getTransactionById,
         getDashboardAnalytics,

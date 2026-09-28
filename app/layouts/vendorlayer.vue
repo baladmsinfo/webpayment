@@ -31,6 +31,9 @@ import { useVendorKycStatus } from "~/composables/useVendorKycStatus";
 const { getVendor } = useVendorApi();
 const auth = useAuthStore();
 const route = useRoute();
+
+const { public: { BRAND_NAME } } = useRuntimeConfig();
+const brandName = BRAND_NAME || "Bucksbox";
 const { showWarning, countdown, keepAlive, doLogout } = useIdleTimer();
 const { isKycPending, isKycSubmitted, loadKycStatus } = useVendorKycStatus();
 
@@ -118,7 +121,7 @@ onMounted(async () => {
     }
   }
   
-  Title.value = auth.vendor?.name || "Bucksbox";
+  Title.value = auth.vendor?.name || brandName;
 
   await loadKycStatus();
 
