@@ -40,8 +40,9 @@ export function useAggregatorApi() {
         return res.data;
     };
 
-    const getMerchants = async ({ page = 1, limit = 10 }) => {
-        const res = await get(`/aggregator/merchants?page=${page}&limit=${limit}`);
+    const getMerchants = async ({ page = 1, limit = 10, search = '' }: { page?: number | string; limit?: number | string; search?: string }) => {
+        const q = search?.trim() ? `&search=${encodeURIComponent(search.trim())}` : '';
+        const res = await get(`/aggregator/merchants?page=${page}&limit=${limit}${q}`);
 
         merchant.setMerchants({
             list: res.data.data,
@@ -61,8 +62,9 @@ export function useAggregatorApi() {
         return res.data;
     };
 
-    const getVendors = async ({ page = 1, limit = 10 }) => {
-        const res = await get(`/aggregator/vendors?page=${page}&limit=${limit}`);
+    const getVendors = async ({ page = 1, limit = 10, search = '' }: { page?: number | string; limit?: number | string; search?: string }) => {
+        const q = search?.trim() ? `&search=${encodeURIComponent(search.trim())}` : '';
+        const res = await get(`/aggregator/vendors?page=${page}&limit=${limit}${q}`);
 
         vendor.setVendors({
             list: res.data.data,
